@@ -29,7 +29,7 @@
 //------------------------------------------------------------------------------------------------------------------
 
 欢迎大家使用SDLGUI图形窗口管理库。
-本文档托管于http://code.google.com/p/sdlgui/
+本文档托管于http://githum.com/sdlgui/sdlgui/
 
 //简单实例
 #include <sdlgui.h>
@@ -241,6 +241,15 @@ int main(int argc,char** argv)
 //
 //------------------------------------------------------------------------
 
+更新时间:2014年3月1日
+
+文件名								MD5值
+
+sdlbase.h							3a1922eb3fca42cf40f2d2d1dbeda1ef
+sdlgui.h							9071d983e6c65281c80f3ffdb90fe0e8
+sdltools.h						6c4bed8e6c39ea7acb2c5cc56d190280
+sdlwindow.h						9629f5ccfbec079932937dd42b22b50a
+wb.txt								1fa9b174a9ec2486011a44828848be50 
 
 更新时间:2014年2月22日
 
@@ -251,3 +260,4 @@ sdlwindow.h						2f25e1171072a5211b4a00fc78476b26
 sdlgui.h							f6bc3340b21adb11a3d736f480c35402
 sdltools.h						1cd67fd5f23608336adb144bc1b45013
 wb.txt								1fa9b174a9ec2486011a44828848be50
+
