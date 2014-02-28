@@ -1,0 +1,253 @@
+//----------------------------------------------------------------------------------------------------------------
+//
+//
+//
+//
+//						文档名：						readme
+//
+//						文档创建日期：			2014年2月22日
+//						文档创建者：				徐荣
+//						文档更新者：				徐荣
+//						文档创建者联系方式：Email:twtfcu3@126.com
+//																QQ:12880312(twtfcu3@126.com)
+//																网站:http://sdl.my-mx.cn
+//
+//						版权说明：
+//						1.本文档使用者的权利
+//							a)本文档使用者可以随时利用本文档创建其它文件。
+//						2.本文档使用者的义务
+//							a)任何使用者不得改变本文档及本文档名。
+//							b)本文档使用者在使用本文档时请在您的文档开始处
+//								说明本文档版权归本文档创建者所有。
+//							c)本文档使用者本人承担
+//								使用本文档后的所有法律责任,
+//								本文档创建者不为您的文件内容承担任何法律责任。
+//
+//
+//
+//
+//------------------------------------------------------------------------------------------------------------------
+
+欢迎大家使用SDLGUI图形窗口管理库。
+本文档托管于http://code.google.com/p/sdlgui/
+
+//简单实例
+#include <sdlgui.h>
+int main(int argc,char** argv)
+{
+	sdl_frame frame("SDLGUI",0,0,100,100,SDL_WINDOW_SHOWN);
+	return frame.run();
+}
+
+SDLGUI是基于SDL2.0图形库而开发的。
+SDLGUI可以在一个窗口内管理多个图形剪辑。
+每个图形剪辑就是一个Widget，
+在任何widget内可以加入多个子级widget,
+也可以直接在widget内进行图形操作。
+每个widget可以响应鼠标事件和键盘事件，
+还可以发出自定义事件。
+
+SDLGUI所用到的库有：
+SDL2.0
+SDL_image
+SDL_TTF
+SDL_DRAW
+SDL_gfx
+使用前请自动安装好以上图形库，以上图形库
+都使用2.0版,SDL_DRAW库只有1.2版，编译时
+请自动修改库文件
+
+
+编译文档时请使用以下顺序来加载库文件
+-ID:/Mingw32_msys/local/include  -LD:/Mingw32_msys/local/lib -lSDL2_gfx -lSDL2_image -lSDL2_image.dll -lSDL2_draw -lSDL2_ttf -lSDL2_ttf.dll -lSDL2_mixer -lSDL2_mixer.dll -lSDL2_net -lSDL2_net.dll -lmingw32 -lSDL2main -lSDL2 -lSDL2.dll  
+
+如果您发现了BUG或有好的想法，可以通过以下联系方式交流
+QQ:12880312(twtfcu3@126.com)
+EMAIL:twtfcu3@126.com
+web:http://sdl.my-mx.cn
+
+
+//--------------------------------------------------------------------------------
+
+SDLGUI文档结构说明
+sdlbase.h										class sdlsurface
+														class sdltext
+														class sdltexture
+														class sdlrnederer
+														class sdlwindow
+
+sdlwindow.h									class sdl_board
+														class sdl_ime
+														class sdl_frame
+														class sdl_widget
+														class sdl_clip
+														class timer_node
+
+sdltols.h										class sdl_edit
+//---------------------------------------------------------------------------
+SDLGUI库的程序结构说明
+
+class sdlsurface						为SDLGUI库的表面操作基类。
+
+class sdltexture						为SDLGUI库的纹理操作基类。
+
+class sdlrenderer						为SDLGUI库的渲染操作基类。
+
+class sdlwindow							为SDLGUI库的渲染操作基类。
+
+class sdltext								为SDLGUI库的文本操作基类，
+														是sdlsurface的子类。
+//------------------------------------------------------------------
+template <class T,class B>
+class GUI : public B				为SDLGUI库的继承专用类，
+														是sdl_board及其子级类的
+														所有继承使用类。
+
+class sdl_board							为SDLGUI库的所有图形窗口
+														的功能实现基类，
+														它是sdlsurface的子类,
+														用于处理图形操作管理
+														及鼠标和键盘事件的处理
+
+class sdl_ime								为SDLGUI库的内置输入法
+														接口类，
+														它是sdl_board的子类,
+														用于处理文字输入管理。
+
+
+class sdl_widget						为SDLGUI库的工具类,
+														它是sdl_board的子类，
+														用于所有子窗口的基类，
+														所有新创建的子窗口都
+														应继承它，才可能让
+														SDLGUI库自动管理新的
+														窗口类。
+														
+class sdl_frame							为SDLGUI库的顶级窗口
+														框架类，它是sdl_board
+														的子类，用于所有顶级
+														窗口的显示及窗口更新
+														和所有事件消息的分流。
+														所有基于sdl_widget窗
+														口类都可以在本类窗口
+														中显示。
+
+class sdl_clip							为SDLGUI的剪辑类，是
+														sdlsurface的子类，用
+														于任何图形对象的指定
+														矩形区域进行裁剪及更新
+
+class sdl_button						为SDLGUI的按钮类，是
+														sdl_widget的子类，用
+														于处理按钮子窗口事件。
+
+class sdl_edit							为SDLGUI的文本编辑类，
+														是sdl_widget的子类，
+														用于处理文本输入及显示
+//--------------------------------------------------------------------------------
+
+
+
+
+
+SDLGUI使用实例
+
+#include <sdlgui.h>
+using namespace std;
+sdl_frame frame;
+sdl_widget_ptr widget;
+int frame_event(sdl_widget* obj,SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_LBUTTONDOWN:
+		break;
+	}
+	return 0;
+}
+int main(int argc,char** argv)
+{
+	frame.init("SDLGUI",0,0,100,100,SDL_WINDOW_SHOWN);
+	widget = fraem.add<sdl_widget>("widget",0,0,20,20,SDL_WINDOW_SHOWN);
+	widget->fill_rect(NULL,0x00ff00);
+	frame.event(frame_event);
+	frame.run();
+	return 0;
+}
+
+
+//实例分析讲解
+
+//使用头库
+#include <sdlgui.h>
+//SDLGUI是基于类设计的,防止名字冲突
+using namespace std;
+//申请全局框架变量
+sdl_frame frame;
+//申请全局子窗口指针变量
+sdl_widget_ptr widget;
+//设置全局框架事件处理函数，函数格式int obj_event(sdl_widget*,SDL_Event*);
+//sdl_widget*为你要调用事件处理函数的类本身的类型
+//SDL_Event*为您要处理的事件
+//返回类型为int,如果事件处理成功返回0，否则返回-1。
+int frame_event(sdl_widget* obj,SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_LBUTTONDOWN:
+		break;
+	}
+	return 0;
+}
+
+//程序主函数,函数参数格式是固定的，这是
+因为SDL库把main给typedef了
+
+int main(int argc,char** argv)
+{
+	//初始化程序框架
+	//初始化函数的参数为char*,int,int,int,int,Uint32
+	//第1个参数为窗口标题
+	//第2,3,4,5个参数为x坐标,y坐标,窗口宽度,窗口高度。
+	//第6个参数为显示模式，在这里使用SDL_WINDOW_SHOWN,
+	//但在测试时使用SDL_WINDOW_FULLSCREEN不能正常使用。
+	frame.init("SDLGUI",0,0,100,100,SDL_WINDOW_SHOWN);
+	//添加子窗口
+	//使用sdl_boare::add<class T>(char*,int,int,int,int,Uint32);
+	//在程序框架里加入子窗口,它的参数格式和框架初始化
+	//函数的参数格式一样。
+	widget = frame.add<sdl_widget>("widget",0,0,20,20,1);
+	//在子窗口widget中画图,使用矩形填充
+	widget->fill_rect(NULL,0x00ff00);
+	//给程序框架加入事件处理函数
+	frame.event(frame_event);
+	//进入事件消息循环处理函数
+	frame.run();
+	//以下函数为自己处理退出程序框架所做的处理。
+	//
+	//.....
+	//
+	return 0;
+}
+
+
+
+//------------------------------------------------------------------------
+//
+//
+//
+//
+//
+//
+//------------------------------------------------------------------------
+
+
+更新时间:2014年2月22日
+
+文件名								MD5值
+
+sdlbase.h							1f0d9becdd52f96da289c599e20b7975 
+sdlwindow.h						2f25e1171072a5211b4a00fc78476b26
+sdlgui.h							f6bc3340b21adb11a3d736f480c35402
+sdltools.h						1cd67fd5f23608336adb144bc1b45013
+wb.txt								1fa9b174a9ec2486011a44828848be50
