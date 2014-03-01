@@ -51,15 +51,13 @@ SDLGUI所用到的库有：
 SDL2.0
 SDL_image
 SDL_TTF
-SDL_DRAW
 SDL_gfx
 使用前请自动安装好以上图形库，以上图形库
-都使用2.0版,SDL_DRAW库只有1.2版，编译时
-请自动修改库文件
+都使用2.0版,编译时请自动修改库文件
 
 
 编译文档时请使用以下顺序来加载库文件
--ID:/Mingw32_msys/local/include  -LD:/Mingw32_msys/local/lib -lSDL2_gfx -lSDL2_image -lSDL2_image.dll -lSDL2_draw -lSDL2_ttf -lSDL2_ttf.dll -lSDL2_mixer -lSDL2_mixer.dll -lSDL2_net -lSDL2_net.dll -lmingw32 -lSDL2main -lSDL2 -lSDL2.dll  
+-ID:/Mingw32_msys/local/include  -LD:/Mingw32_msys/local/lib -lSDL2_gfx -lSDL2_image -lSDL2_image.dll -lSDL2_ttf -lSDL2_ttf.dll -lSDL2_mixer -lSDL2_mixer.dll -lSDL2_net -lSDL2_net.dll -lmingw32 -lSDL2main -lSDL2 -lSDL2.dll  
 
 如果您发现了BUG或有好的想法，可以通过以下联系方式交流
 QQ:12880312(twtfcu3@126.com)
