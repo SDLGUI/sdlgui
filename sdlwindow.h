@@ -38,6 +38,7 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <string.h>
 //-----------------------------------------------
 using namespace std;
 //--------------------------------------------------
@@ -70,6 +71,11 @@ const int sdlgui_button_click = button_event_macro(003);
 //IME类消息集合1002
 #define ime_event_macro(y) __event_macro__(1002,y) 
 const int sdlgui_ime_up= ime_event_macro(001);
+const int sdlgui_ime_en= ime_event_macro(002);
+const int sdlgui_ime_cn_edit= ime_event_macro(003);
+const int sdlgui_ime_cn_up= ime_event_macro(004);
+const int sdlgui_ime_show= ime_event_macro(005);
+const int sdlgui_ime_hide= ime_event_macro(006);
 //---------------------------------------------
 //-------------------------------------
 //
@@ -183,6 +189,8 @@ typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
 		int state();
 		int input_method(const char*);
 		int input(char);
+		int input_en_method();
+		int input_cn_method();
 		const char* word();
 	protected:
 		int init();
@@ -211,7 +219,7 @@ int sdl_ime::init()
 	//
 	_cur_word = NULL;
 	_input_method_file_path = NULL;
-	_state = 1;
+	_state = sdlgui_ime_en;
 	memset(_word_buf,0x00,sizeof(char)*100);
 	_word_buf_index = 0;
 	_word_group_index = 0;
@@ -226,7 +234,7 @@ int sdl_ime::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 }
 int sdl_ime::state()
 {
-
+	return _state;
 }
 int sdl_ime::input_method(const char* pfile)
 {
@@ -238,12 +246,96 @@ int sdl_ime::input_method(const char* pfile)
 	_input_method_file_path = new char[strlen(pfile)+1];
 	memset(_input_method_file_path,0x00,sizeof(char)*strlen(pfile)+1);
 	memcpy(_input_method_file_path,pfile,sizeof(char)*strlen(pfile)+1);
+	return input_cn_method();
+}
+int sdl_ime::input_en_method()
+{
+	_state = sdlgui_ime_en;
+	return 0;
+}
+int sdl_ime::input_cn_method()
+{
+	_state = sdlgui_ime_cn_up;
 	return 0;
 }
 int sdl_ime::input(char ch)
 {
-				SDL_UserEvent ue;
-				SDL_Event e;
+	SDL_UserEvent ue;
+	SDL_Event e;
+	if(isalpha(ch) && (_state != sdlgui_ime_en)) _state = sdlgui_ime_cn_edit;
+	switch (_state)
+	{
+		case sdlgui_ime_en:
+			if(_parent)_parent->event(&e);			
+		break;
+		case sdlgui_ime_cn_edit:
+			switch(ch)
+			{
+				//{
+				case SDLK_a:
+				case SDLK_b:
+				case SDLK_c:
+				case SDLK_d:
+				case SDLK_e:
+				case SDLK_f:
+				case SDLK_g:
+				case SDLK_h:
+				case SDLK_i:
+				case SDLK_j:
+				case SDLK_k:
+				case SDLK_l:
+				case SDLK_m:
+				case SDLK_n:
+				case SDLK_o:
+				case SDLK_p:
+				case SDLK_q:
+				case SDLK_r:
+				case SDLK_s:
+				case SDLK_t:
+				case SDLK_u:
+				case SDLK_v:
+				case SDLK_w:
+				case SDLK_x:
+				case SDLK_y:
+				case SDLK_z:
+					_word_buf[_word_buf_index] = ch;
+					_word_buf_index++;
+					parse();
+				break;
+				//}
+
+				case SDLK_SPACE:
+					memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
+					_word_buf_index = 0;
+					_cur_word=_word_group[1];
+					if(_parent)
+					{
+						ue.type = SDL_USEREVENT;
+						ue.code = 0;
+						ue.data1 = (void*)word();
+						e.type = SDL_USEREVENT;
+						e.user = ue;
+						_parent->event(&e);
+					}
+				break;
+				case SDLK_0:
+				case SDLK_1:
+				case SDLK_2:
+				case SDLK_3:
+				case SDLK_4:
+				case SDLK_5:
+				case SDLK_6:
+				case SDLK_7:
+				case SDLK_8:
+				case SDLK_9:
+				break;
+			}
+		break;
+		case sdlgui_ime_cn_up:
+		break;
+	}
+	show_list();
+	return 0;
 	switch(ch)
 	{
 		case SDLK_ESCAPE:
