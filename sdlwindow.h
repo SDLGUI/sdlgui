@@ -185,25 +185,44 @@ typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
 	public:
 		sdl_ime();
 		int init(const char*,int,int,int,int,Uint32);
+		/* 输入法系统事件 */
 		int sysevet(SDL_Event*);
+		/* 返回当前输入法输入状态 */
 		int state();
+		/* 设置输入法的码表 */
 		int input_method(const char*);
+		/* 解析按键 */
 		int input(char);
+		/* 设置输入法状态为英文状态 */
 		int input_en_method();
+		/* 设置输入法状态为中文状态 */
 		int input_cn_method();
+		/* 返回当前文字 */
 		const char* word();
 	protected:
+		/* 内部初始化 */
 		int init();
+		/* 根据码表解析当前编码 */
 		int parse();
+		/* 初始化当前编码 */
+		int init_buffer();
+		/* 显示编码对应的词组 */
 		int show_list();
 	protected:
+		/* 当前输入的UTF8文字 */
 		char* _cur_word;
+		/*当前输入法的输入状态*/
 		int _state;
+		/* 输入法的码表文件路径 */
 		char* _input_method_file_path;
 		fstream _input_method_file;
+		/* 当前编辑状态下的按键字符顺序 */
 		char _word_buf[100];
+		/* 存储当前编码所对应的10个词组 */
 		char _word_group[10][100];
+		/* 当前编辑状态下按键顺序引索 */
 		int _word_buf_index;
+		/* 存储当前编码所对应的10个词组引索 */
 		int _word_group_index = 0;
 }*sdl_ime_ptr;
 //------------------------------------
@@ -317,6 +336,7 @@ int sdl_ime::input(char ch)
 						e.user = ue;
 						_parent->event(&e);
 					}
+					init_buffer();
 				break;
 				case SDLK_0:
 				case SDLK_1:
@@ -328,6 +348,18 @@ int sdl_ime::input(char ch)
 				case SDLK_7:
 				case SDLK_8:
 				case SDLK_9:
+					memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
+					_word_buf_index = 0;
+					_cur_word=_word_group[ch-SDLK_0];
+					if(_parent)
+					{
+						ue.type = SDL_USEREVENT;
+						ue.code = 0;
+						ue.data1 = (void*)word();
+						e.type = SDL_USEREVENT;
+						e.user = ue;
+						_parent->event(&e);
+					}
 				break;
 			}
 		break;
@@ -364,6 +396,7 @@ int sdl_ime::input(char ch)
 				e.user = ue;
 				//cout<<word()<<endl;
 				_parent->event(&e);
+				init_buffer();
 			}
 		break;
 		case SDLK_a:
@@ -466,6 +499,14 @@ const char* sdl_ime::word()
 {
 	if(_cur_word)return _cur_word;
 	return NULL;
+}
+int sdl_ime::init_buffer()
+{
+	if(_cur_word)delete _cur_word;
+	//_word_list = NULL;
+	_cur_word = NULL;
+	memset(_word_buf,0x00,sizeof(_word_buf));
+	return 0;
 }
 //------------------------------------
 //
