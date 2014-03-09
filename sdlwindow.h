@@ -70,12 +70,20 @@ const int sdlgui_button_click = button_event_macro(003);
 //
 //IME类消息集合1002
 #define ime_event_macro(y) __event_macro__(1002,y) 
+/* 输入上屏 */
 const int sdlgui_ime_up= ime_event_macro(001);
+/* 输入英文 */
 const int sdlgui_ime_en= ime_event_macro(002);
+/* 中文编码状态 */
 const int sdlgui_ime_cn_edit= ime_event_macro(003);
+/* 中文上屏状态 */
 const int sdlgui_ime_cn_up= ime_event_macro(004);
-const int sdlgui_ime_show= ime_event_macro(005);
-const int sdlgui_ime_hide= ime_event_macro(006);
+/* 中文输入不可打印的控制符 */
+const int sdlgui_ime_cn_ctrl= ime_event_macro(006);
+/* 显示输入法窗口 */
+const int sdlgui_ime_show= ime_event_macro(006);
+/* 隐藏输入法窗口 */
+const int sdlgui_ime_hide= ime_event_macro(007);
 //---------------------------------------------
 //-------------------------------------
 //
@@ -288,41 +296,36 @@ int sdl_ime::input(char ch)
 			if(_parent)_parent->event(&e);			
 		break;
 		case sdlgui_ime_cn_edit:
+			ue.code = sdlgui_ime_cn_up;
 			switch(ch)
 			{
-				//{
-				case SDLK_a:
-				case SDLK_b:
-				case SDLK_c:
-				case SDLK_d:
-				case SDLK_e:
-				case SDLK_f:
-				case SDLK_g:
-				case SDLK_h:
-				case SDLK_i:
-				case SDLK_j:
-				case SDLK_k:
-				case SDLK_l:
-				case SDLK_m:
-				case SDLK_n:
-				case SDLK_o:
-				case SDLK_p:
-				case SDLK_q:
-				case SDLK_r:
-				case SDLK_s:
-				case SDLK_t:
-				case SDLK_u:
-				case SDLK_v:
-				case SDLK_w:
-				case SDLK_x:
-				case SDLK_y:
-				case SDLK_z:
-					_word_buf[_word_buf_index] = ch;
-					_word_buf_index++;
-					parse();
+				default:
+					/* 如果输入的字母则解析编码 */
+					if(isalpha(ch))
+					{
+						_word_buf[_word_buf_index] = ch;
+						_word_buf_index++;
+						parse();
+					}
+					else
+					/* 如果输入的数字则选择编码对应的词语 */
+					if(isdigit(ch))
+					{
+						memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
+						_word_buf_index = 0;
+						_cur_word=_word_group[ch-SDLK_0];
+						if(_parent)
+						{
+							ue.type = SDL_USEREVENT;
+							ue.data1 = (void*)word();
+							e.type = SDL_USEREVENT;
+							e.user = ue;
+							_parent->event(&e);
+						}
+						_state = sdlgui_ime_cn_up;
+					}
 				break;
-				//}
-
+				/* 如果输入的是空格则选择编码对应的第一个词语 */
 				case SDLK_SPACE:
 					memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
 					_word_buf_index = 0;
@@ -330,113 +333,94 @@ int sdl_ime::input(char ch)
 					if(_parent)
 					{
 						ue.type = SDL_USEREVENT;
-						ue.code = 0;
 						ue.data1 = (void*)word();
 						e.type = SDL_USEREVENT;
 						e.user = ue;
 						_parent->event(&e);
 					}
+					_state = sdlgui_ime_cn_up;
 					init_buffer();
-				break;
-				case SDLK_0:
-				case SDLK_1:
-				case SDLK_2:
-				case SDLK_3:
-				case SDLK_4:
-				case SDLK_5:
-				case SDLK_6:
-				case SDLK_7:
-				case SDLK_8:
-				case SDLK_9:
-					memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
-					_word_buf_index = 0;
-					_cur_word=_word_group[ch-SDLK_0];
-					if(_parent)
-					{
-						ue.type = SDL_USEREVENT;
-						ue.code = 0;
-						ue.data1 = (void*)word();
-						e.type = SDL_USEREVENT;
-						e.user = ue;
-						_parent->event(&e);
-					}
 				break;
 			}
 		break;
 		case sdlgui_ime_cn_up:
-		break;
-	}
-	show_list();
-	return 0;
-	switch(ch)
-	{
-		case SDLK_ESCAPE:
-			memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
-			_word_buf_index = 0;
-			parse();
-		break;
-		case SDLK_DELETE:
-			if(_word_buf_index)_word_buf_index--;
-		break;
-		case SDLK_BACKSPACE:
-			if(_word_buf_index)_word_buf_index--;
-			_word_buf[_word_buf_index]=0;
-			parse();
-		break;
-		case SDLK_SPACE:
-			memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
-			_word_buf_index = 0;
-			_cur_word = _word_group[1];
+			/* 如果指定的输入窗口则发送消息 */
 			if(_parent)
 			{
 				ue.type = SDL_USEREVENT;
-				ue.code = 0;
-				ue.data1 = (void*)word();
-				e.type = SDL_USEREVENT;
-				e.user = ue;
-				//cout<<word()<<endl;
-				_parent->event(&e);
-				init_buffer();
+				/* 处理可打印字符 */
+				if(isprint(ch))
+				{
+					ue.code = sdlgui_ime_cn_up;
+					memset(_word_buf,0x0,100);
+					/* 如果输入的数字 */
+					if(isdigit(ch))
+					{
+						sprintf(_word_buf,"%c",ch);
+					}
+					else
+					/* 如果输入的标点符号 */
+					if(ispunct(ch))
+					{
+						switch(ch)		
+						{
+							case '.':
+								sprintf(_word_buf,"。");
+							break;
+							case ',':
+								sprintf(_word_buf,"，");
+							break;
+							case ';':
+								sprintf(_word_buf,"；");
+							break;
+							case ':':
+								sprintf(_word_buf,"：");
+							break;
+							case '\'':
+								sprintf(_word_buf,"‘");
+							break;
+							case '"':
+								sprintf(_word_buf,"”");
+							break;
+							case '<':
+								sprintf(_word_buf,"《");
+							break;
+							case '>':
+								sprintf(_word_buf,"》");
+							break;
+							case '[':
+								sprintf(_word_buf,"【");
+							break;
+							case ']':
+								sprintf(_word_buf,"】");
+							break;
+							case '!':
+								sprintf(_word_buf,"！");
+							break;
+							case '`':
+								sprintf(_word_buf,"`");
+							break; 
+							case '~':
+								sprintf(_word_buf,"~");
+							break; 
+						}
+					}
+					ue.data1 = (void*)_word_buf;
+				}
+				/* 处理不可打印的字符 */
+				else
+				{
+					ue.code = sdlgui_ime_cn_ctrl;
+					ue.data1 = (void*)ch;
+				}
 			}
-		break;
-		case SDLK_a:
-		case SDLK_b:
-		case SDLK_c:
-		case SDLK_d:
-		case SDLK_e:
-		case SDLK_f:
-		case SDLK_g:
-		case SDLK_h:
-		case SDLK_i:
-		case SDLK_j:
-		case SDLK_k:
-		case SDLK_l:
-		case SDLK_m:
-		case SDLK_n:
-		case SDLK_o:
-		case SDLK_p:
-		case SDLK_q:
-		case SDLK_r:
-		case SDLK_s:
-		case SDLK_t:
-		case SDLK_u:
-		case SDLK_v:
-		case SDLK_w:
-		case SDLK_x:
-		case SDLK_y:
-		case SDLK_z:
-			if(_state)
-			{
-				_word_buf[_word_buf_index] = ch;
-				_word_buf_index++;	
-				parse();
-				//show_list();
-			}
-		break;
-		default:
 		break;
 	}
+	e.type = SDL_USEREVENT;
+	e.user = ue;
+	_parent->event(&e);
 	show_list();
+	return 0;
 }
 int sdl_ime::parse()
 {
