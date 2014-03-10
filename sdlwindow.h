@@ -166,6 +166,8 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		SDL_TimerID add_timer(int);
 	public:
 		static Uint32 timer_callback(Uint32,void*); 
+		/* 当前刷新帧数累计 */
+		static int _frame_count;
 	protected:
 		sdlsurface *_board;
 		sdlsurface *_hit_board;
@@ -180,6 +182,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int _is_show;
 		int _is_destroy;
 }*sdl_board_ptr;
+int sdl_board::_frame_count = 0;
 //------------------------------------
 //
 //
@@ -561,6 +564,8 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		int size(int,int);
 		int show();
 		int hide();
+		//------------------------------------
+		double fps();
 	public:
 		sdl_ime ime;
 	protected:
@@ -568,6 +573,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		static int call_redraw(void*);
 		sdlwindow* _window;
 		SDL_Event _main_event;
+		double _fps;
 }*sdl_frame_ptr;
 //-------------------------------------------------------
 //
@@ -1035,6 +1041,7 @@ int sdl_board::redraw()
 	{
 		_hit_board->fill_rect(_hit_rect,0x000000);
 	}
+	_frame_count++;
 	return 0;
 }
 //------------------------------------
@@ -1189,6 +1196,9 @@ sdlwindow* sdl_frame::frame()
 //用于把_board对象显示到窗口框架
 int sdl_frame::redraw()
 {
+	static clock_t _frame_timer;
+	_frame_timer = clock();
+	sdl_board::_frame_count = 0;
 	fill_rect(NULL,0x000000);
 	sdl_board::redraw();
 	if(ime.is_show())
@@ -1199,7 +1209,15 @@ int sdl_frame::redraw()
 	}
 	_board->blit_surface(NULL,this,NULL);
 	_window->update_window_surface();
+	_fps = (double)sdl_board::_frame_count / ((clock() - _frame_timer +0.1)/1000.0);
+	//cout<<"function sdl_frame::redraw() FPS is:"<<sdl_board::_frame_count<<":"<<_fps<<endl;
 	return 0;
+}
+//-------------------------------------
+//返回当前FPS
+double sdl_frame::fps()
+{
+	return _fps;
 }
 //-------------------------
 //重载窗口的系统事件处理函数。
