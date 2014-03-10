@@ -107,7 +107,7 @@ class GUI : public B
 		GUI();
 		virtual int event(SDL_Event*);//GUI专用类事件统一调用函数
 		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
-		virtual int sysevent(SDL_Event*){return 0;}//GUI专用类系统事件处理函数的虚类
+		virtual int sysevent(SDL_Event*e){};//GUI专用类系统事件处理函数的虚类
 	protected:
 		static int sysprocess(T*,SDL_Event*);
 		static int userprocess(T*,SDL_Event*);
@@ -194,7 +194,7 @@ typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
 		sdl_ime();
 		int init(const char*,int,int,int,int,Uint32);
 		/* 输入法系统事件 */
-		int sysevet(SDL_Event*);
+		int sysevent(SDL_Event*);
 		/* 返回当前输入法输入状态 */
 		int state();
 		/* 设置输入法的码表 */
@@ -323,6 +323,7 @@ int sdl_ime::input(char ch)
 							_parent->event(&e);
 						}
 						_state = sdlgui_ime_cn_up;
+						init_buffer();
 					}
 				break;
 				/* 如果输入的是空格则选择编码对应的第一个词语 */
@@ -351,7 +352,6 @@ int sdl_ime::input(char ch)
 				/* 处理可打印字符 */
 				if(isprint(ch))
 				{
-					ue.code = sdlgui_ime_cn_up;
 					memset(_word_buf,0x0,100);
 					/* 如果输入的数字 */
 					if(isdigit(ch))
@@ -405,6 +405,7 @@ int sdl_ime::input(char ch)
 							break; 
 						}
 					}
+					ue.code = sdlgui_ime_cn_up;
 					ue.data1 = (void*)_word_buf;
 				}
 				/* 处理不可打印的字符 */
@@ -413,12 +414,12 @@ int sdl_ime::input(char ch)
 					ue.code = sdlgui_ime_cn_ctrl;
 					ue.data1 = (void*)ch;
 				}
+				e.type = SDL_USEREVENT;
+				e.user = ue;
+				_parent->event(&e);
 			}
 		break;
 	}
-	e.type = SDL_USEREVENT;
-	e.user = ue;
-	_parent->event(&e);
 	show_list();
 	return 0;
 }
@@ -490,7 +491,34 @@ int sdl_ime::init_buffer()
 	//_word_list = NULL;
 	_cur_word = NULL;
 	memset(_word_buf,0x00,sizeof(_word_buf));
+	_word_buf_index = 0;
+	memset(_word_group,0x00,sizeof(_word_group));
+	_word_group_index=0;
 	return 0;
+}
+int sdl_ime::sysevent(SDL_Event* e)
+{
+	return 0;
+	switch (e->type)
+	{
+		case SDL_MOUSEBUTTONUP:
+			cout<<_state<<endl;
+			if(_state == sdlgui_ime_en)
+			{
+				_state = sdlgui_ime_cn_up;
+			}
+			else
+			{
+				_state = sdlgui_ime_en;
+			}
+			init_buffer();
+		break;
+		case SDL_KEYUP:
+			input(e->key.keysym.sym);
+		break;
+	}
+	return 0;
+	//return sdl_board::sysevent(e);
 }
 //------------------------------------
 //
@@ -1197,6 +1225,7 @@ int sdl_frame::sysevent(SDL_Event* e)
 		case SDL_KEYUP:
 			//
 			if(_active_win != this)ime.parent(_active_win);
+			//ime.event(e);
 			ime.input(e->key.keysym.sym);
 		break;
 		case SDL_TEXTINPUT:
