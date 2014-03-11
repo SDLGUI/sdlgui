@@ -1196,8 +1196,8 @@ sdlwindow* sdl_frame::frame()
 //用于把_board对象显示到窗口框架
 int sdl_frame::redraw()
 {
-	static clock_t _frame_timer;
-	_frame_timer = clock();
+	//static clock_t _frame_timer;
+	//_frame_timer = clock();
 	sdl_board::_frame_count = 0;
 	fill_rect(NULL,0x000000);
 	sdl_board::redraw();
@@ -1209,7 +1209,7 @@ int sdl_frame::redraw()
 	}
 	_board->blit_surface(NULL,this,NULL);
 	_window->update_window_surface();
-	_fps = (double)sdl_board::_frame_count / ((clock() - _frame_timer +0.1)/1000.0);
+	//_fps = (double)sdl_board::_frame_count / ((clock() - _frame_timer +0.1)/1000.0);
 	//cout<<"function sdl_frame::redraw() FPS is:"<<sdl_board::_frame_count<<":"<<_fps<<endl;
 	return 0;
 }
@@ -1275,6 +1275,8 @@ int sdl_frame::call_redraw(void* obj)
 	sdl_frame* _this = (sdl_frame*)obj;
 	//while(1)
 	{
+		static clock_t _frame_timer;
+		_frame_timer = clock();
 		_this->redraw();
 		switch(_this->_main_event.type)
 		{
@@ -1300,6 +1302,9 @@ int sdl_frame::call_redraw(void* obj)
 				_this->event(&(_this->_main_event));
 			break;
 		}
+
+		//cout<<clock()-_frame_timer<<endl;
+		_this->_fps = sdl_board::_frame_count / ((clock() - _frame_timer)/1000.0+0.01);
 		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
 	}
 	return 0;  
