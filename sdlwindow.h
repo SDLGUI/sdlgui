@@ -505,7 +505,7 @@ int sdl_ime::sysevent(SDL_Event* e)
 	switch (e->type)
 	{
 		case SDL_MOUSEBUTTONUP:
-			cout<<_state<<endl;
+			//cout<<_state<<endl;
 			if(_state == sdlgui_ime_en)
 			{
 				_state = sdlgui_ime_cn_up;
@@ -1033,7 +1033,7 @@ int sdl_board::redraw()
 					//cout<<this<<endl;
 				}
 		}
-		SDL_Delay(1);
+		//SDL_Delay(1);
 	}
 	//------------------------------
 	//处理探板范围
@@ -1041,7 +1041,7 @@ int sdl_board::redraw()
 	{
 		_hit_board->fill_rect(_hit_rect,0x000000);
 	}
-	_frame_count++;
+	//_frame_count++;
 	return 0;
 }
 //------------------------------------
@@ -1304,7 +1304,7 @@ int sdl_frame::call_redraw(void* obj)
 		}
 
 		//cout<<clock()-_frame_timer<<endl;
-		_this->_fps = sdl_board::_frame_count / ((clock() - _frame_timer)/1000.0+0.01);
+		_this->_fps = 1 / ((clock() - _frame_timer)/1000.0+0.0001);
 		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
 	}
 	return 0;  
