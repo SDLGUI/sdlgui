@@ -34,9 +34,12 @@
 #ifndef __SDLGUI_TOOLS_HANDLE__
 #define __SDLGUI_TOOLS_HANDLE__
 #include "sdlbase.h"
-#include "sdlgui.h"
+#include "sdlwindow.h"
 #include <iostream>
 #include <string.h>
+
+using namespace std;
+
 typedef class sdl_edit : public GUI<sdl_edit,sdl_widget>
 {
 	public:
@@ -44,6 +47,16 @@ typedef class sdl_edit : public GUI<sdl_edit,sdl_widget>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
+		/* 追加文本 */
+		int push(const char*);
+		/* 删除文本最后一个字 */
+		int kill();
+		/* 清除文本内容 */
+		int clear();
+		/* 返回文本内容长度 */
+		int length();
+	protected:
+		int _count;
 }*sdl_edit_ptr;
 sdl_edit::sdl_edit()
 :
@@ -57,16 +70,47 @@ int sdl_edit::init()
 }
 int sdl_edit::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
-
+	if(sdl_widget::init(ptitle,px,py,pw,ph,pflags))return -1;
+	push(ptitle);
+	return 0;
 }
 int sdl_edit::sysevent(SDL_Event* e)
 {
 	switch(e->type)
 	{
 		case SDL_USEREVENT:
-
+			switch(e->user.code)
+			{
+				case sdlgui_ime_cn_up:
+					push((char*)(e->user.data1));
+				break;
+			}
 		break;
 	}
+	return 0;
+}
+int sdl_edit::push(const char* p = NULL)
+{
+	if(p==NULL)return 0;
+	_count += strlen(p);
+	char* t = new char[_count];
+	memset(t,0x00,_count);
+	t = strcat(t,text());
+	t = strcat(t,p);
+	text(t);
+	cout<<text()<<endl;
+	delete t;
+	return 0;
+}
+int sdl_edit::kill()
+{
+	if(!_count)return 0;
+	char* t = new char[_count];
+	memset(t,0x00,_count);
+	memcpy(t,text(),_count-1);
+	text(t);
+	delete t;
+	_count --;
 	return 0;
 }
 #endif// __SDLGUI_TOOLS_HANDLE__

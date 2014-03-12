@@ -117,7 +117,7 @@ typedef class sdltext : public sdlsurface
 		sdltext(const char*,int);
 		int init();
 		int text(const char*);
-		const char* text();
+		char* text();
 		int font(const char*,int);
 		//--------------------------------------
 		int font_style();	
@@ -456,11 +456,18 @@ int sdltext::init()
 }
 int sdltext::text(const char* ptext)
 {
-	//_text = ptext;
+	if(_text)delete _text;
+	int len = strlen(ptext)+1;
+	_text = new char[len];
+	memset(_text,0x00,len);
+	strcpy(_text,ptext);
+	//---------------------------------
+	return 0;
 }
-const char* sdltext::text()
+char* sdltext::text()
 {
-	//return _text;
+	return "aa Ê½ ½ä";
+	return _text;
 }
 int sdltext::font(const char* font_path,int font_size)
 {
