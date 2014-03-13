@@ -71,6 +71,7 @@ int sdl_edit::init()
 int sdl_edit::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflags))return -1;
+	fill_rect(NULL,0xffffff);
 	push(ptitle);
 	return 0;
 }
@@ -96,9 +97,9 @@ int sdl_edit::push(const char* p = NULL)
 	char* t = new char[_count];
 	memset(t,0x00,_count);
 	t = strcat(t,text());
+	strcpy(t,text());
 	t = strcat(t,p);
 	text(t);
-	cout<<text()<<endl;
 	delete t;
 	return 0;
 }

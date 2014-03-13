@@ -751,9 +751,10 @@ int sdl_board::init()
 //设置窗口底板标题
 int sdl_board::text(const char* ptext)
 {
+	int len;
 	if(_text_board)
 	{
-		//_text_board->text(ptext);
+		_text_board->text(ptext);
 		return _text_board->render_utf8_solid(ptext,0);
 	}
 	return -1;
@@ -762,7 +763,9 @@ int sdl_board::text(const char* ptext)
 //取得窗口底板标题
 const char* sdl_board::text()
 {
+	if(_text_board)
 	return _text_board->text();
+	return "";
 }
 //--------------------------------------
 //设置窗口底板位置

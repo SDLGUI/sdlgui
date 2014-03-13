@@ -50,7 +50,7 @@ class sdlwidnow;
 //
 //
 ///////////////////////////////////////////////////////////////////////
-class sdlsurface
+typedef class sdlsurface
 {
 	public:
 		sdlsurface();
@@ -102,7 +102,7 @@ class sdlsurface
 		SDL_Point zoom_surface_size(int,int,double,double,int*,int*);
 		int shrink_surface(int,int);
 		int rotate_surface_90degrees(int);
-};
+}*sdlsurface_ptr;
 //----------------------------------------------------
 //
 //
@@ -456,6 +456,7 @@ int sdltext::init()
 }
 int sdltext::text(const char* ptext)
 {
+	cout<<ptext<<endl;
 	if(_text)delete _text;
 	int len = strlen(ptext)+1;
 	_text = new char[len];
@@ -466,8 +467,8 @@ int sdltext::text(const char* ptext)
 }
 char* sdltext::text()
 {
-	return "aa Ê½ ½ä";
-	return _text;
+	if(_text) return _text;
+	return "";
 }
 int sdltext::font(const char* font_path,int font_size)
 {
