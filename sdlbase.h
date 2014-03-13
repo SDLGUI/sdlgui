@@ -456,7 +456,7 @@ int sdltext::init()
 }
 int sdltext::text(const char* ptext)
 {
-	cout<<ptext<<endl;
+	//cout<<ptext<<endl;
 	if(_text)delete _text;
 	int len = strlen(ptext)+1;
 	_text = new char[len];
