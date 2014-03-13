@@ -90,6 +90,7 @@ int sdl_edit::sysevent(SDL_Event* e)
 					{
 						case SDLK_BACKSPACE:
 							kill();
+
 						break;
 					}
 				break;

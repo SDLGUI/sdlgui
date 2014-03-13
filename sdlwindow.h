@@ -84,6 +84,11 @@ const int sdlgui_ime_cn_ctrl= ime_event_macro(006);
 const int sdlgui_ime_show= ime_event_macro(006);
 /* 隐藏输入法窗口 */
 const int sdlgui_ime_hide= ime_event_macro(007);
+//
+//文本输入框类消息集合1003
+#define edit_event_macro(y) __event_macro__(1003,y) 
+/* 文本更新 */
+const int sdlgui_edit_change= edit_event_macro(001);
 //---------------------------------------------
 //-------------------------------------
 //
