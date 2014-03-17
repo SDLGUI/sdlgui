@@ -519,7 +519,8 @@ int sdl_ime::sysevent(SDL_Event* e)
 			{
 				_state = sdlgui_ime_en;
 			}
-			init_buffer();
+			/* 这里引起错误，要调试 */
+			//init_buffer();
 		break;
 		case SDL_KEYUP:
 			input(e->key.keysym.sym);
@@ -1251,7 +1252,17 @@ int sdl_frame::sysevent(SDL_Event* e)
 		break;
 		case SDL_KEYUP:
 			//
-			if(_active_win != this)ime.parent(_active_win);
+			if(_active_win != this)
+			{
+				if(ime.is_show())
+				{
+					ime.parent(_active_win);
+				}
+				else
+				{
+					_active_win->event(e);
+				}
+			}
 			//ime.event(e);
 			ime.input(e->key.keysym.sym);
 		break;
