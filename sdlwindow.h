@@ -1581,8 +1581,10 @@ int sdl_button::sysevent(SDL_Event* e)
 		case SDL_MOUSEBUTTONUP:
 			if(is_down)
 			{
+				_ue.type = SDL_USEREVENT;
+				_ue.code= sdlgui_button_click;
+				_ue.data1 = this;
 				_event.type = SDL_USEREVENT;
-				_event.user.code= sdlgui_button_click;
 				_event.user = _ue;
 				parent()->event(&_event);
 			}
