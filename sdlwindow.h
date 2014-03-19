@@ -159,7 +159,9 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		template<class T>T* add(T*);
 		int z_top(sdl_board*,sdl_board*,int);
 		int destroy();
+		int redraw_hit();
 		int redraw();
+		sdl_board* hit_board(int,int);
 		//virtual int event(SDL_Event* e){return 0;}
 		//-----------------------------------------------
 		int color_key(int,Uint32);
@@ -171,8 +173,11 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		SDL_TimerID add_timer(int);
 	public:
 		static Uint32 timer_callback(Uint32,void*); 
+	public:
 		/* 当前刷新帧数累计 */
 		static int _frame_count;
+		/* 全局探板数组 */
+		static sdl_board** _hit_board_ptr;
 	protected:
 		sdlsurface *_board;
 		sdlsurface *_hit_board;
@@ -187,7 +192,9 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int _is_show;
 		int _is_destroy;
 }*sdl_board_ptr;
+/* 初始全局变量 */
 int sdl_board::_frame_count = 0;
+sdl_board** sdl_board::_hit_board_ptr=NULL;
 //------------------------------------
 //
 //
@@ -574,6 +581,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		double fps();
 	public:
 		sdl_ime ime;
+		sdlsurface backgroup;
 	protected:
 		sdl_board* _active_win;
 		static int call_redraw(void*);
@@ -982,6 +990,36 @@ int sdl_board::destroy()
 	}
 	return 0;
 }
+//-----------------------------------------------
+//重绘窗口探板
+int sdl_board::redraw_hit()
+{
+	int x,y;
+	sdl_board* t;
+	if(sdl_board::_hit_board_ptr)
+	{
+		for(y = _rect.y;y<_rect.h;y++)
+		{
+			//t = &_hit_board_ptr[y];
+			for(x = _rect.x;x<_rect.w;x++)
+			{
+				_hit_board_ptr[x,y]=this;
+				//_hit_board_ptr[x][y]=this;
+			}
+		}
+	}
+	return 0;
+}
+//-----------------------------------
+//返回探板中指定坐标的窗口值
+sdl_board* sdl_board::hit_board(int px,int py)
+{
+	if(_hit_board_ptr)
+	{
+		return _hit_board_ptr[px,py];
+	}
+	return NULL;
+}
 //-------------------------
 //重绘底板窗口
 int sdl_board::redraw()
@@ -997,10 +1035,13 @@ int sdl_board::redraw()
 		if(_is_show)
 		{
 			blit_surface(NULL,_board,NULL);
+			/* 处理窗口标签文本 */
 			if(_text_board)
 			{
 				_text_board->blit_surface(NULL,_board,NULL);
 			}
+			/* 处理探板 */
+			redraw_hit();
 			_hit_board->fill_rect(NULL,(int)this);
 		}
 	}
@@ -1192,6 +1233,18 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_surface = _window->get_window_surface()->surface();
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
+	/* 初始化背景 */
+	if(backgroup.init(0,pw,ph,32,0,0,0,0))return -1;
+	backgroup.fill_rect(NULL,0x000000);
+	/* 申请探板对象 */
+	if(sdl_board::_hit_board_ptr)
+	{
+		/* 先清除以前的探板对象 */
+		delete sdl_board::_hit_board_ptr;
+	}
+	/* 申请新的探板对象 */
+	sdl_board::_hit_board_ptr = new sdl_board*[pw,ph];
+	//memset((char*)sdl_board::_hit_board_ptr,0x00,sizeof(sdl_board)*px*py);
 	//add<sdl_ime>(&ime);
 	return 0;
 }
@@ -1209,12 +1262,14 @@ int sdl_frame::redraw()
 	//static clock_t _frame_timer;
 	//_frame_timer = clock();
 	sdl_board::_frame_count = 0;
-	fill_rect(NULL,0x000000);
+	//fill_rect(NULL,0x000000);
+	backgroup.blit_surface(NULL,this,NULL);
 	sdl_board::redraw();
 	if(ime.is_show())
 	{
 		ime.redraw();
 		ime._board->blit_surface(NULL,_board,ime.rect());
+		ime.redraw_hit();
 		ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
 	}
 	_board->blit_surface(NULL,this,NULL);
@@ -1238,6 +1293,8 @@ int sdl_frame::sysevent(SDL_Event* e)
 	static int x,y;
 	SDL_GetMouseState(&x,&y);
 	t = (sdl_board*)_hit_board->pixel(x,y);
+	cout<<hit_board(x,y)<<":"<<t<<endl;
+	//t = hit_board(x,y);
 	t = (t==0)?(sdl_board*)this : t;
 	switch(e->type)
 	{

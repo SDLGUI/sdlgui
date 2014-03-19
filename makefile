@@ -4,5 +4,5 @@ ALL:
 	rm *.exe
 	make test.exe
 test.exe : test.cpp
-	g++ test.cpp -o test.exe $(CFLAG) $(LIBS)
+	g++ -g test.cpp -o test.exe $(CFLAG) $(LIBS)
 	./test
