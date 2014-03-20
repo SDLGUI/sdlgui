@@ -586,6 +586,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		sdl_board* _active_win;
 		static int call_redraw(void*);
 		sdlwindow* _window;
+		sdl_board _screen;
 		SDL_Event _main_event;
 		double _fps;
 }*sdl_frame_ptr;
@@ -1049,12 +1050,14 @@ int sdl_board::redraw()
 	while(temp)
 	{
 		del_board = temp;
-		temp->redraw();
 		//子窗口不消毁则显示
 		if(!temp->_is_destroy)
 		{
 			if(temp->_is_show)
 			{
+				/* 重绘子窗口 */
+				temp->redraw();
+				/* 将子窗口绘制到父窗口上 */
 				temp->_board->blit_surface(NULL,_board,temp->rect());
 				temp->_hit_board->blit_surface(NULL,_hit_board,temp->rect());
 			}
@@ -1229,13 +1232,15 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	if(sdl_board::init(ptitle,px,py,pw,ph,0))return -1;
 	//-------------------
 	//创建窗口
+	_screen.init(ptitle,px,py,pw,ph,pflags);
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
-	_surface = _window->get_window_surface()->surface();
+	_screen._surface = _window->get_window_surface()->surface();
+	//创建输入法
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
 	/* 初始化背景 */
-	if(backgroup.init(0,pw,ph,32,0,0,0,0))return -1;
-	backgroup.fill_rect(NULL,0x000000);
+	//if(backgroup.init(0,pw,ph,32,0,0,0,0))return -1;
+	//backgroup.fill_rect(NULL,0x000000);
 	/* 申请探板对象 */
 	if(sdl_board::_hit_board_ptr)
 	{
@@ -1259,11 +1264,7 @@ sdlwindow* sdl_frame::frame()
 //用于把_board对象显示到窗口框架
 int sdl_frame::redraw()
 {
-	//static clock_t _frame_timer;
-	//_frame_timer = clock();
 	sdl_board::_frame_count = 0;
-	//fill_rect(NULL,0x000000);
-	backgroup.blit_surface(NULL,this,NULL);
 	sdl_board::redraw();
 	if(ime.is_show())
 	{
@@ -1272,10 +1273,8 @@ int sdl_frame::redraw()
 		ime.redraw_hit();
 		ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
 	}
-	_board->blit_surface(NULL,this,NULL);
+	_board->blit_surface(NULL,&_screen,NULL);
 	_window->update_window_surface();
-	//_fps = (double)sdl_board::_frame_count / ((clock() - _frame_timer +0.1)/1000.0);
-	//cout<<"function sdl_frame::redraw() FPS is:"<<sdl_board::_frame_count<<":"<<_fps<<endl;
 	return 0;
 }
 //-------------------------------------
@@ -1293,7 +1292,7 @@ int sdl_frame::sysevent(SDL_Event* e)
 	static int x,y;
 	SDL_GetMouseState(&x,&y);
 	t = (sdl_board*)_hit_board->pixel(x,y);
-	cout<<hit_board(x,y)<<":"<<t<<endl;
+	//cout<<hit_board(x,y)<<":"<<t<<endl;
 	//t = hit_board(x,y);
 	t = (t==0)?(sdl_board*)this : t;
 	switch(e->type)
