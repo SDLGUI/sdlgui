@@ -142,6 +142,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int is_show();
 		int text(const char*);
 		const char* text();
+		/* 本地坐标 */
 		int pos(int,int);
 		int pos_x(int);
 		int pos_x();
@@ -149,6 +150,14 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int pos_y();
 		int pos(SDL_Point);
 		SDL_Point pos();
+		/* 全局坐标 */
+		SDL_Point global_pos();
+		int global_pos(int,int);
+		int global_pos_x(int);
+		int global_pos_x();
+		int global_pos_y(int);
+		int global_pos_y();
+		/*  */
 		int size(int,int);
 		int size(SDL_Point);
 		SDL_Point size();
@@ -159,7 +168,9 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		template<class T>T* add(T*);
 		int z_top(sdl_board*,sdl_board*,int);
 		int destroy();
-		int redraw_hit();
+		//int redraw_hit();
+		int redraw_hit(sdl_board*);
+		//int redraw_hit(SDL_Rect*,sdl_board*);
 		int redraw();
 		sdl_board* hit_board(int,int);
 		//virtual int event(SDL_Event* e){return 0;}
@@ -177,10 +188,11 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		/* 当前刷新帧数累计 */
 		static int _frame_count;
 		/* 全局探板数组 */
-		static sdl_board** _hit_board_ptr;
+		//static sdl_board** _hit_board_ptr;
 	protected:
 		sdlsurface *_board;
 		sdlsurface *_hit_board;
+		sdl_board** _hit_board_ptr;
 		sdltext *_text_board;
 		SDL_Rect  _rect;
 		SDL_Rect  *_hit_rect;
@@ -194,7 +206,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 }*sdl_board_ptr;
 /* 初始全局变量 */
 int sdl_board::_frame_count = 0;
-sdl_board** sdl_board::_hit_board_ptr=NULL;
+//sdl_board** sdl_board::_hit_board_ptr=NULL;
 //------------------------------------
 //
 //
@@ -719,7 +731,7 @@ sdl_board::~sdl_board()
 //底板初始函数
 int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
-	init();
+	if(init())return -1;
 	if(sdlsurface::init(0,pw,ph,32,0,0,0,0))return -1;
 	//-------------
 	_rect.x = px;
@@ -729,11 +741,13 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//--------------
 	_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
 	//----------------
+	_hit_board_ptr = new sdl_board*[pw*ph];
 	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
-	_hit_board->fill_rect(NULL,(int)this);
+	_hit_board->fill_rect(NULL,(Uint32)this);
 	_hit_board->color_key(SDL_TRUE,0);
 	_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
 	_hit_rect = NULL;
+	redraw_hit(NULL);
 	//-----------------
 	if(ptitle)
 	{
@@ -805,6 +819,96 @@ int sdl_board::pos_y(int y)
 {
 		_rect.y = y;
 		return 0;
+}
+//---------------------------------------------
+//获取窗口底板全局位置
+SDL_Point sdl_board::global_pos()
+{
+	SDL_Point pt = {_rect.x,_rect.y};
+	sdl_board* t =parent();
+	while(t)
+	{
+		pt.x += t->_rect.x;
+		pt.y += t->_rect.y;
+		t=t->parent();
+	}
+	return pt;
+}
+//-----------------------------------------------
+//设置窗口底板全局位置
+int sdl_board::global_pos(int x,int y)
+{
+	int tx,ty;
+	tx = x;
+	ty = y;
+	sdl_board* t = parent();
+	while(t)
+	{
+		tx-=t->_rect.x;
+		ty-=t->_rect.y;
+		t = t->parent();
+	}
+	_rect.x = tx;
+	_rect.y = ty;
+	return 0;
+}
+//-----------------------------------------
+//设置窗口底板全局X坐标
+int sdl_board::global_pos_x(int x)
+{
+	int tx;
+	tx = x;
+	sdl_board* t = parent();
+	while(t)
+	{
+		tx-=t->_rect.x;
+		t = t->parent();
+	}
+	_rect.x = tx;
+	return 0;
+}
+//-----------------------------------------
+//设置窗口底板全局Y坐标
+int sdl_board::global_pos_y(int y)
+{
+	int ty;
+	ty = y;
+	sdl_board* t = parent();
+	while(t)
+	{
+		ty-=t->_rect.y;
+		t = t->parent();
+	}
+	_rect.y = ty;
+	return 0;
+}
+//-----------------------------------------
+//获取窗口底板全局X坐标
+int sdl_board::global_pos_x()
+{
+	int tx;
+	tx = _rect.x;
+	sdl_board* t = parent();
+	while(t)
+	{
+		tx+=t->_rect.x;
+		t = t->parent();
+	}
+	return tx;
+}
+//-----------------------------------------
+//获取窗口底板全局Y坐标
+int sdl_board::global_pos_y()
+{
+	int ty;
+	ty = _rect.y;
+	sdl_board* t = parent();
+	while(t)
+	{
+		ty+=t->_rect.y;
+		t = t->parent();
+	}
+	return ty;
 }
 //--------------------------------------
 //取得窗口底板位置
@@ -993,23 +1097,36 @@ int sdl_board::destroy()
 }
 //-----------------------------------------------
 //重绘窗口探板
-int sdl_board::redraw_hit()
+int sdl_board::redraw_hit(sdl_board* child = NULL)
 {
+	SDL_Rect lrt;
 	int x,y;
-	sdl_board* t;
-	if(sdl_board::_hit_board_ptr)
+	/* 如果子对象存在表示复制到父级探板 */
+	if(child)
 	{
-		for(y = _rect.y;y<_rect.h;y++)
+		memcpy(&lrt,child->rect(),sizeof(SDL_Rect));
+		//lrt.x = 0;
+		//lrt.y = 0;
+		for(y = (lrt.y>0)?lrt.y:0;y<(lrt.h+lrt.y) && y<_rect.h;y++)
 		{
-			//t = &_hit_board_ptr[y];
-			for(x = _rect.x;x<_rect.w;x++)
+			for(x=(lrt.x>0)?lrt.x:0;x<(lrt.w+lrt.x) && x<_rect.w;x++)
 			{
-				_hit_board_ptr[x,y]=this;
-				//_hit_board_ptr[x][y]=this;
+				_hit_board_ptr[x+y*_rect.w] = child->_hit_board_ptr[(x-child->_rect.x)+(y-child->_rect.y)*child->_rect.w];
 			}
 		}
+		return 0;
 	}
-	return 0;
+	/* 如果没有子级表示更新自身探板 */
+	memcpy(&lrt,&_rect,sizeof(SDL_Rect));
+	lrt.x = 0;
+	lrt.y = 0;
+	for(y = (lrt.y>0)?lrt.y:0;y<(lrt.h+lrt.y) && y<_rect.h;y++)
+	{
+		for(x=(lrt.x>0)?lrt.x:0;x<(lrt.w+lrt.x) && x<_rect.w;x++)
+		{
+			_hit_board_ptr[x+y*_rect.w] = this;
+		}
+	}
 }
 //-----------------------------------
 //返回探板中指定坐标的窗口值
@@ -1017,7 +1134,7 @@ sdl_board* sdl_board::hit_board(int px,int py)
 {
 	if(_hit_board_ptr)
 	{
-		return _hit_board_ptr[px,py];
+		return _hit_board_ptr[px+py*_rect.w];
 	}
 	return NULL;
 }
@@ -1041,7 +1158,7 @@ int sdl_board::redraw()
 			{
 				_text_board->blit_surface(NULL,_board,NULL);
 			}
-			/* 处理探板 */
+			/* 重绘新探板 */
 			redraw_hit();
 			_hit_board->fill_rect(NULL,(int)this);
 		}
@@ -1059,6 +1176,9 @@ int sdl_board::redraw()
 				temp->redraw();
 				/* 将子窗口绘制到父窗口上 */
 				temp->_board->blit_surface(NULL,_board,temp->rect());
+				/* 将子窗口探板绘制到父窗口上 */
+				redraw_hit(temp);
+				//memmove((_hit_board_ptr+_rect.w*temp->_rect.y+temp->_rect.x),(temp->_hit_board_ptr),temp->_rect.w*temp->_rect.h);
 				temp->_hit_board->blit_surface(NULL,_hit_board,temp->rect());
 			}
 			temp = temp->_next;
@@ -1095,7 +1215,6 @@ int sdl_board::redraw()
 	{
 		_hit_board->fill_rect(_hit_rect,0x000000);
 	}
-	//_frame_count++;
 	return 0;
 }
 //------------------------------------
@@ -1229,7 +1348,10 @@ int sdl_frame::init()
 int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
 	init();
-	if(sdl_board::init(ptitle,px,py,pw,ph,0))return -1;
+	if(sdl_board::init("",px,py,pw,ph,0))return -1;
+	/* 设置窗口位置 */
+	_rect.x = 0;
+	_rect.y = 0;
 	//-------------------
 	//创建窗口
 	_screen.init(ptitle,px,py,pw,ph,pflags);
@@ -1242,13 +1364,13 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//if(backgroup.init(0,pw,ph,32,0,0,0,0))return -1;
 	//backgroup.fill_rect(NULL,0x000000);
 	/* 申请探板对象 */
-	if(sdl_board::_hit_board_ptr)
+	//if(sdl_board::_hit_board_ptr)
 	{
 		/* 先清除以前的探板对象 */
-		delete sdl_board::_hit_board_ptr;
+		//delete sdl_board::_hit_board_ptr;
 	}
 	/* 申请新的探板对象 */
-	sdl_board::_hit_board_ptr = new sdl_board*[pw,ph];
+	//sdl_board::_hit_board_ptr = new sdl_board*[pw,ph];
 	//memset((char*)sdl_board::_hit_board_ptr,0x00,sizeof(sdl_board)*px*py);
 	//add<sdl_ime>(&ime);
 	return 0;
@@ -1292,6 +1414,7 @@ int sdl_frame::sysevent(SDL_Event* e)
 	static int x,y;
 	SDL_GetMouseState(&x,&y);
 	t = (sdl_board*)_hit_board->pixel(x,y);
+	t = hit_board(x,y);
 	//cout<<hit_board(x,y)<<":"<<t<<endl;
 	//t = hit_board(x,y);
 	t = (t==0)?(sdl_board*)this : t;
