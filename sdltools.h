@@ -83,6 +83,8 @@ int sdl_edit::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_ime_cn_up:
+				case sdlgui_ime_en:
+					//cout<<e->user.data1<<endl;
 					push((char*)(e->user.data1));
 				break;
 				case sdlgui_ime_cn_ctrl:
@@ -90,7 +92,6 @@ int sdl_edit::sysevent(SDL_Event* e)
 					{
 						case SDLK_BACKSPACE:
 							kill();
-
 						break;
 					}
 				break;
