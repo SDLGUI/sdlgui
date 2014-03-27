@@ -614,18 +614,24 @@ typedef class sdl_clip : public sdlsurface
 	public:
 		sdl_clip();
 		sdl_clip(sdlsurface*,int,int);
+		//用给定的剪辑宽度和高度进行裁剪。
+		int clip(int,int);
 		int init();
 		int init(sdlsurface*,int,int);
 		int row();
 		int column();
+		int read(int,int);
+		int read();
 		int write();
 		int write(int,int);
 		virtual sdlsurface* operator()(int,int);
+		virtual sdlsurface* operator[](SDL_Point);
 	protected:
 		inline SDL_Rect clip_rect(int,int);
 	protected:
 		sdlsurface* _clip_surface;
 		sdlsurface** _sub_surface;
+		SDL_Rect _clip_rect;
 		int _width,_height;
 		SDL_Point _sub_size;
 }*sdl_clip_ptr;
@@ -1588,64 +1594,85 @@ sdlsurface()
 }
 int sdl_clip::init()
 {
+	_clip_surface = NULL;
 	if(sdlsurface::init())return -1;
 	return 0;
 }
-int sdl_clip::init(sdlsurface* clip,int w,int h)
+int sdl_clip::init(sdlsurface* pclip,int w,int h)
 {
 	init();
-	int i,j;
-	SDL_Rect* src_clip,tclip;
-	if(clip == NULL)return -1;
-	//create_rgb_surface(0,100,100,32,0,0,0,0);
-	_clip_surface = clip;
-	_surface = clip->surface();	
-	//----------------------------------------
-	src_clip = sdlsurface::clip_rect();
-	_sub_size.x = w;
-	_sub_size.y = h;
-	_width = src_clip->w%_sub_size.x;
-	_width = int(src_clip->w/_sub_size.x) + ((_width)?1:0);
-	_height= src_clip->h%_sub_size.y;
-	_height= int(src_clip->h/_sub_size.y) + ((_height)?1:0);
-	//_clip_surface = clip;
-	sdlsurface **temp = new sdlsurface*[_width*_height];
-	_sub_surface= new sdlsurface*[_width*_height];
+	if(pclip == NULL)return -1;
+	//更新操作对象
+	_clip_surface = pclip;
+	_surface = pclip->surface();	
+	//初始化剪辑
+	return clip(w,h);
+}
+//用于初始化表面剪辑
+//w和h分别表示每个剪辑的宽度和高度
+//这个函数会自动计算把表面分成了几个剪辑
+int sdl_clip::clip(int w,int h)
+{
+	//return 0;
+	int x,y;
+	SDL_Rect tclip;
+	//先得取当前表面的宽度和高度
+	int src_w = sdlsurface::clip_rect()->w;
+	int src_h = sdlsurface::clip_rect()->h;
+	//更新每个剪辑的高度和宽度
+	_clip_rect.w = w;
+	_clip_rect.h = h;
+	//计算这个表面可以剪辑的行与列
+	_clip_rect.x = int(src_w/_clip_rect.w+0.9);
+	_clip_rect.y = int(src_h/_clip_rect.h+0.9);
+	//更新剪辑数组
+	if(_clip_surface)delete[] _clip_surface;
+	_clip_surface = new sdlsurface[row()*column()];
+	//更新每个剪辑表面
+	for(y=0;y<row();y++)
 	{
-		for(i = 0;i<_height;i++)
+		for(x=0;x<column();x++)
 		{
-			for(j = 0;j<_width;j++)
-			{
-				
-				//cout<<i<<":"<<j<<endl;
-				//continue;
-				//if(_sub_surface[i*_width+j])	delete _sub_surface[i*_width+j];
-				temp[i*_width+j] = new sdlsurface(0,w,h,32,0,0,0,0);
-				//_sub_surface[i*_width+j] = new sdlsurface(0,w,h,32,0,0,0,0);
-				tclip = clip_rect(i,j);	
-				//blit_surface(&tclip,_sub_surface[i*_width+j],NULL);
-				blit_surface(&tclip,temp[i*_width+j],NULL);
-			}
+			//初始子剪辑
+			_clip_surface[x+y*column()].init(0,_clip_rect.w,_clip_rect.h,32,0,0,0,0);
+			//更新子剪辑表面
+			read(x,y);
 		}
-		if(_sub_surface)delete _sub_surface;
-		_sub_surface = temp;
 	}
-	return  0;
+	return 0;
+}
+/* 读取所有剪辑 */
+int sdl_clip::read()
+{
+
+}
+int sdl_clip::read(int x,int y)
+{
+	//取得指定的剪辑引索
+	int tx = (x>column())?column():x;
+	int ty = (x>row())?row():x;
+	//取得指定剪辑的坐标
+	SDL_Rect rt = clip_rect(tx,ty);
+	//更新指定剪辑表面
+	blit_surface(&rt,operator()(x,y),NULL);
+	return 0;
 }
 int sdl_clip::row()
 {
+	return _clip_rect.y;
 	return _width;
 }
 int sdl_clip::column()
 {
+	return _clip_rect.x;
 	return _height;
 }
 int sdl_clip::write()
 {
 	int i,j;
-	for(i=0;i<_height;i++)
+	for(i=0;i<row();i++)
 	{
-		for(j=0;j<_width;j++)
+		for(j=0;j<column();j++)
 		{
 			write(j,i);
 		}
@@ -1659,19 +1686,25 @@ int sdl_clip::write(int x,int y)
 	if(t)t->blit_surface(NULL,this,&rt);
 	return  0;
 }
+//取得指定引索的剪辑对象
 sdlsurface* sdl_clip::operator()(int x,int y)
 {
-	if(x*y >= _width*_height)return NULL;
-	if(_sub_surface)return _sub_surface[y*_width+x];
+	if((x+y*column()) >= row()*column())return NULL;
+	if(_clip_surface)return &_clip_surface[y*column()+x];
 	return NULL;
 }
+sdlsurface* sdl_clip::operator[](SDL_Point pt)
+{
+	return operator()(pt.x,pt.y);
+}
+//取得指定引索的剪辑范围
 SDL_Rect sdl_clip::clip_rect(int x,int y)
 {
 	SDL_Rect rt;
-	rt.x = ((x>column())?column():x)*_sub_size.x;
-	rt.y = ((y>column())?row():y)*_sub_size.y;
-	rt.w = _sub_size.x;
-	rt.h = _sub_size.y;
+	rt.x = ((x>=column())?column()-1:x)*_clip_rect.w;
+	rt.y = ((y>=column())?row()-1:y)*_clip_rect.h;
+	rt.w = _clip_rect.w;
+	rt.h = _clip_rect.h;
 	return rt;
 }
 //-----------------------------------------------------------------------------
