@@ -173,6 +173,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		//int redraw_hit(SDL_Rect*,sdl_board*);
 		int redraw();
 		sdl_board* hit_board(int,int);
+		//virtual int event(SDL_Event* e){return 0;}
 		//-----------------------------------------------
 		int color_key(int,Uint32);
 		int alpha(Uint8);
@@ -258,8 +259,6 @@ typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
 		int _word_buf_index;
 		/* 存储当前编码所对应的10个词组引索 */
 		int _word_group_index = 0;
-		/* 存储输入法宽度 */
-		int ime_width;
 }*sdl_ime_ptr;
 //------------------------------------
 sdl_ime::sdl_ime()
@@ -285,7 +284,6 @@ int sdl_ime::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
 	init();
 	if(sdl_board::init(ptitle,px,py,pw,ph,pflag))return -1;
-	ime_width = pw;
 	return 0;
 }
 int sdl_ime::state()
@@ -322,21 +320,7 @@ int sdl_ime::input(char ch)
 	switch (_state)
 	{
 		case sdlgui_ime_en:
-			if(_parent)
-			{
-				_word_buf_index++;
-				memset(_word_buf,0x00,_word_buf_index);
-				_word_buf_index = 0;
-				_word_buf[0] = ch;
-				ue.type = SDL_USEREVENT;
-				ue.code = sdlgui_ime_en;
-				ue.data1 = (void*)_word_buf;
-				e.type = SDL_USEREVENT;
-				e.user = ue;
-				//cout<<ue.data1<<endl;
-				_parent->event(&e);
-			}
-			//if(_parent)_parent->event(&e);			
+			if(_parent)_parent->event(&e);			
 		break;
 		case sdlgui_ime_cn_edit:
 			ue.code = sdlgui_ime_cn_up;
@@ -471,7 +455,6 @@ int sdl_ime::parse()
 	int a,*b;
 	//memset(_word_group,0x0,sizeof(_word_group));
 	memset(_word_group,0x0,1000);
-	if(!_word_buf)return 0;
 	memcpy(_word_group[0],_word_buf,100);
 	if(!_word_buf_index)return 0;
 	char *_tc;
@@ -531,9 +514,9 @@ const char* sdl_ime::word()
 }
 int sdl_ime::init_buffer()
 {
-	//if(_cur_word)delete _cur_word;
+	if(_cur_word)delete _cur_word;
 	//_word_list = NULL;
-	//_cur_word = NULL;
+	_cur_word = NULL;
 	memset(_word_buf,0x00,sizeof(_word_buf));
 	_word_buf_index = 0;
 	memset(_word_group,0x00,sizeof(_word_group));
@@ -542,46 +525,28 @@ int sdl_ime::init_buffer()
 }
 int sdl_ime::sysevent(SDL_Event* e)
 {
-	char ch;
-	SDL_Event te;
-	SDL_UserEvent ue;
+	return 0;
 	switch (e->type)
 	{
 		case SDL_MOUSEBUTTONUP:
 			//cout<<_state<<endl;
-				cout<<_rect.w<<endl;
 			if(_state == sdlgui_ime_en)
 			{
-				size(ime_width,0);				
 				_state = sdlgui_ime_cn_up;
 			}
 			else
 			{
-				size(_rect.h,0);
 				_state = sdlgui_ime_en;
 			}
 			/* 这里引起错误，要调试 */
-			init_buffer();
+			//init_buffer();
 		break;
 		case SDL_KEYUP:
-			ch = e->key.keysym.sym;
-			if(isprint(ch))
-			{
-				input(e->key.keysym.sym);
-			}
-			else
-			{
-				ue.type = SDL_USEREVENT;
-				ue.code = sdlgui_ime_cn_ctrl;
-				ue.data1 = (void*)ch;
-				te.type = SDL_USEREVENT;
-				te.user = ue;
-				_parent->event(&te);
-			}
+			input(e->key.keysym.sym);
 		break;
 	}
-	//return 0;
-	return sdl_board::sysevent(e);
+	return 0;
+	//return sdl_board::sysevent(e);
 }
 //------------------------------------
 //
@@ -1183,7 +1148,6 @@ sdl_board* sdl_board::hit_board(int px,int py)
 //重绘底板窗口
 int sdl_board::redraw()
 {
-	SDL_Rect sr,tr;
 	if(_is_show == 0)return 0;
 	sdl_board* temp = _head;
 	sdl_board* del_board = NULL;
@@ -1194,10 +1158,6 @@ int sdl_board::redraw()
 		//如果显示则绘画窗口
 		if(_is_show)
 		{
-			memcpy((char*)&sr,(char*)&_rect,sizeof(SDL_Rect));
-			sr.x = 0;
-			sr.y = 0;
-			//cout<<sr.w<<":"<<sr.h<<endl;
 			blit_surface(NULL,_board,NULL);
 			/* 处理窗口标签文本 */
 			if(_text_board)
@@ -1221,9 +1181,6 @@ int sdl_board::redraw()
 				/* 重绘子窗口 */
 				temp->redraw();
 				/* 将子窗口绘制到父窗口上 */
-				memcpy((char*)&sr,temp->rect(),sizeof(SDL_Rect));
-				sr.x = 0;
-				sr.y = 0;
 				temp->_board->blit_surface(NULL,_board,temp->rect());
 				/* 将子窗口探板绘制到父窗口上 */
 				redraw_hit(temp);
@@ -1262,14 +1219,12 @@ int sdl_board::redraw()
 	//处理探板范围
 	if(_hit_rect)
 	{
-		_hit_board->fill_rect(_hit_rect,0x000000);
+		//_hit_board->fill_rect(_hit_rect,0x000000);
 	}
 	return 0;
 }
 //------------------------------------
 //激活底板窗口
-//
-//在本对象一直向上查找，直到程序的框架窗口对象则设置当前激活为本对象。
 int sdl_board::active()
 {
 	sdl_board* t = this;
@@ -1443,8 +1398,10 @@ int sdl_frame::redraw()
 	{
 		ime.redraw();
 		ime._board->blit_surface(NULL,_board,ime.rect());
+		cout<<ime.rect()->w<<endl;
+		//ime.redraw_hit();
 		redraw_hit(&ime);
-		ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
+		//ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
 	}
 	_board->blit_surface(NULL,&_screen,NULL);
 	_window->update_window_surface();
@@ -1493,7 +1450,8 @@ int sdl_frame::sysevent(SDL_Event* e)
 					_active_win->event(e);
 				}
 			}
-			ime.event(e);
+			//ime.event(e);
+			ime.input(e->key.keysym.sym);
 		break;
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
