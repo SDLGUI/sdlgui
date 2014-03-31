@@ -89,6 +89,39 @@ const int sdlgui_ime_hide= ime_event_macro(007);
 #define edit_event_macro(y) __event_macro__(1003,y) 
 /* 文本更新 */
 const int sdlgui_edit_change= edit_event_macro(001);
+//-------------------------------------------------------------
+//
+//
+//							消息事件结构
+//
+//
+//
+//-------------------------------------------------------------
+typedef class sdlgui_event_struct
+{
+	public:
+		sdlgui_event_struct();
+		sdlgui_event_struct(SDL_Event*,SDL_UserEvent*);
+		/* 事件对象储存器 */
+		SDL_Event event;
+		SDL_UserEvent user_event;
+		/* 列表节点 */
+	//protected:
+		sdlgui_event_struct *next,*last;
+}*sdlgui_event_struct_ptr;
+sdlgui_event_struct::sdlgui_event_struct()
+{
+	memset((char*)&event,0x00,sizeof(SDL_Event));
+	memset((char*)&user_event,0x00,sizeof(SDL_UserEvent));
+	next = NULL;
+	last = NULL;
+}
+sdlgui_event_struct::sdlgui_event_struct(SDL_Event* e,SDL_UserEvent* ue = NULL)
+{
+	sdlgui_event_struct();
+	if(e)memcpy((char*)&event,(char*)e,sizeof(SDL_Event));
+	if(ue)memcpy((char*)&user_event,(char*)ue,sizeof(SDL_UserEvent));
+}
 //---------------------------------------------
 //-------------------------------------
 //
@@ -104,6 +137,7 @@ const int sdlgui_edit_change= edit_event_macro(001);
 template <class T,class B>
 class GUI : public B
 {
+	friend int event_process(void* obj);
 	public:
 		int(*event_fun)(T*,SDL_Event*);
 	public:
@@ -113,9 +147,13 @@ class GUI : public B
 		virtual int event(SDL_Event*);//GUI专用类事件统一调用函数
 		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
 		virtual int sysevent(SDL_Event*e){};//GUI专用类系统事件处理函数的虚类
+		sdlgui_event_struct_ptr event();
+	//protected:
+		sdlgui_event_struct_ptr _head_event,_end_event;
 	protected:
 		static int sysprocess(T*,SDL_Event*);
 		static int userprocess(T*,SDL_Event*);
+		static int event_process(void*);
 };
 //-------------------------------------
 //
@@ -259,6 +297,8 @@ typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
 		int _word_buf_index;
 		/* 存储当前编码所对应的10个词组引索 */
 		int _word_group_index = 0;
+		/* 输入法宽度 */
+		int ime_width;
 }*sdl_ime_ptr;
 //------------------------------------
 sdl_ime::sdl_ime()
@@ -277,6 +317,7 @@ int sdl_ime::init()
 	memset(_word_buf,0x00,sizeof(char)*100);
 	_word_buf_index = 0;
 	_word_group_index = 0;
+	ime_width = 0;
 	//
 	return 0;
 }
@@ -284,6 +325,7 @@ int sdl_ime::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
 	init();
 	if(sdl_board::init(ptitle,px,py,pw,ph,pflag))return -1;
+	ime_width = pw;
 	return 0;
 }
 int sdl_ime::state()
@@ -320,7 +362,20 @@ int sdl_ime::input(char ch)
 	switch (_state)
 	{
 		case sdlgui_ime_en:
-			if(_parent)_parent->event(&e);			
+			if(_parent)
+			{
+				_word_buf_index++;
+				memset(_word_buf,0x00,_word_buf_index);
+				_word_buf_index = 0;
+				_word_buf[0] = ch;
+				ue.type = SDL_USEREVENT;
+				ue.code = sdlgui_ime_en;
+				ue.data1 = (void*)_word_buf;
+				e.type = SDL_USEREVENT;
+				e.user = ue;
+				//cout<<ue.data1<<endl;
+				_parent->event(&e);
+			}
 		break;
 		case sdlgui_ime_cn_edit:
 			ue.code = sdlgui_ime_cn_up;
@@ -514,9 +569,9 @@ const char* sdl_ime::word()
 }
 int sdl_ime::init_buffer()
 {
-	if(_cur_word)delete _cur_word;
+	//if(_cur_word)delete _cur_word;
 	//_word_list = NULL;
-	_cur_word = NULL;
+	//_cur_word = NULL;
 	memset(_word_buf,0x00,sizeof(_word_buf));
 	_word_buf_index = 0;
 	memset(_word_group,0x00,sizeof(_word_group));
@@ -532,14 +587,16 @@ int sdl_ime::sysevent(SDL_Event* e)
 			//cout<<_state<<endl;
 			if(_state == sdlgui_ime_en)
 			{
+				size(ime_width,0);				
 				_state = sdlgui_ime_cn_up;
 			}
 			else
 			{
+				size(_rect.h,0);
 				_state = sdlgui_ime_en;
 			}
 			/* 这里引起错误，要调试 */
-			//init_buffer();
+			init_buffer();
 		break;
 		case SDL_KEYUP:
 			input(e->key.keysym.sym);
@@ -618,6 +675,7 @@ typedef class sdl_clip : public sdlsurface
 		int clip(int,int);
 		int init();
 		int init(sdlsurface*,int,int);
+		int init(Uint32,int,int,int,Uint32,Uint32,Uint32,Uint32);
 		int row();
 		int column();
 		int read(int,int);
@@ -630,7 +688,7 @@ typedef class sdl_clip : public sdlsurface
 		inline SDL_Rect clip_rect(int,int);
 	protected:
 		sdlsurface* _clip_surface;
-		sdlsurface** _sub_surface;
+		//sdlsurface** _sub_surface;
 		SDL_Rect _clip_rect;
 		int _width,_height;
 		SDL_Point _sub_size;
@@ -657,6 +715,26 @@ GUI<T,B>::GUI():B()
 	//This = dynamic_cast<T*>(this);
 	This = (T*)(this);
 	event_fun = NULL;
+	//为每个对象创建事件列表的头节点
+	_head_event = new sdlgui_event_struct;
+	if(_head_event)
+	{
+		//为每个对象创建事件列表的尾节点
+		_head_event->next= new sdlgui_event_struct;
+		_head_event->last = _head_event->next; 
+		_head_event->next->last = _head_event;
+	}
+	//为每个对象创建事件缓冲列表头节点
+	_end_event = new sdlgui_event_struct;
+	if(_end_event)
+	{
+		//为每个对象创建事件列表的尾节点
+		_end_event->next= new sdlgui_event_struct;
+		_end_event->last = _end_event->next; 
+		_end_event->next->last = _end_event;
+	}
+	//为每个对象创建一个事件处理线程
+	SDL_CreateThread(GUI<T,B>::event_process,"event_process",(void*)This);
 }
 //----------------------------------------
 //GUI继承专用类对象事件设置函数
@@ -675,9 +753,17 @@ int GUI<T,B>::event(int(*f)(T*,SDL_Event*))
 template<class T,class B>
 int GUI<T,B>::event(SDL_Event* e)
 {
-	userprocess(This,e);
-	return sysprocess(This,e);
-	//sysevent(e);
+	//cout<<this<<":"<<(e->type)<<endl;
+	//向对象事件列表末端追加一个事件
+	//在末端申请一个事件节点
+	_end_event->last->next = new sdlgui_event_struct(e,NULL);
+	//更新新节点的上下指向
+	_end_event->last->next->next = _end_event->last;
+	_end_event->last->next->last = _end_event->last->last;
+	//更新末尾节点的向上指向
+	_end_event->last->last->next = _end_event->last->next;
+	_end_event->last->last = _end_event->last->next;
+	return 0;
 }
 //--------------------------------------
 //GUI继承专用类系统事件设置函数
@@ -701,6 +787,62 @@ int GUI<T,B>::userprocess(T* obj,SDL_Event* e)
 	}
 	return -1;
 }
+//-----------------------------------------------
+//GUI继承专用类事件处理线程
+template<class T,class B>
+int GUI<T,B>::event_process(void* obj)
+{
+	T* This = ((GUI<T,B>*)obj)->This;
+	sdlgui_event_struct* cur_event = NULL;
+	while(1)
+	{
+		//取出当前事件节点
+		cur_event = This->event();
+		if(cur_event)
+		{
+			//cout<<This<<endl;
+			//调整事件处理函数来处理事件
+			This->userprocess(This,&cur_event->event);
+			This->sysprocess(This,&cur_event->event);
+			delete cur_event;
+		}
+		SDL_Delay(0);
+	}
+	return 0;
+}
+//-----------------------------------------------
+//GUI继承专用类读取事件列表中的有效节点
+template<class T,class B>
+sdlgui_event_struct_ptr GUI<T,B>::event()
+{
+	sdlgui_event_struct* cur_event = NULL;
+	//如果事件列表头节点的前后指向节点不同则表示缓存的事件还有处理数据
+	if(_head_event->next != _head_event->last)
+	{
+		//1.取出当前事件节点
+		cur_event = _head_event->next;
+		//2.让头节点的下个节点指向已处理事件节点的下个节点。
+		_head_event->next = _head_event->next->next;
+		_head_event->next->last = _head_event;
+	}
+	//如果事件列表头节点的前后都指向尾节点则表示缓存的事件已处理完成
+	if(_head_event->next == _head_event->last)
+	{
+		if(_end_event->last != _end_event->next)
+		{
+			//将缓存事件放到处理列表当中
+			_end_event->last->last->next = _head_event->last;
+			_head_event->last->last = _end_event->last->last;
+			_head_event->next = _end_event->next;
+			_head_event->next->last = _head_event;
+			//将缓存事件列表清空
+			_end_event->last->last = _end_event;
+			_end_event->next = _end_event->last;
+		}
+	}
+	return (cur_event == _head_event->last || cur_event == NULL)?NULL:cur_event;
+}
+
 //------------------------------------------
 //
 //
@@ -770,6 +912,7 @@ int sdl_board::init()
 	if(sdlsurface::init())return -1;
 	memset((char*)&_pos,0x00,sizeof(SDL_Point));
 	memset((char*)&_size,0x00,sizeof(SDL_Point));
+	memset((char*)&_rect,0x00,sizeof(SDL_Rect));
 	_is_show = 1;
 	_is_destroy = 0;
 	_text = NULL;
@@ -1398,7 +1541,7 @@ int sdl_frame::redraw()
 	{
 		ime.redraw();
 		ime._board->blit_surface(NULL,_board,ime.rect());
-		cout<<ime.rect()->w<<endl;
+		//cout<<ime.rect()->w<<endl;
 		//ime.redraw_hit();
 		redraw_hit(&ime);
 		//ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
@@ -1411,7 +1554,7 @@ int sdl_frame::redraw()
 //返回当前FPS
 double sdl_frame::fps()
 {
-	return _fps;
+	return _fps*1000;
 }
 //-------------------------
 //重载窗口的系统事件处理函数。
@@ -1426,9 +1569,11 @@ int sdl_frame::sysevent(SDL_Event* e)
 	//cout<<hit_board(x,y)<<":"<<t<<endl;
 	//t = hit_board(x,y);
 	t = (t==0)?(sdl_board*)this : t;
+//	cout<<t<<endl;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
+			//cout<<t<<endl;
 			t->active();
 			if(t != this)t->event(e);
 		break;
@@ -1466,11 +1611,11 @@ int sdl_frame::sysevent(SDL_Event* e)
 int sdl_frame::run()
 {
 	static SDL_Thread *thread;
+	thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
 	while(1)
 	{
 		SDL_PollEvent(&_main_event);
-		thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
-		SDL_WaitThread(thread,NULL);
+		//SDL_WaitThread(thread,NULL);
 		SDL_Delay(1);
 	}
 	return 0;
@@ -1480,7 +1625,7 @@ int sdl_frame::run()
 int sdl_frame::call_redraw(void* obj)
 {
 	sdl_frame* _this = (sdl_frame*)obj;
-	//while(1)
+	while(1)
 	{
 		static clock_t _frame_timer;
 		_frame_timer = clock();
@@ -1488,6 +1633,7 @@ int sdl_frame::call_redraw(void* obj)
 		switch(_this->_main_event.type)
 		{
 			case SDL_QUIT:
+				//_this->event(&(_this->_main_event));
 				exit(0);
 			break;
 			case SDL_USEREVENT:
@@ -1505,14 +1651,15 @@ int sdl_frame::call_redraw(void* obj)
 					break;
 				}
 			break;
+			case 0:
+			break;
 			default:
 				_this->event(&(_this->_main_event));
 			break;
 		}
-
-		//cout<<clock()-_frame_timer<<endl;
 		_this->_fps = 1 / ((clock() - _frame_timer)/1000.0+0.0001);
 		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
+		SDL_Delay((1000/60)-1/_this->_fps;);
 	}
 	return 0;  
 }
@@ -1551,6 +1698,7 @@ sdl_widget::sdl_widget()
 :
 GUI<sdl_widget,sdl_board>()
 {
+	init();
 }
 sdl_widget::sdl_widget(const char* title,int px,int py,int pw,int ph,Uint32 pflags)
 :
@@ -1610,6 +1758,10 @@ int sdl_clip::init(sdlsurface* pclip,int w,int h)
 	//初始化剪辑
 	return clip(w,h);
 }
+int sdl_clip::init(Uint32 pflags,int pw,int ph,int pdepth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
+{
+	return	sdlsurface::init(pflags,pw,ph,pdepth,Rmask,Gmask,Bmask,Amask); 
+}
 //用于初始化表面剪辑
 //w和h分别表示每个剪辑的宽度和高度
 //这个函数会自动计算把表面分成了几个剪辑
@@ -1646,13 +1798,21 @@ int sdl_clip::clip(int w,int h)
 /* 读取所有剪辑 */
 int sdl_clip::read()
 {
-
+	int x,y;
+	for(y=0;y<column();y++)
+	{
+		for(x=0;x<row();x++)
+		{
+			read(x,y);
+		}
+	}
+	return 0;
 }
 int sdl_clip::read(int x,int y)
 {
 	//取得指定的剪辑引索
 	int tx = (x>column())?column():x;
-	int ty = (x>row())?row():x;
+	int ty = (y>row())?row():y;
 	//取得指定剪辑的坐标
 	SDL_Rect rt = clip_rect(tx,ty);
 	//更新指定剪辑表面
@@ -1742,6 +1902,8 @@ typedef class sdl_button : public GUI<sdl_button,sdl_widget>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
+		int clip(sdlsurface*);
+		int clip(const char*);
 	protected:
 		sdlsurface _button_frame;
 		sdl_clip _button_clip;
@@ -1772,14 +1934,31 @@ int sdl_button::init()
 int sdl_button::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
-	_button_frame.init(0,pw*4,ph,32,0,0,0,0);
-	_button_clip.init(&_button_frame,pw,ph);
+	_button_clip.init(0,pw*4,ph,32,0,0,0,0);
+	_button_clip.clip(pw,ph);
 	//-------------------------------------------
 	_button_clip(0,0)->fill_rect(NULL,0x00ff00);
 	_button_clip(1,0)->fill_rect(NULL,0xff0000);
 	_button_clip(2,0)->fill_rect(NULL,0x0000ff);
 	_button_clip(3,0)->fill_rect(NULL,0xffff00);
 	_button_clip.write();
+	_button_clip(0,0)->blit_surface(NULL,this,NULL);
+	return 0;
+}
+int sdl_button::clip(sdlsurface* sur)
+{
+	if(!sur)return -1;
+	//sur->blit_surface(_button_clip.clip_rect(),&_button_clip,NULL);
+	sur->blit_surface(sur->clip_rect(),&_button_clip,NULL);
+	_button_clip.read();
+	_button_clip(0,0)->blit_surface(NULL,this,NULL);
+	return 0;
+}
+int sdl_button::clip(const char* path)
+{
+	if(!path)return 0;
+	_button_clip.img_load(path);
+	_button_clip.read();
 	_button_clip(0,0)->blit_surface(NULL,this,NULL);
 	return 0;
 }
