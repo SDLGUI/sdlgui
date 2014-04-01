@@ -806,7 +806,7 @@ int GUI<T,B>::event_process(void* obj)
 			This->sysprocess(This,&cur_event->event);
 			delete cur_event;
 		}
-		SDL_Delay(0);
+		SDL_Delay(1);
 	}
 	return 0;
 }
@@ -1417,6 +1417,7 @@ SDL_TimerID sdl_board::add_timer(int t)
 }
 Uint32 sdl_board::timer_callback(Uint32 interval,void* p)
 {
+	sdl_board* t = (sdl_board*)p;
 	SDL_UserEvent userevent;
 	SDL_Event e;
 	//-----------------
@@ -1428,7 +1429,8 @@ Uint32 sdl_board::timer_callback(Uint32 interval,void* p)
 	e.type = SDL_USEREVENT;
 	e.user = userevent;
 	//-----------------
-	SDL_PushEvent(&e);	
+	//SDL_PushEvent(&e);	
+	t->event(&e);
 	//------------------
 	return interval;
 }
@@ -1659,7 +1661,7 @@ int sdl_frame::call_redraw(void* obj)
 		}
 		_this->_fps = 1 / ((clock() - _frame_timer)/1000.0+0.0001);
 		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
-		SDL_Delay((1000/60)-1/_this->_fps;);
+		SDL_Delay((1000/60)-1/_this->_fps);
 	}
 	return 0;  
 }
