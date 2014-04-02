@@ -356,8 +356,10 @@ int sdl_ime::input_cn_method()
 }
 int sdl_ime::input(char ch)
 {
+	//return 0;
 	SDL_UserEvent ue;
 	SDL_Event e;
+	//return 0;
 	if(isalpha(ch) && (_state != sdlgui_ime_en)) _state = sdlgui_ime_cn_edit;
 	switch (_state)
 	{
@@ -375,6 +377,8 @@ int sdl_ime::input(char ch)
 				e.user = ue;
 				//cout<<ue.data1<<endl;
 				_parent->event(&e);
+				return 0;
+
 			}
 		break;
 		case sdlgui_ime_cn_edit:
@@ -502,6 +506,7 @@ int sdl_ime::input(char ch)
 			}
 		break;
 	}
+	return 0;
 	show_list();
 	return 0;
 }
@@ -580,7 +585,8 @@ int sdl_ime::init_buffer()
 }
 int sdl_ime::sysevent(SDL_Event* e)
 {
-	return 0;
+	//cout<<e<<endl;
+	//return 0;
 	switch (e->type)
 	{
 		case SDL_MOUSEBUTTONUP:
@@ -599,11 +605,12 @@ int sdl_ime::sysevent(SDL_Event* e)
 			init_buffer();
 		break;
 		case SDL_KEYUP:
+			//cout<<(e->key.keysym.sym)<<endl;
 			input(e->key.keysym.sym);
 		break;
 	}
-	return 0;
-	//return sdl_board::sysevent(e);
+	//return 0;
+	return sdl_board::sysevent(e);
 }
 //------------------------------------
 //
@@ -1556,7 +1563,7 @@ int sdl_frame::redraw()
 //返回当前FPS
 double sdl_frame::fps()
 {
-	return _fps*1000;
+	return _fps;
 }
 //-------------------------
 //重载窗口的系统事件处理函数。
@@ -1566,7 +1573,7 @@ int sdl_frame::sysevent(SDL_Event* e)
 	static sdl_board* t;
 	static int x,y;
 	SDL_GetMouseState(&x,&y);
-	t = (sdl_board*)_hit_board->pixel(x,y);
+	//t = (sdl_board*)_hit_board->pixel(x,y);
 	t = hit_board(x,y);
 	//cout<<hit_board(x,y)<<":"<<t<<endl;
 	//t = hit_board(x,y);
@@ -1591,6 +1598,9 @@ int sdl_frame::sysevent(SDL_Event* e)
 				if(ime.is_show())
 				{
 					ime.parent(_active_win);
+					//cout<<this<<endl;
+					ime.event(e);
+					//ime.input(e->key.keysym.sym);
 				}
 				else
 				{
@@ -1598,7 +1608,6 @@ int sdl_frame::sysevent(SDL_Event* e)
 				}
 			}
 			//ime.event(e);
-			ime.input(e->key.keysym.sym);
 		break;
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
@@ -1613,10 +1622,11 @@ int sdl_frame::sysevent(SDL_Event* e)
 int sdl_frame::run()
 {
 	static SDL_Thread *thread;
-	thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
+	//thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
 	while(1)
 	{
 		SDL_PollEvent(&_main_event);
+		sdl_frame::call_redraw((void*)this);
 		//SDL_WaitThread(thread,NULL);
 		SDL_Delay(1);
 	}
@@ -1627,9 +1637,9 @@ int sdl_frame::run()
 int sdl_frame::call_redraw(void* obj)
 {
 	sdl_frame* _this = (sdl_frame*)obj;
-	while(1)
+	//while(1)
 	{
-		static clock_t _frame_timer;
+		clock_t _frame_timer;
 		_frame_timer = clock();
 		_this->redraw();
 		switch(_this->_main_event.type)
@@ -1659,9 +1669,9 @@ int sdl_frame::call_redraw(void* obj)
 				_this->event(&(_this->_main_event));
 			break;
 		}
-		_this->_fps = 1 / ((clock() - _frame_timer)/1000.0+0.0001);
+		_this->_fps = 1000 / ((clock() - _frame_timer + 0.0001));
 		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
-		SDL_Delay((1000/60)-1/_this->_fps);
+		SDL_Delay((1000/60-1000/_this->_fps));
 	}
 	return 0;  
 }
