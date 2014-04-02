@@ -377,8 +377,6 @@ int sdl_ime::input(char ch)
 				e.user = ue;
 				//cout<<ue.data1<<endl;
 				_parent->event(&e);
-				return 0;
-
 			}
 		break;
 		case sdlgui_ime_cn_edit:
@@ -506,7 +504,7 @@ int sdl_ime::input(char ch)
 			}
 		break;
 	}
-	return 0;
+	//return 0;
 	show_list();
 	return 0;
 }
@@ -1622,10 +1620,10 @@ int sdl_frame::sysevent(SDL_Event* e)
 int sdl_frame::run()
 {
 	static SDL_Thread *thread;
-	//thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
 	while(1)
 	{
 		SDL_PollEvent(&_main_event);
+		//thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
 		sdl_frame::call_redraw((void*)this);
 		//SDL_WaitThread(thread,NULL);
 		SDL_Delay(1);
@@ -1669,7 +1667,7 @@ int sdl_frame::call_redraw(void* obj)
 				_this->event(&(_this->_main_event));
 			break;
 		}
-		_this->_fps = 1000 / ((clock() - _frame_timer + 0.0001));
+		_this->_fps = 1000 / ((clock() - _frame_timer + 0.001));
 		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
 		SDL_Delay((1000/60-1000/_this->_fps));
 	}
