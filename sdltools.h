@@ -77,6 +77,7 @@ int sdl_edit::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 }
 int sdl_edit::sysevent(SDL_Event* e)
 {
+	//return 0;
 	switch(e->type)
 	{
 		case SDL_USEREVENT:
@@ -106,10 +107,13 @@ int sdl_edit::push(const char* p = NULL)
 	_count += strlen(p);
 	char* t = new char[_count];
 	memset(t,0x00,_count);
+	//return 0;
 	t = strcat(t,text());
 	strcpy(t,text());
 	t = strcat(t,p);
-	text(t);
+	//text(t);
+	//text("123456");
+	cout<<"sdl_edit printf:"<<t<<endl;
 	delete t;
 	return 0;
 }
