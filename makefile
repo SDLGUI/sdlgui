@@ -3,6 +3,6 @@ LIBS = -L/usr/local/lib -lSDL2_image -lSDL2_image.dll -lSDl2_gfx -lSDL2_draw -lm
 ALL:
 	rm *.exe
 	make test.exe
-test.exe : test.cpp
-	g++ test.cpp -o test.exe $(CFLAG) $(LIBS)
+test.exe : test.cpp sdlgui.h sdlbase.h sdlwindow.h sdltools.h
+	g++ -g test.cpp sdlbase.h sdlwindow.h sdltools.h -o test.exe $(CFLAG) $(LIBS)
 	./test
