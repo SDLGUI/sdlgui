@@ -1554,7 +1554,7 @@ int sdl_frame::redraw()
 		//ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
 	}
 	_board->blit_surface(NULL,&_screen,NULL);
-	_window->update_window_surface();
+	//_window->update_window_surface();
 	return 0;
 }
 //-------------------------------------
@@ -1623,9 +1623,10 @@ int sdl_frame::run()
 	while(1)
 	{
 		SDL_PollEvent(&_main_event);
-		//thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
-		sdl_frame::call_redraw((void*)this);
-		//SDL_WaitThread(thread,NULL);
+		//sdl_frame::call_redraw((void*)this);
+		thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
+		SDL_WaitThread(thread,NULL);
+		_window->update_window_surface();
 		SDL_Delay(1);
 	}
 	return 0;
