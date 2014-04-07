@@ -6,6 +6,7 @@
 //						文档名：						sdlbase.h
 //
 //						文档创建日期：			2014年2月22日
+//						文档更新日期：			2014年4月07日
 //						文档创建者：				徐荣
 //						文档更新者：				徐荣
 //						文档创建者联系方式：Email:twtfcu3@126.com
@@ -35,7 +36,9 @@
 #define __sdlbase_head__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#ifndef __ANDROID_OS__
 #include <SDL2/SDL2_rotozoom.h>
+#endif //__ANDROID_OS__
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
 using namespace std;
@@ -92,6 +95,7 @@ typedef class sdlsurface
 		//---------------------------------------
 		//SDL_image.h
 		int img_load(const char*);
+#ifndef __ANDROID_OS__
 		//-----------------------------------------
 		//SDL2_rotozoom.h
 		int rotozoom_surface(double,double,int);	
@@ -102,6 +106,7 @@ typedef class sdlsurface
 		SDL_Point zoom_surface_size(int,int,double,double,int*,int*);
 		int shrink_surface(int,int);
 		int rotate_surface_90degrees(int);
+#endif// __ANDROID_OS__
 }*sdlsurface_ptr;
 //----------------------------------------------------
 //
@@ -468,7 +473,7 @@ int sdltext::text(const char* ptext)
 char* sdltext::text()
 {
 	if(_text) return _text;
-	return "";
+	return NULL;
 }
 int sdltext::font(const char* font_path,int font_size)
 {
@@ -819,6 +824,7 @@ Uint32 sdlsurface::map_rgba(Uint8 r,Uint8 g,Uint8 b,Uint8 a)
 {
 	return SDL_MapRGBA(_surface->format,r,g,b,a);
 }
+#ifndef __ANDROID_OS__
 //-----------------------------------------------------
 //旋转缩放表面
 int sdlsurface::rotozoom_surface(double angle,double zoom,int smooth)
@@ -909,6 +915,7 @@ int sdlsurface::rotate_surface_90degrees(int numClockwiseTurns)
 	}
 	return -1;
 }
+#endif //__ANDROID_OS__
 ///////////////////////////////////////////////////////////////////////////
 //
 //
@@ -924,7 +931,7 @@ sdltexture::sdltexture(SDL_Texture* tex)
 {
 	if(tex)
 	{
-		if(_texture)delete _texture;
+		if(_texture)destroy();
 		_texture = tex;
 	}
 }
@@ -933,12 +940,11 @@ sdltexture::~sdltexture()
 	if(_texture)
 	{
 		destroy();
-		delete _texture;
 	}
 }
 int sdltexture::texture(SDL_Texture* tex)
 {
-	if(_texture)delete _texture;
+	if(_texture)destroy();
 	_texture = tex;
 }
 SDL_Texture* sdltexture::texture()
@@ -962,6 +968,7 @@ SDL_BlendMode sdltexture::texture_blend_mode()
 int sdltexture::destroy()
 {
 	SDL_DestroyTexture(_texture);
+	_texture = NULL;
 	return 0;
 }
 /////////////////////////////////////////////////////////////////////////
@@ -978,7 +985,7 @@ sdlrenderer::sdlrenderer(SDL_Renderer* ren)
 {
 	if(ren)
 	{
-		if(_renderer)delete _renderer;
+		if(_renderer)destroy();
 		_renderer = ren;
 	}
 }
@@ -987,7 +994,6 @@ sdlrenderer::~sdlrenderer()
 	if(_renderer)
 	{
 		destroy();
-		delete _renderer;
 	}
 }
 sdltexture* sdlrenderer::create_texture_from_surface(sdlsurface* surface)
@@ -1044,6 +1050,7 @@ int sdlrenderer::draw_point(int x,int y)
 int sdlrenderer::destroy()
 {
 	SDL_DestroyRenderer(_renderer);
+	_renderer = NULL;
 	return 0;
 }
 //////////////////////////////////////////////////////////////////////
@@ -1060,13 +1067,13 @@ sdlwindow::sdlwindow(SDL_Window* win)
 {
 	if(win)
 	{
-		if(_window)delete _window;
+		if(_window)destroy();
 		_window = win;
 	}
 }
 sdlwindow::~sdlwindow()
 {
-	if(_window)delete _window;
+	if(_window)destroy();
 }
 sdlwindow::sdlwindow(const char* title,int px,int py,int pw,int ph,Uint32 flags)
 {
@@ -1074,7 +1081,7 @@ sdlwindow::sdlwindow(const char* title,int px,int py,int pw,int ph,Uint32 flags)
 }
 int sdlwindow::window(const char* title,int px,int py,int pw,int ph,Uint32 flags)
 {
-	if(_window)delete _window;
+	if(_window)destroy();
 	_window = SDL_CreateWindow(title,px,py,pw,ph,flags);
 	if(_window==NULL)return -1;
 	return 0;
@@ -1082,7 +1089,7 @@ int sdlwindow::window(const char* title,int px,int py,int pw,int ph,Uint32 flags
 int sdlwindow::window(sdlwindow* pwindow)
 {
 	if(pwindow==NULL)return -1;
-	if(_window)delete _window;
+	if(_window)destroy();
 	_window = pwindow->_window;
 	if(_window==NULL)return -1;
 	return 0;
@@ -1094,6 +1101,7 @@ SDL_Window* sdlwindow::window()
 int sdlwindow::destroy()
 {
 	SDL_DestroyWindow(_window);
+	_window = NULL;
 	return 0;
 }
 sdlrenderer* sdlwindow::create_renderer(int index,Uint32 flags)

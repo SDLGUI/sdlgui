@@ -296,7 +296,7 @@ typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
 		/* 当前编辑状态下按键顺序引索 */
 		int _word_buf_index;
 		/* 存储当前编码所对应的10个词组引索 */
-		int _word_group_index = 0;
+		int _word_group_index;
 		/* 输入法宽度 */
 		int ime_width;
 }*sdl_ime_ptr;
@@ -496,7 +496,7 @@ int sdl_ime::input(char ch)
 				else
 				{
 					ue.code = sdlgui_ime_cn_ctrl;
-					ue.data1 = (void*)ch;
+					ue.data1 = (void*)(int)ch;
 				}
 				e.type = SDL_USEREVENT;
 				e.user = ue;
