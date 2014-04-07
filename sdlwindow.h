@@ -296,7 +296,7 @@ typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
 		/* 当前编辑状态下按键顺序引索 */
 		int _word_buf_index;
 		/* 存储当前编码所对应的10个词组引索 */
-		int _word_group_index = 0;
+		int _word_group_index;
 		/* 输入法宽度 */
 		int ime_width;
 }*sdl_ime_ptr;
@@ -496,7 +496,7 @@ int sdl_ime::input(char ch)
 				else
 				{
 					ue.code = sdlgui_ime_cn_ctrl;
-					ue.data1 = (void*)ch;
+					ue.data1 = (void*)(int)ch;
 				}
 				e.type = SDL_USEREVENT;
 				e.user = ue;
@@ -758,6 +758,7 @@ int GUI<T,B>::event(int(*f)(T*,SDL_Event*))
 template<class T,class B>
 int GUI<T,B>::event(SDL_Event* e)
 {
+	//return 0;
 	//cout<<this<<":"<<(e->type)<<endl;
 	//向对象事件列表末端追加一个事件
 	//在末端申请一个事件节点
@@ -896,7 +897,7 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//----------------
 	_hit_board_ptr = new sdl_board*[pw*ph];
 	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
-	_hit_board->fill_rect(NULL,(Uint32)this);
+	_hit_board->fill_rect(NULL,*(Uint32*)this);
 	_hit_board->color_key(SDL_TRUE,0);
 	_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
 	_hit_rect = NULL;
@@ -1549,7 +1550,7 @@ int sdl_frame::redraw()
 		ime.redraw();
 		ime._board->blit_surface(NULL,_board,ime.rect());
 		//cout<<ime.rect()->w<<endl;
-		//ime.redraw_hit();
+		ime.redraw_hit();
 		redraw_hit(&ime);
 		//ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
 	}
@@ -1620,12 +1621,13 @@ int sdl_frame::sysevent(SDL_Event* e)
 int sdl_frame::run()
 {
 	static SDL_Thread *thread;
+	thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
 	while(1)
 	{
 		SDL_PollEvent(&_main_event);
 		//sdl_frame::call_redraw((void*)this);
-		thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
-		SDL_WaitThread(thread,NULL);
+		//SDL_WaitThread(thread,NULL);
+		//_board->blit_surface(NULL,&_screen,NULL);
 		_window->update_window_surface();
 		SDL_Delay(1);
 	}
@@ -1636,7 +1638,8 @@ int sdl_frame::run()
 int sdl_frame::call_redraw(void* obj)
 {
 	sdl_frame* _this = (sdl_frame*)obj;
-	//while(1)
+	double sleep = 0;
+	while(1)
 	{
 		clock_t _frame_timer;
 		_frame_timer = clock();
@@ -1647,21 +1650,6 @@ int sdl_frame::call_redraw(void* obj)
 				//_this->event(&(_this->_main_event));
 				exit(0);
 			break;
-			case SDL_USEREVENT:
-				switch(_this->_main_event.user.code)
-				{
-					case sdlgui_event_timer:
-						if(_this->_main_event.user.data1 == obj)
-						{
-							_this->event(&_this->_main_event);
-						}
-						else
-						{
-							((sdl_board*)_this->_main_event.user.data1)->event(&_this->_main_event);
-						}
-					break;
-				}
-			break;
 			case 0:
 			break;
 			default:
@@ -1670,7 +1658,8 @@ int sdl_frame::call_redraw(void* obj)
 		}
 		_this->_fps = 1000 / ((clock() - _frame_timer + 0.001));
 		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
-		SDL_Delay((1000/60-1000/_this->_fps));
+		sleep = 1000/60-1000/_this->_fps;
+		SDL_Delay((sleep>0)?sleep:0);
 	}
 	return 0;  
 }

@@ -89,7 +89,7 @@ int sdl_edit::sysevent(SDL_Event* e)
 					push((char*)(e->user.data1));
 				break;
 				case sdlgui_ime_cn_ctrl:
-					switch((int)(e->user.data1))
+					switch(*(int*)(e->user.data1))
 					{
 						case SDLK_BACKSPACE:
 							kill();
