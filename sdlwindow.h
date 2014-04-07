@@ -905,7 +905,13 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//-----------------
 	if(ptitle)
 	{
+		#if defined (WIN32)
 		_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
+		#elif defined (LINUX) 
+		_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
+		#elif defined (__ANDROID_OS__)
+		_text_board = new sdltext("/system/fonts/DroidNaskh-Regular.ttf",16);
+		#endif
 		_text_board->render_utf8_solid(ptitle,0);
 	}
 	//
@@ -1571,21 +1577,45 @@ int sdl_frame::sysevent(SDL_Event* e)
 {
 	static sdl_board* t;
 	static int x,y;
-	SDL_GetMouseState(&x,&y);
+	switch(e->type)
+	{
+		case SDL_MOUSEBUTTONDOWN:
+			SDL_GetMouseState(&x,&y);
+			//t = hit_board(x,y);
+		break;
+		case SDL_MOUSEMOTION:
+			SDL_GetMouseState(&x,&y);
+			//t = hit_board(x,y);
+		break;
+		case SDL_MOUSEWHEEL:
+			SDL_GetMouseState(&x,&y);
+			//t = hit_board(x,y);
+		break;
+		case SDL_FINGERDOWN:
+			x = e->tfinger.x * 480;
+			y = e->tfinger.y * 480;
+			//t = hit_board(x,y);
+		break;
+		case SDL_FINGERMOTION:
+			x = e->tfinger.x * 480;
+			y = e->tfinger.y * 480;
+		break;
+	}
 	//t = (sdl_board*)_hit_board->pixel(x,y);
-	t = hit_board(x,y);
 	//cout<<hit_board(x,y)<<":"<<t<<endl;
-	//t = hit_board(x,y);
+	t = hit_board(x,y);
 	t = (t==0)?(sdl_board*)this : t;
 //	cout<<t<<endl;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
+		case SDL_FINGERDOWN:
 			//cout<<t<<endl;
 			t->active();
 			if(t != this)t->event(e);
 		break;
 		case SDL_MOUSEBUTTONUP:
+		case SDL_FINGERUP:
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
 			if(t != this)t->event(e);
