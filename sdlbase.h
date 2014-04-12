@@ -95,6 +95,7 @@ typedef class sdlsurface
 		//---------------------------------------
 		//SDL_image.h
 		int img_load(const char*);
+		int png_load(const char*);
 #ifndef __ANDROID_OS__
 		//-----------------------------------------
 		//SDL2_rotozoom.h
@@ -780,9 +781,20 @@ int sdlsurface::pixel(int x,int y,Uint32 v)
 int sdlsurface::img_load(const char* pfile)
 {
 	if(pfile == NULL)return -1;
-	//if(_surface)SDL_FreeSurface(_surface);
+	if(_surface)free_surface();
 	_surface = IMG_Load(pfile);
-	return 0;
+	if(_surface)return 0;
+	return -1;
+}
+//----------------------------------------------------------
+//加载一个PNG图片
+int sdlsurface::png_load(const char* pfile)
+{
+	if(pfile == NULL)return -1;
+	if(_surface)free_surface();
+	_surface = IMG_Load(pfile);
+	if(_surface)return 0;
+	return -1;
 }
 //------------------------------------------------------
 //锁定表面

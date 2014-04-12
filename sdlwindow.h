@@ -1684,6 +1684,7 @@ int sdl_frame::call_redraw(void* obj)
 			break;
 			default:
 				_this->event(&(_this->_main_event));
+				cout<<_this<<endl;
 			break;
 		}
 		_this->_fps = 1000 / ((clock() - _frame_timer + 0.001));
@@ -1801,14 +1802,15 @@ int sdl_clip::clip(int w,int h)
 	int x,y;
 	SDL_Rect tclip;
 	//先得取当前表面的宽度和高度
-	int src_w = sdlsurface::clip_rect()->w;
-	int src_h = sdlsurface::clip_rect()->h;
+	float src_w = sdlsurface::clip_rect()->w;
+	float src_h = sdlsurface::clip_rect()->h;
 	//更新每个剪辑的高度和宽度
 	_clip_rect.w = w;
 	_clip_rect.h = h;
 	//计算这个表面可以剪辑的行与列
 	_clip_rect.x = int(src_w/_clip_rect.w+0.9);
 	_clip_rect.y = int(src_h/_clip_rect.h+0.9);
+	//cout<<"column:"<<_clip_rect.h<<endl;
 	//更新剪辑数组
 	if(_clip_surface)delete[] _clip_surface;
 	_clip_surface = new sdlsurface[row()*column()];
@@ -1829,9 +1831,11 @@ int sdl_clip::clip(int w,int h)
 int sdl_clip::read()
 {
 	int x,y;
-	for(y=0;y<column();y++)
+	//for(y=0;y<column();y++)
+	for(y=0;y<row();y++)
 	{
-		for(x=0;x<row();x++)
+		//for(x=0;x<row();x++)
+		for(x=0;x<column();x++)
 		{
 			read(x,y);
 		}
@@ -1841,12 +1845,14 @@ int sdl_clip::read()
 int sdl_clip::read(int x,int y)
 {
 	//取得指定的剪辑引索
-	int tx = (x>column())?column():x;
-	int ty = (y>row())?row():y;
+	int tx = (x>=column())?column()-1:x;
+	int ty = (y>=row())?row()-1:y;
+	if(tx<0)tx=0;
+	if(ty<0)ty=0;
 	//取得指定剪辑的坐标
 	SDL_Rect rt = clip_rect(tx,ty);
 	//更新指定剪辑表面
-	blit_surface(&rt,operator()(x,y),NULL);
+	blit_surface(&rt,operator()(tx,ty),NULL);
 	return 0;
 }
 int sdl_clip::row()
