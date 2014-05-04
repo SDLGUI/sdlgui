@@ -6,6 +6,7 @@
 //						文档名：						sdltools.h
 //
 //						文档创建日期：			2014年2月22日
+//						文档更新日期：			2014年5月02日
 //						文档创建者：				徐荣
 //						文档更新者：				徐荣
 //						文档创建者联系方式：Email:twtfcu3@126.com
@@ -40,6 +41,11 @@
 
 using namespace std;
 
+/* --------------------------------------------
+	 
+	文本输入框 
+	 
+	 -------------------------------------------- */
 typedef class sdl_edit : public GUI<sdl_edit,sdl_widget>
 {
 	public:
@@ -128,4 +134,34 @@ int sdl_edit::kill()
 	_count --;
 	return 0;
 }
+
+
+/*----------------------------------------------------------
+
+				滚动条
+
+
+------------------------------------------------------------ */
+typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
+{
+	public:
+		/* 空白构造函数 */
+		sdl_scroll();
+		/* 带参构造函数 */
+		sdl_scroll(const char*,int,int,int,int,Uint32);
+		/* 空白初始化函数 */
+		int init();
+		/* 带参构造函数 */
+		int init(const char*,int,int,int,int,Uint32);
+		/* 滚动函数 */
+		float scroll(float);
+	public:
+		/* 滚动条背景 */
+		sdlsurface bg;
+		sdlsurface bar;
+		/* 滚动条滑块 */
+	protected:
+		/* 滚动点的值 */
+		float _scroll_point;
+}*sdl_scroll_ptr;
 #endif// __SDLGUI_TOOLS_HANDLE__

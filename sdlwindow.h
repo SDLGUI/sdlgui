@@ -138,7 +138,8 @@ sdlgui_event_struct::sdlgui_event_struct(SDL_Event* e,SDL_UserEvent* ue = NULL)
 template <class T,class B>
 class GUI : public B
 {
-	friend int event_process(void* obj);
+	//friend int event_process(void* obj);
+	friend class sdl_frame;
 	public:
 		int(*event_fun)(T*,SDL_Event*);
 	public:
@@ -148,13 +149,14 @@ class GUI : public B
 		virtual int event(SDL_Event*);//GUI专用类事件统一调用函数
 		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
 		virtual int sysevent(SDL_Event*e){};//GUI专用类系统事件处理函数的虚类
-		sdlgui_event_struct_ptr event();
+		sdlgui_event_struct_ptr event();//GUI专用类读取事件函数
 	//protected:
 		sdlgui_event_struct_ptr _head_event,_end_event;
 	protected:
+		int event_process();
+	protected:
 		static int sysprocess(T*,SDL_Event*);
 		static int userprocess(T*,SDL_Event*);
-		static int event_process(void*);
 };
 //-------------------------------------
 //
@@ -242,6 +244,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		sdl_board *_next,*_last;
 		int _is_show;
 		int _is_destroy;
+		sdlrenderer* _renderer;
 }*sdl_board_ptr;
 /* 初始全局变量 */
 int sdl_board::_frame_count = 0;
@@ -655,17 +658,24 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		int hide();
 		//------------------------------------
 		double fps();
+	protected:
+		/* 事件分流 */
+		int event_shunt(SDL_Event*);
 	public:
 		sdl_ime ime;
 		sdlsurface backgroup;
 	protected:
-		sdl_board* _active_win;
 		static int call_redraw(void*);
+		static int all_event_process(void*);
+	protected:
+		sdl_board* _active_win;
 		sdlwindow* _window;
 		sdl_board _screen;
 		SDL_Event _main_event;
 		double _fps;
 		SDL_Point _window_rect;
+		/* 处理消息流的子级线程 */
+		SDL_Thread* _event_thread;
 }*sdl_frame_ptr;
 //-------------------------------------------------------
 //
@@ -716,6 +726,14 @@ typedef class sdl_clip : public sdlsurface
 //
 //---------------------------------------------------
 //---------------------------------------------
+/* 
+	主要是处理消息分流而设计的类,
+	它的构造函数首先会申请两个事件节点,
+	第一个节点为首节点，第二个节点为尾节点,
+	首节点的向上指向节点永远是指向尾节点的,
+	如果首尾节点相邻，则表示本窗口的,
+	所有事件处理完毕，将合并新的缓冲事件,
+ */
 //GUI继承专用类构造函数
 template<class T,class B>
 GUI<T,B>::GUI():B()
@@ -724,25 +742,18 @@ GUI<T,B>::GUI():B()
 	This = (T*)(this);
 	event_fun = NULL;
 	//为每个对象创建事件列表的头节点
+	/* 关系与下面的缓冲关系一样 */
 	_head_event = new sdlgui_event_struct;
-	if(_head_event)
-	{
-		//为每个对象创建事件列表的尾节点
-		_head_event->next= new sdlgui_event_struct;
-		_head_event->last = _head_event->next; 
-		_head_event->next->last = _head_event;
-	}
+	_head_event->next = _head_event;
+	_head_event->last = _head_event; 
+	/* 
 	//为每个对象创建事件缓冲列表头节点
+	让缓冲节点的第一个节点的上下指向设置为第一个节点
+	尾节点的头节点永远存在且为空白消息,仅
+	供检测列表使用
+	 */
 	_end_event = new sdlgui_event_struct;
-	if(_end_event)
-	{
-		//为每个对象创建事件列表的尾节点
-		_end_event->next= new sdlgui_event_struct;
-		_end_event->last = _end_event->next; 
-		_end_event->next->last = _end_event;
-	}
-	//为每个对象创建一个事件处理线程
-	//SDL_CreateThread(GUI<T,B>::event_process,"event_process",(void*)This);
+	_end_event->last = _end_event; 
 }
 //----------------------------------------
 //GUI继承专用类对象事件设置函数
@@ -764,16 +775,11 @@ int GUI<T,B>::event(SDL_Event* e)
 	userprocess(This,e);
 	sysprocess(This,e);
 	return 0;
-	//cout<<this<<":"<<(e->type)<<endl;
 	//向对象事件列表末端追加一个事件
 	//在末端申请一个事件节点
 	_end_event->last->next = new sdlgui_event_struct(e,NULL);
 	//更新新节点的上下指向
-	_end_event->last->next->next = _end_event->last;
-	_end_event->last->next->last = _end_event->last->last;
-	//更新末尾节点的向上指向
-	_end_event->last->last->next = _end_event->last->next;
-	_end_event->last->last = _end_event->last->next;
+	_end_event->last = _end_event->last->next;
 	return 0;
 }
 //--------------------------------------
@@ -801,24 +807,19 @@ int GUI<T,B>::userprocess(T* obj,SDL_Event* e)
 //-----------------------------------------------
 //GUI继承专用类事件处理线程
 template<class T,class B>
-int GUI<T,B>::event_process(void* obj)
+int GUI<T,B>::event_process()
 {
-	T* This = ((GUI<T,B>*)obj)->This;
 	sdlgui_event_struct* cur_event = NULL;
-	while(1)
-	{
 		//取出当前事件节点
-		cur_event = This->event();
+		cur_event = event();
 		if(cur_event)
 		{
-			//cout<<This<<endl;
 			//调整事件处理函数来处理事件
-			This->userprocess(This,&cur_event->event);
-			This->sysprocess(This,&cur_event->event);
+			userprocess(This,&cur_event->event);
+			sysprocess(This,&cur_event->event);
 			delete cur_event;
 		}
 		SDL_Delay(1);
-	}
 	return 0;
 }
 //-----------------------------------------------
@@ -827,31 +828,42 @@ template<class T,class B>
 sdlgui_event_struct_ptr GUI<T,B>::event()
 {
 	sdlgui_event_struct* cur_event = NULL;
+	//return NULL;
 	//如果事件列表头节点的前后指向节点不同则表示缓存的事件还有处理数据
-	if(_head_event->next != _head_event->last)
+	/* 
+	如果事件列表头节点的向后指向存在，
+	表示列表还有数据处理
+	 */
+	if(_head_event->next)
 	{
+		//cout<<this<<endl;
 		//1.取出当前事件节点
 		cur_event = _head_event->next;
 		//2.让头节点的下个节点指向已处理事件节点的下个节点。
 		_head_event->next = _head_event->next->next;
-		_head_event->next->last = _head_event;
+		//_head_event->next->last = _head_event;
 	}
-	//如果事件列表头节点的前后都指向尾节点则表示缓存的事件已处理完成
-	if(_head_event->next == _head_event->last)
+	//return 0;
+	//如果事件列表头节点的向后指向为空表示缓存的事件已处理完成
+	if(!_head_event->next)
 	{
+		/* 
+			 如果尾节点的上个节点与下个节点指向不同节点，
+			 表示有新加入的事件节点 
+			 则把尾节点移动到头节点当中 
+		 */
 		if(_end_event->last != _end_event->next)
 		{
 			//将缓存事件放到处理列表当中
-			_end_event->last->last->next = _head_event->last;
-			_head_event->last->last = _end_event->last->last;
 			_head_event->next = _end_event->next;
-			_head_event->next->last = _head_event;
 			//将缓存事件列表清空
-			_end_event->last->last = _end_event;
-			_end_event->next = _end_event->last;
+			//_end_event->next = NULL;
+			//_end_event->last= _end_event;
+			//_end_event->next = _end_event->last;
 		}
 	}
-	return (cur_event == _head_event->last || cur_event == NULL)?NULL:cur_event;
+	return cur_event;
+	//return (cur_event == _head_event->last || cur_event == NULL)?NULL:cur_event;
 }
 
 //------------------------------------------
@@ -1161,6 +1173,9 @@ template<class T>T* sdl_board::add(T* obj)
 }
 //-----------------------------------------
 //调整子窗口Z序
+/* 
+		子窗口Z序的最顶层窗口（即列表尾节点）的NEXT应为NULL 
+ */
 int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 {
 	sdl_board* temp;
@@ -1505,6 +1520,8 @@ int sdl_frame::init()
 {
 	if(sdl_board::init())return -1;
 	_window = NULL;
+	_renderer = NULL;
+	_event_thread = NULL;
 	_active_win = this;
 }
 //-------------------------
@@ -1517,28 +1534,22 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_rect.x = 0;
 	_rect.y = 0;
 	//-------------------
-	//创建窗口
 	_screen.init(ptitle,px,py,pw,ph,pflags);
+	//创建窗口
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
+	/* 创建渲染器 */
+	if(_window)
+	{
+		//_renderer = _window->create_renderer(-1,0);
+	}
 	_screen._surface = _window->get_window_surface()->surface();
 	//创建输入法
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
 	/* 取窗口大小 */
 	_window->size(&_window_rect.x,&_window_rect.y);
-	/* 初始化背景 */
-	//if(backgroup.init(0,pw,ph,32,0,0,0,0))return -1;
-	//backgroup.fill_rect(NULL,0x000000);
-	/* 申请探板对象 */
-	//if(sdl_board::_hit_board_ptr)
-	{
-		/* 先清除以前的探板对象 */
-		//delete sdl_board::_hit_board_ptr;
-	}
-	/* 申请新的探板对象 */
-	//sdl_board::_hit_board_ptr = new sdl_board*[pw,ph];
-	//memset((char*)sdl_board::_hit_board_ptr,0x00,sizeof(sdl_board)*px*py);
-	//add<sdl_ime>(&ime);
+	/* 开启消息流子级线程 */
+	_event_thread = SDL_CreateThread(all_event_process,"event_process",(void*)this);
 	return 0;
 }
 //-----------------------------------
@@ -1574,9 +1585,8 @@ double sdl_frame::fps()
 	return _fps;
 }
 //-------------------------
-//重载窗口的系统事件处理函数。
 //用于消息事件分流
-int sdl_frame::sysevent(SDL_Event* e)
+int sdl_frame::event_shunt(SDL_Event* e)
 {
 	static sdl_board* t;
 	static int x,y;
@@ -1604,48 +1614,55 @@ int sdl_frame::sysevent(SDL_Event* e)
 			y = e->tfinger.y * _window_rect.y;
 		break;
 	}
-	//t = (sdl_board*)_hit_board->pixel(x,y);
-	//cout<<hit_board(x,y)<<":"<<t<<endl;
 	t = hit_board(x,y);
 	t = (t==0)?(sdl_board*)this : t;
-//	cout<<t<<endl;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
-			//cout<<t<<endl;
 			t->active();
-			if(t != this)t->event(e);
+			t->event(e);
+			//if(t != this)t->event(e);
 		break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_FINGERUP:
 		case SDL_FINGERMOTION:
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
-			if(t != this)t->event(e);
+			//if(t != this)t->event(e);
+			t->event(e);
 		break;
 		case SDL_KEYUP:
 			//
-			if(_active_win != this)
+			//if(_active_win != this)
 			{
 				if(ime.is_show())
 				{
 					ime.parent(_active_win);
-					//cout<<this<<endl;
 					ime.event(e);
-					//ime.input(e->key.keysym.sym);
 				}
 				else
 				{
 					_active_win->event(e);
 				}
 			}
-			//ime.event(e);
 		break;
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
 		case SDL_KEYDOWN:
-			if(_active_win != this)_active_win->event(e);
+			//if(_active_win != this)_active_win->event(e);
+			_active_win->event(e);
+		break;
+	}
+	return 0;
+}
+//重载窗口的系统事件处理函数。
+int sdl_frame::sysevent(SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_QUIT:
+			exit(0);
 		break;
 	}
 	return sdl_board::sysevent(e);
@@ -1656,6 +1673,7 @@ int sdl_frame::run()
 {
 	clock_t _frame_timer;
 	double sleep = 0;
+	sdltexture* tex=NULL;
 	while(1)
 	{
 		_frame_timer = clock();
@@ -1664,7 +1682,10 @@ int sdl_frame::run()
 			switch(_main_event.type)
 			{
 				case SDL_QUIT:
-					exit(0);
+					event(&_main_event);
+				break;
+				case SDL_WINDOWEVENT:
+					cout<<"Window Event"<<endl;
 				break;
 				case SDL_USEREVENT:
 					if(_main_event.user.code == sdlgui_event_timer)
@@ -1673,7 +1694,7 @@ int sdl_frame::run()
 					}
 				break;
 				default:
-					event(&_main_event);
+					event_shunt(&_main_event);
 				break;
 			}
 		}
@@ -1681,7 +1702,8 @@ int sdl_frame::run()
 		_window->update_window_surface();
 		_fps = 1000 / ((clock() - _frame_timer + 0.001));
 		sleep = 1000/60-1000/_fps;
-		SDL_Delay((sleep>(1000/60))?sleep:(1000/60));
+		sleep = (sleep>0)?sleep:0;
+		SDL_Delay((sleep<(1000/60))?sleep:(1000/60));
 	}
 	return 0;
 }
@@ -1707,6 +1729,42 @@ int sdl_frame::call_redraw(void* obj)
 		SDL_Delay(1);
 	}
 	return 0;  
+}
+//------------------------------------------------
+//窗口消息流事件处理函数
+int sdl_frame::all_event_process(void* obj)
+{
+	sdl_board* This = (sdl_board*)obj;
+	sdl_board* temp = This;
+	/* 退出出前一直处理消息流 */
+	while(1)
+	{
+		/* 每次都从主窗口消息开始处理 */
+		temp = This;
+		while(temp)
+		{
+			/* 处理每个节点的消息流 */
+			//temp->event_process();
+			/* 
+				 以下操作为消息节点的跳转 
+					1.如果没有下个节点则跳转到上级 
+					2.如果有子级则跳转到子级
+			 */
+			if(temp->_head)
+			{
+				temp = temp->_head;
+			}
+			else
+			if(temp->_next)
+			{
+				temp = temp->_next;
+			}
+			else
+			{
+				temp = temp->_parent;
+			}
+		}
+	}
 }
 //------------------------------------------
 //更新窗口位置
