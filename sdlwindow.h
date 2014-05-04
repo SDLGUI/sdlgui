@@ -6,6 +6,7 @@
 //						文档名：						sdlwindow.h
 //
 //						文档创建日期：			2014年2月22日
+//						文档更新日期：			2014年5月02日
 //						文档创建者：				徐荣
 //						文档更新者：				徐荣
 //						文档创建者联系方式：Email:twtfcu3@126.com
@@ -649,6 +650,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		//------------------------------------------------
 		int pos(int,int);
 		int size(int,int);
+		int size(int*,int*);
 		int show();
 		int hide();
 		//------------------------------------
@@ -663,6 +665,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		sdl_board _screen;
 		SDL_Event _main_event;
 		double _fps;
+		SDL_Point _window_rect;
 }*sdl_frame_ptr;
 //-------------------------------------------------------
 //
@@ -739,7 +742,7 @@ GUI<T,B>::GUI():B()
 		_end_event->next->last = _end_event;
 	}
 	//为每个对象创建一个事件处理线程
-	SDL_CreateThread(GUI<T,B>::event_process,"event_process",(void*)This);
+	//SDL_CreateThread(GUI<T,B>::event_process,"event_process",(void*)This);
 }
 //----------------------------------------
 //GUI继承专用类对象事件设置函数
@@ -758,7 +761,9 @@ int GUI<T,B>::event(int(*f)(T*,SDL_Event*))
 template<class T,class B>
 int GUI<T,B>::event(SDL_Event* e)
 {
-	//return 0;
+	userprocess(This,e);
+	sysprocess(This,e);
+	return 0;
 	//cout<<this<<":"<<(e->type)<<endl;
 	//向对象事件列表末端追加一个事件
 	//在末端申请一个事件节点
@@ -982,7 +987,10 @@ int sdl_board::pos_y(int y)
 		return 0;
 }
 //---------------------------------------------
-//获取窗口底板全局位置
+/* 
+	获取窗口底板全局位置
+	不断与父级当前坐标合并，至到没有父级
+ */
 SDL_Point sdl_board::global_pos()
 {
 	SDL_Point pt = {_rect.x,_rect.y};
@@ -1306,6 +1314,7 @@ int sdl_board::redraw()
 	if(_is_show == 0)return 0;
 	sdl_board* temp = _head;
 	sdl_board* del_board = NULL;
+	SDL_Rect trc1,trc2;
 	//------------------
 	//如果不消毁，则处理窗口
 	if(!_is_destroy)
@@ -1322,59 +1331,51 @@ int sdl_board::redraw()
 			/* 重绘新探板 */
 			redraw_hit();
 			//_hit_board->fill_rect(NULL,(int)this);
-		}
-	}
-	//处理子窗口
-	while(temp)
-	{
-		del_board = temp;
-		//子窗口不消毁则显示
-		if(!temp->_is_destroy)
-		{
-			if(temp->_is_show)
+			//处理子窗口
+			while(temp)
 			{
-				/* 重绘子窗口 */
-				temp->redraw();
-				/* 将子窗口绘制到父窗口上 */
-				temp->_board->blit_surface(NULL,_board,temp->rect());
-				/* 将子窗口探板绘制到父窗口上 */
-				redraw_hit(temp);
-				//memmove((_hit_board_ptr+_rect.w*temp->_rect.y+temp->_rect.x),(temp->_hit_board_ptr),temp->_rect.w*temp->_rect.h);
-				//temp->_hit_board->blit_surface(NULL,_hit_board,temp->rect());
+				del_board = temp;
+				if(!temp->redraw())
+				{
+						/* 将子窗口绘制到父窗口上 */
+						trc1.x = temp->rect()->x;	
+						trc1.y = temp->rect()->y;	
+						trc1.w = temp->rect()->w;	
+						trc1.h = temp->rect()->h;	
+						trc2.x = 0;
+						trc2.y = 0;
+						trc2.w = temp->rect()->w;
+						trc2.h = temp->rect()->h;
+						if(trc1.x<0)
+						{
+							trc1.w+=trc1.x;
+							trc1.x = 0;
+							trc2.x = temp->rect()->x*-1;
+						}
+						if(trc1.y<0)
+						{
+							trc1.h+=trc1.y;
+							trc1.y = 0;
+							trc2.y = temp->rect()->y*-1;
+						}
+						temp->_board->blit_surface(&trc2,_board,&trc1);
+						/* 将子窗口探板绘制到父窗口上 */
+						redraw_hit(temp);
+				}
+				temp = temp->_next;
 			}
-			temp = temp->_next;
 		}
-		//子窗口消毁则退出链表
 		else
 		{
-				temp = temp->_next;
-				if(del_board->parent())
-				{
-					if(del_board->parent()->_head == del_board)
-					{
-
-					}
-					else
-					if(del_board->parent()->_head->_last == del_board)
-					{
-						del_board->parent()->_head->_last = del_board->_last;
-						del_board->_last->_next = NULL;
-					}
-					else
-					{
-
-					}
-					//delete del_board;
-					//cout<<this<<endl;
-				}
+			/* 不显示窗口返回-1 */
+			return -1;
 		}
-		//SDL_Delay(1);
 	}
-	//------------------------------
-	//处理探板范围
-	if(_hit_rect)
+	//如果消毁，则移除窗口节点并返回-1
+	else
+	if(_is_destroy)
 	{
-		//_hit_board->fill_rect(_hit_rect,0x000000);
+		return -1;
 	}
 	return 0;
 }
@@ -1441,8 +1442,8 @@ Uint32 sdl_board::timer_callback(Uint32 interval,void* p)
 	e.type = SDL_USEREVENT;
 	e.user = userevent;
 	//-----------------
-	//SDL_PushEvent(&e);	
-	t->event(&e);
+	SDL_PushEvent(&e);	
+	//t->event(&e);
 	//------------------
 	return interval;
 }
@@ -1523,6 +1524,8 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//创建输入法
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
+	/* 取窗口大小 */
+	_window->size(&_window_rect.x,&_window_rect.y);
 	/* 初始化背景 */
 	//if(backgroup.init(0,pw,ph,32,0,0,0,0))return -1;
 	//backgroup.fill_rect(NULL,0x000000);
@@ -1592,13 +1595,13 @@ int sdl_frame::sysevent(SDL_Event* e)
 			//t = hit_board(x,y);
 		break;
 		case SDL_FINGERDOWN:
-			x = e->tfinger.x * 480;
-			y = e->tfinger.y * 480;
+			x = e->tfinger.x * _window_rect.x;
+			y = e->tfinger.y * _window_rect.y;
 			//t = hit_board(x,y);
 		break;
 		case SDL_FINGERMOTION:
-			x = e->tfinger.x * 480;
-			y = e->tfinger.y * 480;
+			x = e->tfinger.x * _window_rect.x;
+			y = e->tfinger.y * _window_rect.y;
 		break;
 	}
 	//t = (sdl_board*)_hit_board->pixel(x,y);
@@ -1616,6 +1619,7 @@ int sdl_frame::sysevent(SDL_Event* e)
 		break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_FINGERUP:
+		case SDL_FINGERMOTION:
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
 			if(t != this)t->event(e);
@@ -1650,16 +1654,34 @@ int sdl_frame::sysevent(SDL_Event* e)
 //窗口框架运行函数
 int sdl_frame::run()
 {
-	static SDL_Thread *thread;
-	thread = SDL_CreateThread(sdl_frame::call_redraw,"call_redraw",(void*)this);
+	clock_t _frame_timer;
+	double sleep = 0;
 	while(1)
 	{
-		SDL_PollEvent(&_main_event);
-		//sdl_frame::call_redraw((void*)this);
-		//SDL_WaitThread(thread,NULL);
-		//_board->blit_surface(NULL,&_screen,NULL);
+		_frame_timer = clock();
+		while(SDL_PollEvent(&_main_event))
+		{
+			switch(_main_event.type)
+			{
+				case SDL_QUIT:
+					exit(0);
+				break;
+				case SDL_USEREVENT:
+					if(_main_event.user.code == sdlgui_event_timer)
+					{
+							((sdl_board*)_main_event.user.data1)->event(&_main_event);
+					}
+				break;
+				default:
+					event(&_main_event);
+				break;
+			}
+		}
+		redraw();
 		_window->update_window_surface();
-		SDL_Delay(1);
+		_fps = 1000 / ((clock() - _frame_timer + 0.001));
+		sleep = 1000/60-1000/_fps;
+		SDL_Delay((sleep>(1000/60))?sleep:(1000/60));
 	}
 	return 0;
 }
@@ -1668,16 +1690,12 @@ int sdl_frame::run()
 int sdl_frame::call_redraw(void* obj)
 {
 	sdl_frame* _this = (sdl_frame*)obj;
-	double sleep = 0;
-	while(1)
+	while(SDL_PollEvent(&(_this->_main_event)))
 	{
 		clock_t _frame_timer;
-		_frame_timer = clock();
-		_this->redraw();
 		switch(_this->_main_event.type)
 		{
 			case SDL_QUIT:
-				//_this->event(&(_this->_main_event));
 				exit(0);
 			break;
 			case 0:
@@ -1686,10 +1704,7 @@ int sdl_frame::call_redraw(void* obj)
 				_this->event(&(_this->_main_event));
 			break;
 		}
-		_this->_fps = 1000 / ((clock() - _frame_timer + 0.001));
-		memset((char*)&_this->_main_event,0x00,sizeof(SDL_Event));
-		sleep = 1000/60-1000/_this->_fps;
-		SDL_Delay((sleep>0)?sleep:0);
+		SDL_Delay(1);
 	}
 	return 0;  
 }
@@ -1697,24 +1712,33 @@ int sdl_frame::call_redraw(void* obj)
 //更新窗口位置
 int sdl_frame::pos(int x,int y)
 {
+	if(!_window)return -1;
 	return _window->pos(x,y);
 }
 //----------------------------------------------
 //更新窗口大小
 int sdl_frame::size(int w,int h)
 {
+	if(!_window)return -1;
+	return _window->size(w,h);
+}
+int sdl_frame::size(int* w,int* h)
+{
+	if(!_window)return -1;
 	return _window->size(w,h);
 }
 //----------------------------------------------
 //显示窗口
 int sdl_frame::show()
 {
+	if(!_window)return -1;
 	return _window->show();
 }
 //----------------------------------------------
 //显示窗口
 int sdl_frame::hide()
 {
+	if(!_window)return -1;
 	return _window->hide();
 }
 //---------------------------------------------------------------

@@ -6,7 +6,7 @@
 //						文档名：						sdlbase.h
 //
 //						文档创建日期：			2014年2月22日
-//						文档更新日期：			2014年4月07日
+//						文档更新日期：			2014年5月02日
 //						文档创建者：				徐荣
 //						文档更新者：				徐荣
 //						文档创建者联系方式：Email:twtfcu3@126.com
@@ -251,6 +251,7 @@ class sdlwindow
 		//
 		int pos(int,int);//更新窗口位置
 		//
+		int size(int*,int*);//取窗口大小
 		int size(int,int);//更新窗口大小
 		//
 		int show();//显示窗口
@@ -1133,6 +1134,11 @@ int sdlwindow::pos(int x,int y)
 int sdlwindow::size(int w,int h)
 {
 	SDL_SetWindowSize(_window,w,h);
+	return 0;
+}
+int sdlwindow::size(int *w,int *h)
+{
+	SDL_GetWindowSize(_window,w,h);	
 	return 0;
 }
 //----------------------------------------------------
