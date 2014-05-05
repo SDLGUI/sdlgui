@@ -927,7 +927,7 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		#elif defined (LINUX) 
 		_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
 		#elif defined (__ANDROID_OS__)
-		_text_board = new sdltext("/system/fonts/DroidNaskh-Regular.ttf",16);
+		_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
 		#endif
 		_text_board->render_utf8_solid(ptitle,0);
 	}
