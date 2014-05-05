@@ -1326,7 +1326,7 @@ sdl_board* sdl_board::hit_board(int px,int py)
 //重绘底板窗口
 int sdl_board::redraw()
 {
-	if(_is_show == 0)return 0;
+	//if(_is_show == 0)return 0;
 	sdl_board* temp = _head;
 	sdl_board* del_board = NULL;
 	SDL_Rect trc1,trc2;
@@ -1345,7 +1345,6 @@ int sdl_board::redraw()
 			}
 			/* 重绘新探板 */
 			redraw_hit();
-			//_hit_board->fill_rect(NULL,(int)this);
 			//处理子窗口
 			while(temp)
 			{
