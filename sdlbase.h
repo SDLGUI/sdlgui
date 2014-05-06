@@ -212,12 +212,14 @@ class sdlrenderer
 		SDL_Renderer *_renderer;
 	public:	
 		sdltexture* create_texture_from_surface(sdlsurface*);
+		sdltexture* create_texture(Uint32,int,int,int);
 		int copy(sdltexture*,const SDL_Rect*,const SDL_Rect*);
 		int clear();
 		int present();
 		int fill_rect(const SDL_Rect*);
 		int set_render_draw_color(Uint8,Uint8,Uint8,Uint8);
 		sdltexture* render_target();
+		int render_target(sdltexture*);
 		int draw_line(int,int,int,int);
 		int draw_point(int,int);
 		int destroy();
@@ -1009,6 +1011,10 @@ sdltexture* sdlrenderer::create_texture_from_surface(sdlsurface* surface)
 	sdltexture* t_tex = new sdltexture(tex);
 	return t_tex;
 }
+sdltexture* sdlrenderer::create_texture(Uint32 format,int access,int w,int h)
+{
+	return new sdltexture(SDL_CreateTexture(_renderer,format,access,w,h));
+}
 int sdlrenderer::clear()
 {
 	return SDL_RenderClear(_renderer);
@@ -1035,6 +1041,11 @@ int sdlrenderer::set_render_draw_color(Uint8 r,Uint8 g,Uint8 b,Uint8 a)
 sdltexture* sdlrenderer::render_target()
 {
 	return new sdltexture(SDL_GetRenderTarget(_renderer));
+}
+int sdlrenderer::render_target(sdltexture* t)
+{
+	if(!t)return -1;
+	return SDL_SetRenderTarget(_renderer,t->texture());
 }
 //-------------------------------------------
 //ÔÚäÖÈ¾Æ÷ÉÏ»­Ïß
