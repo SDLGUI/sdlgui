@@ -90,6 +90,12 @@ const int sdlgui_ime_hide= ime_event_macro(007);
 #define edit_event_macro(y) __event_macro__(1003,y) 
 /* 文本更新 */
 const int sdlgui_edit_change= edit_event_macro(001);
+//滚动条类消息集合1004
+#define scroll_event_macro(y) __event_macro__(1004,y) 
+const int sdlgui_scroll_point= scroll_event_macro(001);
+const int sdlgui_scroll_show= scroll_event_macro(002);
+const int sdlgui_scroll_hide= scroll_event_macro(003);
+
 //-------------------------------------------------------------
 //
 //
