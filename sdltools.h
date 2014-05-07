@@ -155,6 +155,12 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		int init(const char*,int,int,int,int,Uint32);
 		/* 滚动函数 */
 		float scroll(float);
+		/* 返回滚动点的值 */
+		float scroll();
+		/* 设置滚动窗口 */
+		int scroll(sdl_board*);
+		/* 系统事件 */
+		int sysevent(SDL_Event*);
 	public:
 		/* 滚动条背景 */
 		sdlsurface bg;
@@ -163,5 +169,66 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 	protected:
 		/* 滚动点的值 */
 		float _scroll_point;
+		/* 滚动窗口 */
+		sdl_board* _scroll_board;
 }*sdl_scroll_ptr;
+sdl_scroll::sdl_scroll()
+:
+GUI<sdl_scroll,sdl_widget>()
+{
+	init();
+}
+sdl_scroll::sdl_scroll(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
+:
+GUI<sdl_scroll,sdl_widget>()
+{
+	init(ptitle,px,py,pw,ph,pflags);
+}
+int sdl_scroll::init()
+{
+	if(sdl_widget::init())return -1;
+	return 0;
+}
+int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
+{
+	if(sdl_widget::init(ptitle,px,py,pw,ph,pflags))return -1;
+	return 0;
+}
+float sdl_scroll::scroll(float ps)
+{
+	SDL_Event e;
+	SDL_UserEvent ue;
+	if(_scroll_board)
+	{
+		//_scroll_board->event(NULL);
+	}
+	return ps;
+}
+float sdl_scroll::scroll()
+{
+	return _scroll_point;
+}
+int sdl_scroll::scroll(sdl_board* b)
+{
+	if(!b)return -1;
+	_scroll_board = b;
+	return 0;
+}
+int sdl_scroll::sysevent(SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_MOUSEBUTTONDOWN:
+		break;
+		case SDL_MOUSEBUTTONUP:
+		break;
+		case SDL_MOUSEMOTION:
+		break;
+		case SDL_KEYDOWN:
+		break;
+		case SDL_KEYUP:
+		break;
+	}
+	return sdl_widget::sysevent(e);
+}
 #endif// __SDLGUI_TOOLS_HANDLE__
