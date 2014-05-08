@@ -287,6 +287,7 @@ int sdl_scroll::sysevent(SDL_Event* e)
 {
 	SDL_UserEvent ue;
 	SDL_Event te;
+	int p;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
@@ -339,11 +340,13 @@ int sdl_scroll::sysevent(SDL_Event* e)
 							SDL_RemoveTimer(_scroll_timer);
 							_scroll_timer = 0;
 						}
+						//计算滚动窗口坐标
+						p = (_scroll_object_rect.y - _scroll_object_rect.x)*_scroll_point + _scroll_object_rect.x;
 						//向指定窗口或父级窗口发送消息
 						ue.type = SDL_USEREVENT;
 						ue.code = sdlgui_scroll_point;
 						ue.data1 = (void*)&_scroll_point;
-						ue.data2 = 0;
+						ue.data2 = (void*)&p;
 						//------------------------------
 						te.type = SDL_USEREVENT;
 						te.user = ue;
