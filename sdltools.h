@@ -254,7 +254,6 @@ int sdl_scroll::scroll(int pstep)
 	//更新滚动步长速度
 	//_scroll_speed = _scroll_step * _rect.h;
 	_scroll_speed = _scroll_step/_rect.h*1.0;
-	cout<<_scroll_step<<endl;
 	//如果没有计时器或消除了计时器,则加入计时器
 	if(!_scroll_timer)_scroll_timer = add_timer(100);
 	//
@@ -286,6 +285,8 @@ int sdl_scroll::show(int pcmd=0)
 }
 int sdl_scroll::sysevent(SDL_Event* e)
 {
+	SDL_UserEvent ue;
+	SDL_Event te;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
@@ -298,9 +299,10 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		break;
 		case SDL_MOUSEBUTTONUP:
 			//计算步长
-		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time);
+		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001);
+			//cout<<_scroll_step<<endl;
 			//开始滚动事件
-			scroll(int(_scroll_step));
+			scroll(int(_scroll_step*100));
 		break;
 		case SDL_FINGERUP:
 			//计算步长
@@ -322,16 +324,37 @@ int sdl_scroll::sysevent(SDL_Event* e)
 						//如果步长系数不为0，并且滑动点不为1则滑动窗口
 						_scroll_step_sx =(_scroll_step_sx<0)? 0:_scroll_step_sx - 0.03;
 						_scroll_point += _scroll_speed*_scroll_step_sx;
-						//cout<<_scroll_speed<<endl;
-						//向指定窗口或父级窗口发送消息
-						if(_scroll_board)
+						//
+						if((_scroll_step_sx<=0.0 )|| (_scroll_point <= 0.0)|| (_scroll_point>=1.0))
 						{
-							_scroll_board->event();
-						}
-						if(!_scroll_step_sx || _scroll_point || !(_scroll_point-1))
-						{
+							if(_scroll_point<0)
+							{
+								_scroll_point = 0;
+							}
+							else
+							if(_scroll_point>1)
+							{
+								_scroll_point = 1;
+							}
 							SDL_RemoveTimer(_scroll_timer);
 							_scroll_timer = 0;
+						}
+						//向指定窗口或父级窗口发送消息
+						ue.type = SDL_USEREVENT;
+						ue.code = sdlgui_scroll_point;
+						ue.data1 = (void*)&_scroll_point;
+						ue.data2 = 0;
+						//------------------------------
+						te.type = SDL_USEREVENT;
+						te.user = ue;
+						if(_scroll_board)
+						{
+							_scroll_board->event(&te);
+						}
+						else
+						if(parent())
+						{
+							parent()->event(&te);
 						}
 					break;
 			 }
