@@ -175,6 +175,8 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 			参数为0时表示自动显示,为1时表示永远显示 
 		 */
 		int show(int);
+		/* 更新滚动条 */
+		int update();
 	public:
 		/* 滚动条背景 */
 		sdlsurface bg;
@@ -248,6 +250,8 @@ int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	//
 	bg.init(1,pw,ph,32,0,0,0,0);
 	bg.fill_rect(NULL,0x0000ff);
+	//
+	update();
 	return 0;
 }
 float sdl_scroll::scroll(float ps)
@@ -297,6 +301,12 @@ int sdl_scroll::bottom()
 int sdl_scroll::show(int pcmd=0)
 {
 
+}
+int sdl_scroll::update()
+{
+	bg.blit_surface(NULL,this,NULL);
+	bar.blit_surface(NULL,this,&_scroll_bar_rect);
+	return 0;
 }
 int sdl_scroll::sysevent(SDL_Event* e)
 {
