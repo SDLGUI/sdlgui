@@ -319,16 +319,15 @@ int sdl_scroll::sysevent(SDL_Event* e)
 			_scroll_is_change = 0;
 			//计算步长
 		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001);
-			cout<<_scroll_step<<endl;
 			//开始滚动事件
-			scroll(int(_scroll_step*100));
+			scroll(int(_scroll_step*10));
 		break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
 			//计算步长
 		  _scroll_step = (e->tfinger.y - _scroll_start_y)/(clock()-_scroll_start_time);
 			//开始滚动事件
-			scroll(int(_scroll_step*100));
+			scroll(int(_scroll_step*10));
 		break;
 
 		case SDL_MOUSEMOTION:
@@ -348,7 +347,7 @@ int sdl_scroll::sysevent(SDL_Event* e)
 			 {
 				  case sdlgui_event_timer:
 						//如果步长系数不为0，并且滑动点不为1则滑动窗口
-						_scroll_step_sx -= 0.03;
+						_scroll_step_sx -= 0.003;
 						if(_scroll_step_sx<0)_scroll_step_sx = 0;
 						_scroll_point += _scroll_speed*_scroll_step_sx;
 						//
