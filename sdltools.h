@@ -201,6 +201,10 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		clock_t _scroll_start_time;
 		/* 窗口滚动开始坐标 */
 		float _scroll_start_y;
+		/* 滚动滑块区域 */
+		SDL_Rect _scroll_bar_rect;
+		/* 是否滚动 */
+		int _scroll_is_change;
 }*sdl_scroll_ptr;
 sdl_scroll::sdl_scroll()
 :
@@ -233,6 +237,17 @@ int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	_scroll_step_sx = 0;
 	_scroll_object_rect.x = 0;
 	_scroll_object_rect.x = ph;
+	_scroll_is_change = 0;
+	_scroll_bar_rect.x = 0;
+	_scroll_bar_rect.y = 0;
+	_scroll_bar_rect.w = pw;
+	_scroll_bar_rect.h = ph*0.1;
+	//
+	bar.init(1,_scroll_bar_rect.w,_scroll_bar_rect.h,32,0,0,0,0);
+	bar.fill_rect(NULL,0xff0000);
+	//
+	bg.init(1,pw,ph,32,0,0,0,0);
+	bg.fill_rect(NULL,0x0000ff);
 	return 0;
 }
 float sdl_scroll::scroll(float ps)
@@ -293,19 +308,23 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		case SDL_MOUSEBUTTONDOWN:
 			_scroll_start_time = clock();
 			_scroll_start_y = e->button.y;
+			_scroll_is_change = 1;
 		break;
 		case SDL_FINGERDOWN:
 			_scroll_start_time = clock();
 			_scroll_start_y = e->tfinger.y;
+			_scroll_is_change = 1;
 		break;
 		case SDL_MOUSEBUTTONUP:
+			_scroll_is_change = 0;
 			//计算步长
 		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001);
-			//cout<<_scroll_step<<endl;
+			cout<<_scroll_step<<endl;
 			//开始滚动事件
 			scroll(int(_scroll_step*100));
 		break;
 		case SDL_FINGERUP:
+			_scroll_is_change = 0;
 			//计算步长
 		  _scroll_step = (e->tfinger.y - _scroll_start_y)/(clock()-_scroll_start_time);
 			//开始滚动事件
@@ -313,6 +332,12 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		break;
 
 		case SDL_MOUSEMOTION:
+			if(_scroll_is_change)
+			{
+				_scroll_point = (((float)(e->button.y-global_pos_y()))/(float)_rect.h);
+				_scroll_step_sx = 0;
+				_scroll_timer = add_timer(100);
+			}
 		break;
 		case SDL_KEYDOWN:
 		break;
@@ -323,7 +348,8 @@ int sdl_scroll::sysevent(SDL_Event* e)
 			 {
 				  case sdlgui_event_timer:
 						//如果步长系数不为0，并且滑动点不为1则滑动窗口
-						_scroll_step_sx =(_scroll_step_sx<0)? 0:_scroll_step_sx - 0.03;
+						_scroll_step_sx -= 0.03;
+						if(_scroll_step_sx<0)_scroll_step_sx = 0;
 						_scroll_point += _scroll_speed*_scroll_step_sx;
 						//
 						if((_scroll_step_sx<=0.0 )|| (_scroll_point <= 0.0)|| (_scroll_point>=1.0))
@@ -340,6 +366,11 @@ int sdl_scroll::sysevent(SDL_Event* e)
 							SDL_RemoveTimer(_scroll_timer);
 							_scroll_timer = 0;
 						}
+						//更新滚动滑块
+						p = (_rect.h-bar.clip_rect()->h)*_scroll_point;
+						_scroll_bar_rect.y = p;
+						bg.blit_surface(NULL,this,NULL);
+						bar.blit_surface(NULL,this,&_scroll_bar_rect);
 						//计算滚动窗口坐标
 						p = (_scroll_object_rect.y - _scroll_object_rect.x)*_scroll_point + _scroll_object_rect.x;
 						//向指定窗口或父级窗口发送消息
