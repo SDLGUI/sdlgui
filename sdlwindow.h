@@ -1546,10 +1546,10 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	/* 创建渲染器 */
 	if(_window)
 	{
-		_renderer = _window->create_renderer(-1,0);
-		_texture = _renderer->create_texture(SDL_PIXELTYPE(SDL_PIXELFORMAT_RGBA8888),SDL_TEXTUREACCESS_STATIC,pw,ph);
+		//_renderer = _window->create_renderer(-1,0);
+		//_texture = _renderer->create_texture(SDL_PIXELTYPE(SDL_PIXELFORMAT_RGBA8888),SDL_TEXTUREACCESS_STATIC,pw,ph);
 	}
-	//_screen._surface = _window->get_window_surface()->surface();
+	_screen._surface = _window->get_window_surface()->surface();
 	//创建输入法
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
@@ -1706,12 +1706,12 @@ int sdl_frame::run()
 			}
 		}
 		redraw();
-		tex = _renderer->create_texture_from_surface(&_screen);
-		_renderer->render_target(_texture);
-		_renderer->copy(tex,NULL,NULL);
-		_renderer->present();
-		delete tex;
-		//_window->update_window_surface();
+		//tex = _renderer->create_texture_from_surface(&_screen);
+		//_renderer->render_target(_texture);
+		//_renderer->copy(tex,NULL,NULL);
+		//_renderer->present();
+		//tex->destroy();
+		_window->update_window_surface();
 		_fps = 1000 / ((clock() - _frame_timer + 0.001));
 		sleep = 1000/60-1000/_fps;
 		sleep = (sleep>0)?sleep:0;
