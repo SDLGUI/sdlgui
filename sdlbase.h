@@ -783,7 +783,7 @@ int sdlsurface::pixel(int x,int y,Uint32 v)
 int sdlsurface::img_load(const char* pfile)
 {
 	if(pfile == NULL)return -1;
-	//if(_surface)SDL_FreeSurface(_surface);
+	if(_surface)SDL_FreeSurface(_surface);
 	_surface = IMG_Load(pfile);
 	return 0;
 }

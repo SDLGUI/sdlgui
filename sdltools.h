@@ -157,8 +157,14 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		float scroll(float);
 		/* 设置滚动初始速度 */
 		int scroll(int);
-		/* 返回滚动点的值 */
+		/*  */
 		float scroll();
+		/* 返回滚动点的值 */
+		float point();
+		/* 设置滚动点的值 */
+		int point(float);
+		/* 发送滚动点事件 */
+		int scroll_event(sdl_board*);
 		/* 向上滚动一格 */
 		int up();
 		/* 向下滚动一格 */
@@ -271,16 +277,35 @@ int sdl_scroll::scroll(int pstep)
 	//更新滚动步长系数
 	_scroll_step_sx = 1.0;
 	//更新滚动步长速度
-	//_scroll_speed = _scroll_step * _rect.h;
 	_scroll_speed = _scroll_step/_rect.h*1.0;
 	//如果没有计时器或消除了计时器,则加入计时器
 	if(!_scroll_timer)_scroll_timer = add_timer(100);
 	//
 	return 0;
 }
-float sdl_scroll::scroll()
+float sdl_scroll::point()
 {
 	return _scroll_point;
+}
+int sdl_scroll::point(float p)
+{
+	int pt;
+	_scroll_point = p;
+	if(_scroll_point>1)
+	{
+		_scroll_point = 1;
+	}
+	else
+	if(_scroll_point<0)
+	{
+		_scroll_point = 0;
+	}
+	//更新滚动滑块
+	pt = (_rect.h-bar.clip_rect()->h)*_scroll_point;
+	_scroll_bar_rect.y = pt;
+	bg.blit_surface(NULL,this,NULL);
+	bar.blit_surface(NULL,this,&_scroll_bar_rect);
+	return 0;
 }
 int sdl_scroll::scroll(sdl_board* b,int pt,int pb)
 {
@@ -308,6 +333,26 @@ int sdl_scroll::update()
 	bar.blit_surface(NULL,this,&_scroll_bar_rect);
 	return 0;
 }
+int sdl_scroll::scroll_event(sdl_board* obj)
+{
+	SDL_UserEvent ue;
+	SDL_Event te;
+	int p;
+	if(!obj)return -1;
+	//计算滚动窗口坐标
+	p = (_scroll_object_rect.y - _scroll_object_rect.x)*_scroll_point + _scroll_object_rect.x;
+	//向指定窗口或父级窗口发送消息
+	ue.type = SDL_USEREVENT;
+	ue.code = sdlgui_scroll_point;
+	ue.data1 = (void*)&_scroll_point;
+	ue.data2 = (void*)&p;
+	//------------------------------
+	te.type = SDL_USEREVENT;
+	te.user = ue;
+	//---------------------------------
+	obj->event(&te);
+	return 0;
+}
 int sdl_scroll::sysevent(SDL_Event* e)
 {
 	SDL_UserEvent ue;
@@ -328,10 +373,9 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		case SDL_MOUSEBUTTONUP:
 			_scroll_is_change = 0;
 			//计算步长
-		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001);
+		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
 			//开始滚动事件
-			scroll(int(_scroll_step*10));
-		break;
+			scroll(int(_scroll_step*20)); break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
 			//计算步长
@@ -339,13 +383,21 @@ int sdl_scroll::sysevent(SDL_Event* e)
 			//开始滚动事件
 			scroll(int(_scroll_step*10));
 		break;
-
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
 			{
 				_scroll_point = (((float)(e->button.y-global_pos_y()))/(float)_rect.h);
-				_scroll_step_sx = 0;
-				_scroll_timer = add_timer(100);
+				point(_scroll_point);
+				//发送消息
+				if(_scroll_board)
+				{
+					scroll_event(_scroll_board);
+				}
+				else
+				if(parent())
+				{
+					scroll_event(parent());
+				}
 			}
 		break;
 		case SDL_KEYDOWN:
@@ -357,47 +409,26 @@ int sdl_scroll::sysevent(SDL_Event* e)
 			 {
 				  case sdlgui_event_timer:
 						//如果步长系数不为0，并且滑动点不为1则滑动窗口
-						_scroll_step_sx -= 0.003;
+						_scroll_step_sx -= 0.002;
 						if(_scroll_step_sx<0)_scroll_step_sx = 0;
 						_scroll_point += _scroll_speed*_scroll_step_sx;
 						//
 						if((_scroll_step_sx<=0.0 )|| (_scroll_point <= 0.0)|| (_scroll_point>=1.0))
 						{
-							if(_scroll_point<0)
-							{
-								_scroll_point = 0;
-							}
-							else
-							if(_scroll_point>1)
-							{
-								_scroll_point = 1;
-							}
 							SDL_RemoveTimer(_scroll_timer);
 							_scroll_timer = 0;
 						}
 						//更新滚动滑块
-						p = (_rect.h-bar.clip_rect()->h)*_scroll_point;
-						_scroll_bar_rect.y = p;
-						bg.blit_surface(NULL,this,NULL);
-						bar.blit_surface(NULL,this,&_scroll_bar_rect);
-						//计算滚动窗口坐标
-						p = (_scroll_object_rect.y - _scroll_object_rect.x)*_scroll_point + _scroll_object_rect.x;
-						//向指定窗口或父级窗口发送消息
-						ue.type = SDL_USEREVENT;
-						ue.code = sdlgui_scroll_point;
-						ue.data1 = (void*)&_scroll_point;
-						ue.data2 = (void*)&p;
-						//------------------------------
-						te.type = SDL_USEREVENT;
-						te.user = ue;
+						point(_scroll_point);
+						//发送消息
 						if(_scroll_board)
 						{
-							_scroll_board->event(&te);
+							scroll_event(_scroll_board);
 						}
 						else
 						if(parent())
 						{
-							parent()->event(&te);
+							scroll_event(parent());
 						}
 					break;
 			 }
