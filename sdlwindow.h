@@ -1171,7 +1171,6 @@ template<class T>T* sdl_board::add(T* obj)
 {
 	if(obj)
 	{
-		//cout<<this<<endl;
 		obj->_parent = this;
 		z_top(obj,NULL,0);
 		return obj;
@@ -1749,6 +1748,7 @@ int sdl_frame::all_event_process(void* obj)
 	sdl_board* This = (sdl_board*)obj;
 	sdl_board* temp = This;
 	/* 退出出前一直处理消息流 */
+	return 0;
 	while(1)
 	{
 		/* 每次都从主窗口消息开始处理 */
