@@ -894,6 +894,7 @@ sdl_board::sdl_board(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 :
 GUI<sdl_board,sdlsurface>()
 {
+	init();
 	init(ptitle,px,py,pw,ph,pflags);
 }
 //-----------------------------------------------
@@ -909,7 +910,6 @@ sdl_board::~sdl_board()
 //底板初始函数
 int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
-	if(init())return -1;
 	if(sdlsurface::init(0,pw,ph,32,0,0,0,0))return -1;
 	//-------------
 	_rect.x = px;
@@ -917,9 +917,12 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_rect.w = pw;
 	_rect.h = ph;
 	//--------------
+	//if(_board)delete _board;
 	_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
 	//----------------
+	//if(_hit_board_ptr)delete _hit_board_ptr;
 	_hit_board_ptr = new sdl_board*[pw*ph];
+	//if(_hit_board)delete _hit_board;
 	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
 	_hit_board->fill_rect(NULL,*(Uint32*)this);
 	_hit_board->color_key(SDL_TRUE,0);
@@ -929,6 +932,7 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//-----------------
 	if(ptitle)
 	{
+		if(_text_board)delete _text_board;
 		#if defined (WIN32)
 		_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
 		#elif defined (LINUX) 
@@ -1172,6 +1176,7 @@ template<class T>T* sdl_board::add(T* obj)
 	if(obj)
 	{
 		obj->_parent = this;
+		//cout<<"obj:"<<obj<<" obj->_parent:"<<obj->_parent<<":"<<this<<endl;
 		z_top(obj,NULL,0);
 		return obj;
 	}

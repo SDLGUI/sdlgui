@@ -42,6 +42,11 @@
 
 using namespace std;
 
+class sdl_edit;
+class sdl_scroll;
+class sdl_view_plane;
+class sdl_view;
+
 /* --------------------------------------------
 	 
 	文本输入框 
@@ -338,18 +343,20 @@ int sdl_scroll::scroll_event(sdl_board* obj)
 {
 	SDL_UserEvent ue;
 	SDL_Event te;
-	int p;
+	float p[2];
 	if(!obj)return -1;
 	//计算滚动窗口坐标
-	p = (_scroll_object_rect.y - _scroll_object_rect.x)*_scroll_point + _scroll_object_rect.x;
+	p[1] = (_scroll_object_rect.y - _scroll_object_rect.x)*_scroll_point + _scroll_object_rect.x;
+	p[0] = _scroll_point;
 	//向指定窗口或父级窗口发送消息
-	ue.type = (int)this;
+	ue.type = SDL_USEREVENT;
 	ue.code = sdlgui_scroll_point;
-	ue.data1 = (void*)&_scroll_point;
-	ue.data2 = (void*)&p;
+	ue.data1 = (void*)this;
+	ue.data2 = (void*)p;
 	//------------------------------
 	te.type = SDL_USEREVENT;
 	te.user = ue;
+	cout<<((float*)(te.user.data2))[1]<<endl;
 	//---------------------------------
 	obj->event(&te);
 	return 0;
@@ -368,7 +375,7 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		break;
 		case SDL_FINGERDOWN:
 			_scroll_start_time = clock();
-			_scroll_start_y = e->tfinger.y;
+			_scroll_start_y = e->tfinger.y*50;
 			_scroll_is_change = 1;
 		break;
 		case SDL_MOUSEBUTTONUP:
@@ -380,9 +387,9 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
 			//计算步长
-		  _scroll_step = (e->tfinger.y - _scroll_start_y)/(clock()-_scroll_start_time);
+		  _scroll_step = (e->tfinger.y*50 - _scroll_start_y)/(clock()-_scroll_start_time);
 			//开始滚动事件
-			scroll(int(_scroll_step*10));
+			scroll(int(_scroll_step*20));
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
@@ -462,9 +469,12 @@ typedef class sdl_view_plane : public GUI<sdl_view_plane,sdl_widget>
 		int init(const char*,int,int,int,int,Uint32);
 		/* 视图子窗口面板系统事件处理函数 */
 		int sysevent(SDL_Event*);
+		/* 视图子窗口滚动控制对象 */
+		int scroll_bar(sdl_scroll*,sdl_scroll*);
 	protected:
 		int _is_down;
 		int _spte;
+		sdl_scroll *_vertical,*_horizontal;
 }*sdl_view_plane_ptr;
 sdl_view_plane::sdl_view_plane()
 :
@@ -488,15 +498,43 @@ int sdl_view_plane::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 p
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
 	return 0;
 }
+int sdl_view_plane::scroll_bar(sdl_scroll* v,sdl_scroll* h)
+{
+	_vertical = v;
+	_horizontal = h;
+	return 0;
+}
 int sdl_view_plane::sysevent(SDL_Event* e)
 {
+	float pt;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEMOTION:
 		case SDL_FINGERDOWN:
 		case SDL_FINGERUP:
+		case SDL_FINGERMOTION:
+			//cout<<"this:"<<this<<":"<<parent()<<endl;
 			if(parent())parent()->event(e);
+		break;
+		case SDL_USEREVENT:
+			switch(e->user.code)
+			{
+				case sdlgui_scroll_point:
+					pt = (((float*)(e->user.data2))[1]);
+					//cout<<pt<<endl;
+					if(e->user.data1 == _vertical)
+					{
+						pos_y(pt);
+					}
+					else
+					if(e->user.data1 == _horizontal)
+					{
+						pos_x(pt);
+					}
+				break;
+			}
 		break;
 	}
 }
@@ -513,8 +551,8 @@ typedef class sdl_view : public GUI<sdl_view,sdl_widget>
 		int init(const char*,int,int,int,int,Uint32);
 		/* 系统事件处理函数 */
 		int sysevent(SDL_Event*);
-		/* 设置视图 */
-		int scroll_type(Uint32);
+		/* 设置视图滚动参数 */
+		int scroll(Uint32,SDL_Rect*);
 	protected:
 		/* 视图面板的系统函数 */
 	public:
@@ -560,20 +598,31 @@ int sdl_view::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 }
 int sdl_view::sysevent(SDL_Event*e)
 {
+	int scroll_step;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 			SDL_GetMouseState(&_mouse_pt.x,&_mouse_pt.y);
 			_mouse_drag_time = clock();
 		break;
+		case SDL_MOUSEMOTION:
+		break;
 		case SDL_MOUSEBUTTONUP:
 			if(_vertical)
 			{
-				_vertical->scroll(int((e->motion.y-_mouse_pt.y)/(clock()-_mouse_drag_time)));
+				//cout<<this<<endl;
+				scroll_step = e->motion.y-_mouse_pt.y;
+				//cout<<scroll_step<<endl;
+				_vertical->scroll(scroll_step);
+				_vertical->scroll_event(&view);
+				//_vertical->scroll(int((e->motion.y-_mouse_pt.y)/(clock()-_mouse_drag_time)));
 			}
 			if(_horizontal)
 			{
-				_horizontal->scroll(int((e->motion.x-_mouse_pt.x)/(clock()-_mouse_drag_time)));
+				scroll_step = e->motion.x-_mouse_pt.x;
+				_horizontal->scroll(scroll_step);
+				_horizontal->scroll_event(&view);
+				//_horizontal->scroll(int((e->motion.x-_mouse_pt.x)/(clock()-_mouse_drag_time)));
 			}
 		break;
 		case SDL_USEREVENT:
@@ -582,11 +631,12 @@ int sdl_view::sysevent(SDL_Event*e)
 				case sdlgui_event_timer:
 				break;
 				case sdlgui_scroll_point:
-					if((sdl_scroll*)(e->user.type) == _vertical)
+					if((sdl_scroll*)(e->user.data1) == _vertical)
 					{
+						
 					}
 					else
-					if((sdl_scroll*)(e->user.type) == _horizontal)
+					if((sdl_scroll*)(e->user.data1) == _horizontal)
 					{
 
 					}
@@ -601,29 +651,45 @@ int sdl_view::sysevent(SDL_Event*e)
 	2表示水平滚动，
 	1|2表示水平与垂直滚动
  */
-int sdl_view::scroll_type(Uint32 pflag)
+int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 {
 	_scroll_type = pflag;
 	if(_scroll_type&&1)
 	{
-		cout<<"Created vertial Scroll"<<endl;
+		//垂直滚动条
 		if(!_vertical)
 		{
+			cout<<"Created vertial Scroll:"<<_rect.w<<endl;
 			_vertical = add<sdl_scroll>("",_rect.w-30,0,30,_rect.h-30,1);
 			_vertical->fill_rect(NULL,0xff00ff);
-			_vertical->scroll(&view,-100,100);
+			if(rt)
+			{
+				_vertical->scroll(&view,rt->y,rt->h);
+			}
+			else
+			{
+				_vertical->scroll(&view,-_rect.h,0);
+			}
 		}
 	}
 	if(_scroll_type&&2)
 	{
-		cout<<"Ceated horizontal Scroll"<<endl;
 		if(!_horizontal)
 		{
+			cout<<"Ceated horizontal Scroll:"<<_rect.h<<endl;
 			_horizontal= add<sdl_scroll>("",0,_rect.h-30,_rect.w-30,30,1);
 			_horizontal->fill_rect(NULL,0xff00ff);
-			_horizontal->scroll(&view,-100,100);
+			if(rt)
+			{
+				_horizontal->scroll(&view,rt->x,rt->w);
+			}
+			else
+			{
+				_horizontal->scroll(&view,-_rect.w,0);
+			}
 		}
 	}
+	view.scroll_bar((_vertical)?_vertical:NULL,(_horizontal)?_horizontal:NULL);
 	return 0;
 }
 #endif// __SDLGUI_TOOLS_HANDLE__
