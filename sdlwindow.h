@@ -95,6 +95,10 @@ const int sdlgui_edit_change= edit_event_macro(001);
 const int sdlgui_scroll_point= scroll_event_macro(001);
 const int sdlgui_scroll_show= scroll_event_macro(002);
 const int sdlgui_scroll_hide= scroll_event_macro(003);
+//窗口事件类消息集合1005
+#define window_event_macro(y) __event_macro__(1005,y) 
+/* 消息焦点改变时发送的消息 */
+const int sdlgui_window_focus= window_event_macro(001);
 
 //-------------------------------------------------------------
 //
@@ -1601,6 +1605,8 @@ int sdl_frame::event_shunt(SDL_Event* e)
 {
 	static sdl_board* t;
 	static int x,y;
+	SDL_Event te;
+	SDL_UserEvent ue;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
@@ -1631,7 +1637,26 @@ int sdl_frame::event_shunt(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
+			if(t!=_active_win)
+			{
+			/* 先给失去焦点的窗口发送失去焦点消息 */
+			ue.type = SDL_USEREVENT;
+			ue.code = sdlgui_window_focus;
+			ue.data1 = (void*)0;
+			ue.data2 = (void*)t;
+			te.type = SDL_USEREVENT;
+			te.user = ue;
+			if(_active_win)_active_win->event(&te);
+			/* 然后给得到焦点的窗口发送得到焦点消息 */
+			ue.data1= (void*)1;
+			ue.data2 = (void*)_active_win;
+			te.type = SDL_USEREVENT;
+			te.user = ue;
+			t->event(&te);
+			/* 再更新焦点状态 */
 			t->active();
+			}
+			/* 最后发送当前消息 */
 			t->event(e);
 			//if(t != this)t->event(e);
 		break;
@@ -1699,12 +1724,14 @@ int sdl_frame::run()
 					cout<<"Window Event"<<endl;
 				break;
 				case SDL_USEREVENT:
+					/* 计时器消息分流 */
 					if(_main_event.user.code == sdlgui_event_timer)
 					{
 							((sdl_board*)_main_event.user.data1)->event(&_main_event);
 					}
 				break;
 				default:
+					/* 其它消息分流 */
 					event_shunt(&_main_event);
 				break;
 			}
