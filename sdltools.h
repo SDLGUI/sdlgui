@@ -650,11 +650,14 @@ int sdl_view::sysevent(SDL_Event*e)
 	1表示垂直滚动,
 	2表示水平滚动，
 	1|2表示水平与垂直滚动
+	rt参数表示滚动范围
+	x与w一组表示水平范围
+	y与h一级表示垂直范围
  */
 int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 {
 	_scroll_type = pflag;
-	if(_scroll_type&&1)
+	if(_scroll_type&1)
 	{
 		//垂直滚动条
 		if(!_vertical)
@@ -672,7 +675,7 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 			}
 		}
 	}
-	if(_scroll_type&&2)
+	if(_scroll_type&2)
 	{
 		if(!_horizontal)
 		{
@@ -704,6 +707,62 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 //
 //
 //-------------------------------------------------------------
+typedef class sdl_listbox_plane : public GUI<sdl_listbox_plane,sdl_view>
+{
+	public:
+		sdl_listbox_plane();
+		sdl_listbox_plane(const char*,int,int,int,int,Uint32);
+		int init();
+		int init(const char*,int,int,int,int,Uint32);
+		int sysevent(SDL_Event*);
+	protected:
+		/* 视图滚动范围 */
+		SDL_Rect _view_scroll_rect;
+}* sdl_listbox_plane_ptr;
+sdl_listbox_plane::sdl_listbox_plane()
+:
+GUI<sdl_listbox_plane,sdl_view>()
+{
+	init();
+}
+sdl_listbox_plane::sdl_listbox_plane(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+:
+GUI<sdl_listbox_plane,sdl_view>()
+{
+	init(ptitle,px,py,pw,ph,pflag);
+}
+int sdl_listbox_plane::init()
+{
+	if(sdl_view::init())return -1;
+	return 0;
+}
+int sdl_listbox_plane::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+{
+	if(sdl_view::init(ptitle,px,py,pw,ph,pflag))return -1;
+	/* 设置滚动方式 */
+	_view_scroll_rect.x = 0;
+	_view_scroll_rect.w = 0;
+	_view_scroll_rect.y = 0;
+	_view_scroll_rect.h = 0;
+	scroll(1,&_view_scroll_rect);
+	return 0;
+}
+int sdl_listbox_plane::sysevent(SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_USEREVENT:
+			switch(e->user.code)
+			{
+				case sdlgui_window_focus:
+					cout<<"list_box_plane_view"<<endl;
+				break;
+			}
+		break;
+	}
+	return sdl_view::sysevent(e);
+}
+//------------------------------------------------------
 typedef class sdl_listbox : public GUI<sdl_listbox,sdl_widget>
 {
 	public:
@@ -712,6 +771,13 @@ typedef class sdl_listbox : public GUI<sdl_listbox,sdl_widget>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
+		/* 
+			 重载窗口坐标设置函数
+			 用于同步更新滑动面板坐标 
+		 */
+		int pos(int,int);
+		int pos_x(int);
+		int pos_y(int);
 	public:
 		/* 
 			加入或移除列表项目
@@ -728,7 +794,7 @@ typedef class sdl_listbox : public GUI<sdl_listbox,sdl_widget>
 			拉开时要父级窗口新建一个供列表项滑动的窗口
 			参数为拉开时初始长度
 			成功时返回0，失败时返回-1
-		 */
+		*/
 		int pull(int);
 		/* 
 			推入列表 
@@ -747,6 +813,12 @@ typedef class sdl_listbox : public GUI<sdl_listbox,sdl_widget>
 		int _current_item_id;
 		/* 项目滑动面板长度 */
 		int _item_plane_length;
+		/* 项目滑动面板指针 */
+		sdl_listbox_plane* _item_plane;
+		/* 项目下拉按钮指针 */
+		sdl_button* _list_button;
+		/* 项目列表状态 */
+		int _list_status;
 }*sdl_listbox_ptr;
 sdl_listbox::sdl_listbox()
 :
@@ -758,11 +830,17 @@ sdl_listbox::sdl_listbox(const char* ptitle,int px,int py,int pw,int ph,Uint32 p
 :
 GUI<sdl_listbox,sdl_widget>()
 {
+	init();
 	init(ptitle,px,py,pw,ph,pflag);
 }
 int sdl_listbox::init()
 {
 	if(sdl_widget::init())return -1;
+	_item_plane = NULL;
+	_list_button = NULL;
+	_current_item_id = 0;
+	_item_plane_length = 90;
+	_list_status = 0;
 	return 0;
 }
 int sdl_listbox::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
@@ -770,11 +848,27 @@ int sdl_listbox::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pfla
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
 	return 0;
 }
+int sdl_listbox::pos(int px,int py)
+{
+	if(_item_plane)_item_plane->pos(px,py+_rect.h);
+	return sdl_widget::pos(px,py);
+}
+int sdl_listbox::pos_x(int px)
+{
+	if(_item_plane)_item_plane->pos_x(px);
+	return sdl_widget::pos_x(px);
+}
+int sdl_listbox::pos_y(int py)
+{
+	if(_item_plane)_item_plane->pos_y(py);
+	return sdl_widget::pos_y(py);
+}
 int sdl_listbox::sysevent(SDL_Event* e)
 {
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
+			pull(0);
 		break;
 	}
 	return sdl_widget::sysevent(e);
@@ -793,8 +887,30 @@ T* sdl_listbox::item(int pid)
 {
 
 }
-int sdl_listbox::pull(int plength)
+int sdl_listbox::pull(int plength=0)
 {
+	int py;
+	/* 如果指定长度不为0，更新滑动窗口长度 */
+	if(plength)
+	{
+		_item_plane_length = plength;
+	}
+	/* 如果滑动面板存在,则显示面板 */
+	if(_item_plane)
+	{
+		_item_plane->show();
+	}
+	else
+	/* 否则如果存在父级,则创建面板 */
+	if(parent())
+	{
+		/* 创建项目滑动面板 */
+		//py = target_pos_y(parent(),_rect.h);
+		py = _rect.y+_rect.h;
+		_item_plane = parent()->add<sdl_listbox_plane>("",_rect.x,py,_rect.w,_item_plane_length,1);
+		_item_plane->scroll(1);
+		_item_plane->fill_rect(NULL,0x0f00fa);
+	}
 	return 0;
 }
 int sdl_listbox::push()

@@ -187,11 +187,17 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int init();
 		
 	public:
+		/* 激活当前窗口 */
 		int active();
+		/* 显示当前窗口 */
 		int show();
+		/* 隐藏当前窗口 */
 		int hide();
+		/* 返回当前窗口的显示状态 */
 		int is_show();
+		/* 设置当前窗口标题 */
 		int text(const char*);
+		/* 返回当前窗口标题 */
 		const char* text();
 		/* 本地坐标 */
 		int pos(int,int);
@@ -208,32 +214,50 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int global_pos_x();
 		int global_pos_y(int);
 		int global_pos_y();
-		/*  */
+		/* 坐标转换 */
+		int target_pos_x(sdl_board*,int);
+		int target_pos_y(sdl_board*,int);
+		SDL_Point target_pos(sdl_board*,int,int);
+		/*  窗口大小 */
 		int size(int,int);
 		int size(SDL_Point);
 		SDL_Point size();
 		SDL_Rect* rect();
-		sdl_board* parent();
+		/* 设置父级窗口对象 */
 		sdl_board* parent(sdl_board*);
+		/* 返回父级窗口对象 */
+		sdl_board* parent();
+		/* 返回给定对象是否为当前窗口的子窗口 */
+		int is_child(sdl_board*);
+		/* 添加子级窗口 */
 		template<class T>T* add(const char*,int,int,int,int,Uint32);
 		template<class T>T* add(T*);
+		/* 调整当前窗口Z序 */
 		int z_top(sdl_board*,sdl_board*,int);
+		/* 消毁当前窗口数据 */
 		int destroy();
 		//int redraw_hit();
 		int redraw_hit(sdl_board*);
 		//int redraw_hit(SDL_Rect*,sdl_board*);
+		/* 重画当前窗口 */
 		int redraw();
+		/* 返回给定坐标的子窗口对象 */
 		sdl_board* hit_board(int,int);
 		//virtual int event(SDL_Event* e){return 0;}
 		//-----------------------------------------------
+		/* 设置窗口透明色 */
 		int color_key(int,Uint32);
+		/* 设置窗口透明度 */
 		int alpha(Uint8);
+		/* 设置窗口混合模式 */
 		int blend(SDL_BlendMode);
 		int hit_rect(SDL_Rect*);
 		//------------------------------------------------
 		//timer_node* add_timer(int);
+		/* 添加窗口计时器 */
 		SDL_TimerID add_timer(int);
 	public:
+		/* 计时器全局回调函数 */
 		static Uint32 timer_callback(Uint32,void*); 
 	public:
 		/* 当前刷新帧数累计 */
@@ -1106,6 +1130,36 @@ int sdl_board::global_pos_y()
 	}
 	return ty;
 }
+//-------------------------------------------
+//坐标转换
+int sdl_board::target_pos_x(sdl_board* obj,int px)
+{
+	if(!obj)return -1;
+	int x = global_pos_x();
+	int tx = obj->global_pos_x(); 
+	return (x-tx+px);
+}
+int sdl_board::target_pos_y(sdl_board* obj,int py)
+{
+	if(!obj)return -1;
+	int y = global_pos_y();
+	int ty = obj->global_pos_y(); 
+	return (y-ty+py);
+}
+SDL_Point sdl_board::target_pos(sdl_board* obj,int px,int py)
+{
+	SDL_Point pt1 = global_pos();
+	if(!obj)
+	{
+		pt1.x = 0;
+		pt1.y = 0;
+		return pt1;
+	}
+	SDL_Point pt2 = obj->global_pos();
+	pt1.x = pt2.x-pt1.x+px;
+	pt1.y = pt2.y-pt1.y+py;
+	return pt1;
+}
 //--------------------------------------
 //取得窗口底板位置
 SDL_Point sdl_board::pos()
@@ -1162,6 +1216,25 @@ sdl_board* sdl_board::parent(sdl_board* parent)
 sdl_board* sdl_board::parent()
 {
 	return _parent;
+}
+//-------------------------------------------------
+/* 
+	 返回给定对象是否为当前窗口的子窗口 
+	 如果是子级窗口返回0,否则返回-1 
+ */
+int sdl_board::is_child(sdl_board* obj)
+{
+	sdl_board* t = obj;
+	//如果指定窗口与指定窗口的父级窗口都存在则处理数据
+	while(t && t->parent())
+	{
+		//如果指定窗口的父级窗口与当前窗口相等,返回0
+		if(t->parent() == this)return 0;
+		//向父级窗口跳转
+		t = t->parent();
+	}
+	//如果一直没有返回表示指定窗口不是当前窗口的子级,则返回-1
+	return -1;
 }
 //-------------------------------------
 //添加子内部窗口底板
