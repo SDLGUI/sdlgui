@@ -692,4 +692,117 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 	view.scroll_bar((_vertical)?_vertical:NULL,(_horizontal)?_horizontal:NULL);
 	return 0;
 }
+//--------------------------------------------------------------
+//
+//
+//
+//
+//							列表类
+//
+//
+//
+//
+//
+//-------------------------------------------------------------
+typedef class sdl_listbox : public GUI<sdl_listbox,sdl_widget>
+{
+	public:
+		sdl_listbox();
+		sdl_listbox(const char*,int,int,int,int,Uint32);
+		int init();
+		int init(const char*,int,int,int,int,Uint32);
+		int sysevent(SDL_Event*);
+	public:
+		/* 
+			加入或移除列表项目
+			当项目对象为NULL时表示移除第N个项目
+			当项目对象存在时表示在第N个加入项目
+		 */
+		template<class T>T* item(int,T*);
+		/* 
+			返回第N个项目对象指针，失败时返回NULL
+		 */
+		template<class T>T* item(int);
+		/* 
+			拉开列表
+			拉开时要父级窗口新建一个供列表项滑动的窗口
+			参数为拉开时初始长度
+			成功时返回0，失败时返回-1
+		 */
+		int pull(int);
+		/* 
+			推入列表 
+			推入时把项目滑动窗口关闭
+			成功时返回0，失败时返回-1
+		 */
+		int push();
+		/* 
+			选择第N项,成功时返回上次选择的ID，失败时返回-1 
+		 */
+		int select(int);
+	protected:
+		/* 项目个数 */
+		int _item_count;
+		/* 当前选中项目ID */
+		int _current_item_id;
+		/* 项目滑动面板长度 */
+		int _item_plane_length;
+}*sdl_listbox_ptr;
+sdl_listbox::sdl_listbox()
+:
+GUI<sdl_listbox,sdl_widget>()
+{
+	init();
+}
+sdl_listbox::sdl_listbox(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+:
+GUI<sdl_listbox,sdl_widget>()
+{
+	init(ptitle,px,py,pw,ph,pflag);
+}
+int sdl_listbox::init()
+{
+	if(sdl_widget::init())return -1;
+	return 0;
+}
+int sdl_listbox::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+{
+	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
+	return 0;
+}
+int sdl_listbox::sysevent(SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_MOUSEBUTTONDOWN:
+		break;
+	}
+	return sdl_widget::sysevent(e);
+}
+template<class T>
+T* sdl_listbox::item(int pid,T* pitem)
+{
+	if(pitem)
+	{
+		return pitem;
+	}
+	return NULL;
+}
+template <class T>
+T* sdl_listbox::item(int pid)
+{
+
+}
+int sdl_listbox::pull(int plength)
+{
+	return 0;
+}
+int sdl_listbox::push()
+{
+	return 0;
+}
+int sdl_listbox::select(int pid)
+{
+	return 0;
+}
 #endif// __SDLGUI_TOOLS_HANDLE__
