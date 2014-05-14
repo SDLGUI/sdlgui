@@ -182,7 +182,7 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		/* 设置滚动窗口,并设置好滚动对象的滚动高低点*/
 		int scroll(sdl_board*,int,int);
 		/* 系统事件 */
-		int sysevent(SDL_Event*);
+		virtual int sysevent(SDL_Event*);
 		/* 显示窗口
 			参数为0时表示自动显示,为1时表示永远显示 
 		 */
@@ -249,12 +249,19 @@ int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	_scroll_step = 0;
 	_scroll_speed = 0;
 	_scroll_step_sx = 0;
-	_scroll_object_rect.x = 0;
-	_scroll_object_rect.x = ph;
 	_scroll_is_change = 0;
+	//
+	//这一条表达式要删除
+	_scroll_object_rect.x = 0;
+	//这一条表达式要删除
+	_scroll_object_rect.y = ph;
+	//这一条表达式要删除
 	_scroll_bar_rect.x = 0;
+	//这一条表达式要删除
 	_scroll_bar_rect.y = 0;
+	//这一条表达式要删除
 	_scroll_bar_rect.w = pw;
+	//这一条表达式要删除
 	_scroll_bar_rect.h = ph*0.1;
 	//
 	bar.init(1,_scroll_bar_rect.w,_scroll_bar_rect.h,32,0,0,0,0);
@@ -278,12 +285,12 @@ float sdl_scroll::scroll(float ps)
 }
 int sdl_scroll::scroll(int pstep)
 {
+	//更新滚动步长速度(要删除这个表达式)
+	_scroll_speed = pstep/_rect.h*1.0;
 	//更新滚动步长
 	_scroll_step = pstep;
 	//更新滚动步长系数
 	_scroll_step_sx = 1.0;
-	//更新滚动步长速度
-	_scroll_speed = _scroll_step/_rect.h*1.0;
 	//如果没有计时器或消除了计时器,则加入计时器
 	if(!_scroll_timer)_scroll_timer = add_timer(100);
 	//
@@ -295,20 +302,35 @@ float sdl_scroll::point()
 }
 int sdl_scroll::point(float p)
 {
+	//这一行要删除
 	int pt;
+	//这一行要删除
 	_scroll_point = p;
+	//这一行要删除
 	if(_scroll_point>1)
+	//这一行要删除
 	{
+	//这一行要删除
 		_scroll_point = 1;
+	//这一行要删除
 	}
+	//这一行要删除
 	else
+	//这一行要删除
 	if(_scroll_point<0)
+	//这一行要删除
 	{
+	//这一行要删除
 		_scroll_point = 0;
+	//这一行要删除
 	}
+	//这一行要删除
 	//更新滚动滑块
+	//这一行要删除
 	pt = (_rect.h-bar.clip_rect()->h)*_scroll_point;
+	//这一行要更新pt为p
 	_scroll_bar_rect.y = pt;
+	//
 	bg.blit_surface(NULL,this,NULL);
 	bar.blit_surface(NULL,this,&_scroll_bar_rect);
 	return 0;
@@ -316,8 +338,11 @@ int sdl_scroll::point(float p)
 int sdl_scroll::scroll(sdl_board* b,int pt,int pb)
 {
 	if(!b)return -1;
+	/* 滚动条控制窗口 */
 	_scroll_board = b;
+	/* 滚动条最高点 */
 	_scroll_object_rect.x = pt;
+	/* 滚动条最低点 */
 	_scroll_object_rect.y = pb;
 	return 0;
 }
@@ -445,7 +470,109 @@ int sdl_scroll::sysevent(SDL_Event* e)
 	return sdl_widget::sysevent(e);
 }
 
-
+//---------------------------------------------------------------
+//
+//
+//
+//
+//						水平滚动条类
+//
+//
+//
+//
+//
+//
+//----------------------------------------------------------------
+typedef class sdl_v_scroll : public GUI<sdl_v_scroll,sdl_scroll>
+{
+	public:
+		// 空白构造函数 //
+		sdl_v_scroll();
+		// 带参构造函数 //
+		sdl_v_scroll(const char*,int,int,int,int,Uint32);
+		// 空白构造函数 //
+		int init();
+		// 带参初始化函数 //
+		int init(const char*,int,int,int,int,Uint32);
+		// 系统事件处理函数 //
+		int sysevent(SDL_Event*);
+	public:
+		// 最左点 //
+		int left();
+		// 最右点 //
+		int right();
+		/* 设置滚动初始速度 */
+		int scroll(int);
+		/* 设置滚动点的值 */
+		int point(float);
+}*sdl_v_scroll_ptr;
+sdl_v_scroll::sdl_v_scroll()
+{
+	init();
+}
+sdl_v_scroll::sdl_v_scroll(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+:
+GUI<sdl_v_scroll,sdl_scroll>()
+{
+	init(ptitle,px,py,pw,ph,pflag);
+}
+int sdl_v_scroll::init()
+{
+	if(sdl_scroll::init())return -1;
+	return 0;
+}
+int sdl_v_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+{
+	_scroll_object_rect.x = 0;
+	_scroll_object_rect.y = pw;
+	_scroll_bar_rect.x = 0;
+	_scroll_bar_rect.y = 0;
+	_scroll_bar_rect.w = pw*0.1;
+	_scroll_bar_rect.h = ph;
+	if(sdl_scroll::init(ptitle,px,py,pw,ph,pflag))return -1;
+	return 0;
+}
+int sdl_v_scroll::sysevent(SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_USEREVENT:
+		break;
+	}
+	return sdl_scroll::sysevent(e);
+}
+int sdl_v_scroll::left()
+{
+	return _scroll_object_rect.x;
+}
+int sdl_v_scroll::right()
+{
+	return _scroll_object_rect.y;
+}
+int sdl_v_scroll::scroll(int pstep)
+{
+	//更新滚动步长速度
+	_scroll_speed = pstep/_rect.w*1.0;
+	return sdl_scroll::scroll(pstep);
+}
+int sdl_v_scroll::point(float p)
+{
+	int pt;
+	_scroll_point = p;
+	if(_scroll_point>1)
+	{
+		_scroll_point = 1;
+	}
+	else
+	if(_scroll_point<0)
+	{
+		_scroll_point = 0;
+	}
+	//更新滚动滑块
+	pt = (_rect.w-bar.clip_rect()->w)*_scroll_point;
+	//
+	return sdl_scroll::point(pt);
+}
 //---------------------------------------------------------------
 //
 //
@@ -662,34 +789,36 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 		//垂直滚动条
 		if(!_vertical)
 		{
-			//cout<<"Created vertial Scroll:"<<_rect.w<<endl;
-			_vertical = add<sdl_scroll>("",_rect.w-30,0,30,_rect.h-30,1);
+			_vertical = add<sdl_scroll>("",_rect.w-30,0,30,_rect.h,1);
 			_vertical->fill_rect(NULL,0xff00ff);
-			if(rt)
-			{
-				_vertical->scroll(&view,rt->y,rt->h);
-			}
-			else
-			{
-				_vertical->scroll(&view,-_rect.h,0);
-			}
+			_vertical->update();
+		}
+		//如果改变滚动范围
+		if(rt)
+		{
+			_vertical->scroll(&view,rt->y,rt->h);
+		}
+		else
+		{
+			_vertical->scroll(&view,-_rect.h,0);
 		}
 	}
 	if(_scroll_type&2)
 	{
 		if(!_horizontal)
 		{
-			//cout<<"Ceated horizontal Scroll:"<<_rect.h<<endl;
 			_horizontal= add<sdl_scroll>("",0,_rect.h-30,_rect.w-30,30,1);
 			_horizontal->fill_rect(NULL,0xff00ff);
-			if(rt)
-			{
-				_horizontal->scroll(&view,rt->x,rt->w);
-			}
-			else
-			{
-				_horizontal->scroll(&view,-_rect.w,0);
-			}
+			_horizontal->update();
+		}
+		//如果改变滚动范围
+		if(rt)
+		{
+			_horizontal->scroll(&view,rt->x,rt->w);
+		}
+		else
+		{
+			_horizontal->scroll(&view,-_rect.w,0);
 		}
 	}
 	view.scroll_bar((_vertical)?_vertical:NULL,(_horizontal)?_horizontal:NULL);
@@ -756,7 +885,14 @@ int sdl_listbox_plane::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_window_focus:
-					//cout<<"list_box_plane_view"<<endl;
+					/* 如果失去焦点，分析是否被子级窗口获取焦点 */
+					if(!(int)(e->user.data1))
+					{
+						if(!is_child((sdl_board*)(e->user.data2)))
+						{
+							hide();
+						}
+					}
 				break;
 			}
 		break;
@@ -846,7 +982,14 @@ int sdl_listbox::init()
 }
 int sdl_listbox::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
+	SDL_Rect rt;
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
+	/* 创建项目滑动面板 */
+	_item_plane = new sdl_listbox_plane("",px,py+ph,pw,_item_plane_length,1);
+	rt.y = -ph;
+	rt.h = 0;
+	_item_plane->scroll(1,&rt);
+	_item_plane->fill_rect(NULL,0x0f00fa);
 	return 0;
 }
 int sdl_listbox::pos(int px,int py)
@@ -908,8 +1051,7 @@ T* sdl_listbox::item(int pid,T* pitem)
 {
 	if(pitem)
 	{
-		cout<<"item:"<<pitem<<endl;
-		//_item_plane->add<T>(pitem);
+		_item_plane->view.add<T>(pitem);
 		return pitem;
 	}
 	return NULL;
@@ -921,27 +1063,21 @@ T* sdl_listbox::item(int pid)
 }
 int sdl_listbox::pull(int plength=0)
 {
-	int py;
 	/* 如果指定长度不为0，更新滑动窗口长度 */
 	if(plength)
 	{
 		_item_plane_length = plength;
+		if(_item_plane)_item_plane->height(_item_plane_length);
+	}
+	/* 否则如果滑动面板不存在父级,则把面板加入到父级窗口 */
+	if(_item_plane && !_item_plane->parent())
+	{
+		parent()->add<sdl_listbox_plane>(_item_plane);
 	}
 	/* 如果滑动面板存在,则显示面板 */
 	if(_item_plane)
 	{
 		_item_plane->show();
-	}
-	else
-	/* 否则如果存在父级,则创建面板 */
-	if(parent())
-	{
-		/* 创建项目滑动面板 */
-		//py = target_pos_y(parent(),_rect.h);
-		py = _rect.y+_rect.h;
-		_item_plane = parent()->add<sdl_listbox_plane>("",_rect.x,py,_rect.w,_item_plane_length,1);
-		_item_plane->scroll(1);
-		_item_plane->fill_rect(NULL,0x0f00fa);
 	}
 	return 0;
 }

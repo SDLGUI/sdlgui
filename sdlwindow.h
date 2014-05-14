@@ -223,6 +223,10 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int size(SDL_Point);
 		SDL_Point size();
 		SDL_Rect* rect();
+		int width();
+		int width(int);
+		int height();
+		int height(int);
 		/* 设置父级窗口对象 */
 		sdl_board* parent(sdl_board*);
 		/* 返回父级窗口对象 */
@@ -1204,6 +1208,26 @@ SDL_Rect* sdl_board::rect()
 {
 	return &_rect;
 }
+//-------------------------------------------
+//设置窗口宽度
+int sdl_board::width(int pw)
+{
+	_rect.w = pw;
+	return 0;
+}
+//------------------------------------------
+//得到窗口宽度
+int sdl_board::width(){return _rect.w;} 
+//--------------------------------------------
+//设置窗口高度
+int sdl_board::height(int ph)
+{
+	_rect.h = ph;
+	return 0;
+}
+//-----------------------------------------
+//得到窗口高度
+int sdl_board::height(){return _rect.h;}
 //------------------------------------------
 //设置父级窗口
 sdl_board* sdl_board::parent(sdl_board* parent)
