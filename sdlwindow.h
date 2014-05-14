@@ -1229,12 +1229,12 @@ int sdl_board::is_child(sdl_board* obj)
 	while(t && t->parent())
 	{
 		//如果指定窗口的父级窗口与当前窗口相等,返回0
-		if(t->parent() == this)return 0;
+		if(t->parent() == this)return 1;
 		//向父级窗口跳转
 		t = t->parent();
 	}
 	//如果一直没有返回表示指定窗口不是当前窗口的子级,则返回-1
-	return -1;
+	return 0;
 }
 //-------------------------------------
 //添加子内部窗口底板

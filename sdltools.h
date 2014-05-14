@@ -125,7 +125,7 @@ int sdl_edit::push(const char* p = NULL)
 	t = strcat(t,p);
 	//text(t);
 	//text("123456");
-	cout<<"sdl_edit printf:"<<t<<endl;
+	//cout<<"sdl_edit printf:"<<t<<endl;
 	delete t;
 	return 0;
 }
@@ -356,7 +356,7 @@ int sdl_scroll::scroll_event(sdl_board* obj)
 	//------------------------------
 	te.type = SDL_USEREVENT;
 	te.user = ue;
-	cout<<((float*)(te.user.data2))[1]<<endl;
+	//cout<<((float*)(te.user.data2))[1]<<endl;
 	//---------------------------------
 	obj->event(&te);
 	return 0;
@@ -662,7 +662,7 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 		//垂直滚动条
 		if(!_vertical)
 		{
-			cout<<"Created vertial Scroll:"<<_rect.w<<endl;
+			//cout<<"Created vertial Scroll:"<<_rect.w<<endl;
 			_vertical = add<sdl_scroll>("",_rect.w-30,0,30,_rect.h-30,1);
 			_vertical->fill_rect(NULL,0xff00ff);
 			if(rt)
@@ -679,7 +679,7 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 	{
 		if(!_horizontal)
 		{
-			cout<<"Ceated horizontal Scroll:"<<_rect.h<<endl;
+			//cout<<"Ceated horizontal Scroll:"<<_rect.h<<endl;
 			_horizontal= add<sdl_scroll>("",0,_rect.h-30,_rect.w-30,30,1);
 			_horizontal->fill_rect(NULL,0xff00ff);
 			if(rt)
@@ -739,6 +739,7 @@ int sdl_listbox_plane::init()
 int sdl_listbox_plane::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
 	if(sdl_view::init(ptitle,px,py,pw,ph,pflag))return -1;
+	view.fill_rect(NULL,0xffffff);
 	/* 设置滚动方式 */
 	_view_scroll_rect.x = 0;
 	_view_scroll_rect.w = 0;
@@ -755,7 +756,7 @@ int sdl_listbox_plane::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_window_focus:
-					cout<<"list_box_plane_view"<<endl;
+					//cout<<"list_box_plane_view"<<endl;
 				break;
 			}
 		break;
@@ -865,10 +866,39 @@ int sdl_listbox::pos_y(int py)
 }
 int sdl_listbox::sysevent(SDL_Event* e)
 {
+	sdl_board* tobj;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 			pull(0);
+		break;
+		case SDL_USEREVENT:
+			switch(e->user.code)
+			{
+				case sdlgui_window_focus:
+					/* 
+					 当下拉列表焦点改变时 
+					 分析是否被列表滑动面板获取了 
+					*/
+					if(!(int)(e->user.data1))
+					{
+						/* 先取获取焦点的对象 */
+						tobj = (sdl_board*)(e->user.data2);
+						/* 
+							 如果焦点对象是滑动面板或滑动面板的子级窗口 
+							 则处理数据，否则关闭滑动面板 
+						 */
+						if((tobj == _item_plane) || (_item_plane->is_child(tobj)))
+						{
+							cout<<tobj<<endl;
+						}
+						else
+						{
+							_item_plane->hide();
+						}
+					}
+				break;
+			}
 		break;
 	}
 	return sdl_widget::sysevent(e);
@@ -878,6 +908,8 @@ T* sdl_listbox::item(int pid,T* pitem)
 {
 	if(pitem)
 	{
+		cout<<"item:"<<pitem<<endl;
+		//_item_plane->add<T>(pitem);
 		return pitem;
 	}
 	return NULL;
