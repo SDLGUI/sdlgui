@@ -1,4 +1,4 @@
-//----------------------------------------------------------------------------------------------------------------
+﻿//----------------------------------------------------------------------------------------------------------------
 //
 //
 //
@@ -142,6 +142,8 @@ int sdl_edit::kill()
 }
 
 
+
+
 /*----------------------------------------------------------
 
 				滚动条
@@ -156,21 +158,21 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		/* 带参构造函数 */
 		sdl_scroll(const char*,int,int,int,int,Uint32);
 		/* 空白初始化函数 */
-		int init();
+		virtual int init();
 		/* 带参构造函数 */
-		int init(const char*,int,int,int,int,Uint32);
+		virtual int init(const char*,int,int,int,int,Uint32);
 		/* 滚动函数 */
-		float scroll(float);
+		virtual float scroll(float);
 		/* 设置滚动初始速度 */
-		int scroll(int);
+		virtual int scroll(int);
 		/*  */
-		float scroll();
+		virtual float scroll();
 		/* 返回滚动点的值 */
-		float point();
+		virtual float point();
 		/* 设置滚动点的值 */
-		int point(float);
+		virtual int point(float);
 		/* 发送滚动点事件 */
-		int scroll_event(sdl_board*);
+		virtual int scroll_event(sdl_board*);
 		/* 向上滚动一格 */
 		int up();
 		/* 向下滚动一格 */
@@ -180,7 +182,7 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		/* 返回滚动对象最低点 */
 		int bottom();
 		/* 设置滚动窗口,并设置好滚动对象的滚动高低点*/
-		int scroll(sdl_board*,int,int);
+		virtual int scroll(sdl_board*,int,int);
 		/* 系统事件 */
 		virtual int sysevent(SDL_Event*);
 		/* 显示窗口
@@ -251,19 +253,6 @@ int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	_scroll_step_sx = 0;
 	_scroll_is_change = 0;
 	//
-	//这一条表达式要删除
-	_scroll_object_rect.x = 0;
-	//这一条表达式要删除
-	_scroll_object_rect.y = ph;
-	//这一条表达式要删除
-	_scroll_bar_rect.x = 0;
-	//这一条表达式要删除
-	_scroll_bar_rect.y = 0;
-	//这一条表达式要删除
-	_scroll_bar_rect.w = pw;
-	//这一条表达式要删除
-	_scroll_bar_rect.h = ph*0.1;
-	//
 	bar.init(1,_scroll_bar_rect.w,_scroll_bar_rect.h,32,0,0,0,0);
 	bar.fill_rect(NULL,0xff0000);
 	//
@@ -285,8 +274,6 @@ float sdl_scroll::scroll(float ps)
 }
 int sdl_scroll::scroll(int pstep)
 {
-	//更新滚动步长速度(要删除这个表达式)
-	_scroll_speed = pstep/_rect.h*1.0;
 	//更新滚动步长
 	_scroll_step = pstep;
 	//更新滚动步长系数
@@ -302,35 +289,6 @@ float sdl_scroll::point()
 }
 int sdl_scroll::point(float p)
 {
-	//这一行要删除
-	int pt;
-	//这一行要删除
-	_scroll_point = p;
-	//这一行要删除
-	if(_scroll_point>1)
-	//这一行要删除
-	{
-	//这一行要删除
-		_scroll_point = 1;
-	//这一行要删除
-	}
-	//这一行要删除
-	else
-	//这一行要删除
-	if(_scroll_point<0)
-	//这一行要删除
-	{
-	//这一行要删除
-		_scroll_point = 0;
-	//这一行要删除
-	}
-	//这一行要删除
-	//更新滚动滑块
-	//这一行要删除
-	pt = (_rect.h-bar.clip_rect()->h)*_scroll_point;
-	//这一行要更新pt为p
-	_scroll_bar_rect.y = pt;
-	//
 	bg.blit_surface(NULL,this,NULL);
 	bar.blit_surface(NULL,this,&_scroll_bar_rect);
 	return 0;
@@ -381,7 +339,6 @@ int sdl_scroll::scroll_event(sdl_board* obj)
 	//------------------------------
 	te.type = SDL_USEREVENT;
 	te.user = ue;
-	//cout<<((float*)(te.user.data2))[1]<<endl;
 	//---------------------------------
 	obj->event(&te);
 	return 0;
@@ -395,31 +352,34 @@ int sdl_scroll::sysevent(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 			_scroll_start_time = clock();
-			_scroll_start_y = e->button.y;
+			//这条表达式可以删除
+			//_scroll_start_y = e->button.y;
 			_scroll_is_change = 1;
 		break;
 		case SDL_FINGERDOWN:
 			_scroll_start_time = clock();
-			_scroll_start_y = e->tfinger.y*50;
+			//这条表达式可以删除
+			//_scroll_start_y = e->tfinger.y*50;
 			_scroll_is_change = 1;
 		break;
 		case SDL_MOUSEBUTTONUP:
 			_scroll_is_change = 0;
-			//计算步长
-		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
+			//计算步长(这条表达式可以删除)
+		  //_scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
 			//开始滚动事件
 			scroll(int(_scroll_step*20)); break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
-			//计算步长
-		  _scroll_step = (e->tfinger.y*50 - _scroll_start_y)/(clock()-_scroll_start_time);
+			//计算步长(这条表达式可以删除)
+		  //_scroll_step = (e->tfinger.y*50 - _scroll_start_y)/(clock()-_scroll_start_time);
 			//开始滚动事件
 			scroll(int(_scroll_step*20));
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
 			{
-				_scroll_point = (((float)(e->button.y-global_pos_y()))/(float)_rect.h);
+				//这条表达式可以删除
+				//_scroll_point = (((float)(e->button.y-global_pos_y()))/(float)_rect.h);
 				point(_scroll_point);
 				//发送消息
 				if(_scroll_board)
@@ -442,17 +402,22 @@ int sdl_scroll::sysevent(SDL_Event* e)
 			 {
 				  case sdlgui_event_timer:
 						//如果步长系数不为0，并且滑动点不为1则滑动窗口
-						_scroll_step_sx -= 0.002;
-						if(_scroll_step_sx<0)_scroll_step_sx = 0;
-						_scroll_point += _scroll_speed*_scroll_step_sx;
+						//这条表达式可以删除
+						//_scroll_step_sx -= 0.002;
+						//这条表达式可以删除
+						//if(_scroll_step_sx<0)_scroll_step_sx = 0;
+						//这条表达式可以删除
+						//_scroll_point += _scroll_speed*_scroll_step_sx;
+						//这条表达式可以删除
+						//更新滚动滑块
+						//这条表达式可以删除
+						//point(_scroll_point);
 						//
 						if((_scroll_step_sx<=0.0 )|| (_scroll_point <= 0.0)|| (_scroll_point>=1.0))
 						{
 							SDL_RemoveTimer(_scroll_timer);
 							_scroll_timer = 0;
 						}
-						//更新滚动滑块
-						point(_scroll_point);
 						//发送消息
 						if(_scroll_board)
 						{
@@ -490,7 +455,7 @@ typedef class sdl_v_scroll : public GUI<sdl_v_scroll,sdl_scroll>
 		sdl_v_scroll();
 		// 带参构造函数 //
 		sdl_v_scroll(const char*,int,int,int,int,Uint32);
-		// 空白构造函数 //
+		// 空白初始化函数 //
 		int init();
 		// 带参初始化函数 //
 		int init(const char*,int,int,int,int,Uint32);
@@ -536,7 +501,36 @@ int sdl_v_scroll::sysevent(SDL_Event* e)
 {
 	switch(e->type)
 	{
+		case SDL_MOUSEBUTTONDOWN:
+			_scroll_start_y = e->button.x;
+		break;
+		case SDL_FINGERDOWN:
+			_scroll_start_y = e->tfinger.x*50;
+		break;
+		case SDL_MOUSEBUTTONUP:
+			_scroll_step = (e->button.x - _scroll_start_y);
+		break;
+		case SDL_FINGERUP:
+			_scroll_step = (e->tfinger.x*50 - _scroll_start_y);
+		break;
+		case SDL_MOUSEMOTION:
+			if(_scroll_is_change)
+			{
+				_scroll_point = (((float)(e->button.x-global_pos_x()))/(float)_rect.w);
+			}
+		break;
 		case SDL_USEREVENT:
+			switch(e->user.code)
+			{
+				case sdlgui_event_timer:
+					//如果步长系数不为0，并且滑动点不为1则滑动窗口
+					_scroll_step_sx -= 0.002;
+					if(_scroll_step_sx<0)_scroll_step_sx = 0;
+					_scroll_point += _scroll_speed*_scroll_step_sx;
+					//更新滚动滑块
+					point(_scroll_point);
+				break;
+			}
 		break;
 	}
 	return sdl_scroll::sysevent(e);
@@ -570,9 +564,149 @@ int sdl_v_scroll::point(float p)
 	}
 	//更新滚动滑块
 	pt = (_rect.w-bar.clip_rect()->w)*_scroll_point;
+	_scroll_bar_rect.x = pt;
 	//
 	return sdl_scroll::point(pt);
 }
+//-------------------------------------------------------------------------------
+//
+//
+//
+//
+//
+//
+//						垂直滚动条类
+//
+//
+//
+//
+//
+//
+//---------------------------------------------------------------------------------
+typedef class sdl_h_scroll : public GUI<sdl_h_scroll,sdl_scroll>
+{
+	public:
+		/* 空白构造函数 */
+		sdl_h_scroll();
+		/* 带参构造函数 */
+		sdl_h_scroll(const char*,int,int,int,int,Uint32);
+		/* 空白初始函数 */
+		int init();
+		/* 带参初始函数 */
+		int init(const char*,int,int,int,int,Uint32);
+		/* 系统事件处理函数 */
+		int sysevent(SDL_Event*);
+	public:
+		/* 最顶点 */
+		int top();
+		/* 最底点 */
+		int bottom();
+		/* 设置滚动初始速度 */
+		int scroll(int);
+		/* 设置滚动点的值 */
+		int point(float);
+}*sdl_h_scroll_ptr;
+sdl_h_scroll::sdl_h_scroll()
+{
+	init();
+}
+sdl_h_scroll::sdl_h_scroll(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+{
+	init(ptitle,px,py,pw,ph,pflag);
+}
+int sdl_h_scroll::init()
+{
+	if(sdl_scroll::init())return -1;
+	return 0;
+}
+int sdl_h_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+{
+	_scroll_object_rect.x = 0;
+	_scroll_object_rect.y = ph;
+	_scroll_bar_rect.x = 0;
+	_scroll_bar_rect.y = 0;
+	_scroll_bar_rect.w = pw;
+	_scroll_bar_rect.h = ph*0.1;
+	if(sdl_scroll::init(ptitle,px,py,pw,ph,pflag))return -1;
+	return 0;
+}
+int sdl_h_scroll::sysevent(SDL_Event* e)
+{
+	switch(e->type)
+	{
+		case SDL_MOUSEBUTTONDOWN:
+			_scroll_start_y = e->button.y;
+		break;
+		case SDL_FINGERDOWN:
+			_scroll_start_y = e->tfinger.y*50;
+		break;
+		case SDL_MOUSEBUTTONUP:
+			_scroll_step = (e->button.y - _scroll_start_y);
+		break;
+		case SDL_FINGERUP:
+			_scroll_step = (e->tfinger.y*50 - _scroll_start_y);
+		break;
+		case SDL_MOUSEMOTION:
+			if(_scroll_is_change)
+			{
+				_scroll_point = (((float)(e->button.y-global_pos_y()))/(float)_rect.h);
+			}
+		break;
+		case SDL_USEREVENT:
+			switch(e->user.code)
+			{
+				case sdlgui_event_timer:
+					//如果步长系数不为0，并且滑动点不为1则滑动窗口
+					_scroll_step_sx -= 0.002;
+					if(_scroll_step_sx<0)_scroll_step_sx = 0;
+					_scroll_point += _scroll_speed*_scroll_step_sx;
+					//更新滚动滑块
+					point(_scroll_point);
+				break;
+			}
+		break;
+	}
+	return sdl_scroll::sysevent(e);
+}
+int sdl_h_scroll::top()
+{
+	return 0;
+}
+int sdl_h_scroll::bottom()
+{
+	return 0;
+}
+int sdl_h_scroll::scroll(int pstep)
+{
+	//更新滚动步长速度
+	_scroll_speed = pstep/_rect.h*1.0;
+	return sdl_scroll::scroll(pstep);
+
+}
+int sdl_h_scroll::point(float p)
+{
+	int pt;
+	_scroll_point = p;
+	if(_scroll_point>1)
+	{
+		_scroll_point = 1;
+	}
+	else
+	if(_scroll_point<0)
+	{
+		_scroll_point = 0;
+	}
+	//更新滚动滑块
+	pt = (_rect.h-bar.clip_rect()->h)*_scroll_point;
+	_scroll_bar_rect.y = pt;
+	//
+	return sdl_scroll::point(pt);
+}
+
+
+
+
+
 //---------------------------------------------------------------
 //
 //
