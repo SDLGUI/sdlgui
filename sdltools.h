@@ -1,32 +1,32 @@
-ï»¿//----------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------
 //
 //
 //
 //
-//						æ–‡æ¡£åï¼š						sdltools.h
+//						ÎÄµµÃû£º						sdltools.h
 //
-//						æ–‡æ¡£åˆ›å»ºæ—¥æœŸï¼š			2014å¹´2æœˆ22æ—¥
-//						æ–‡æ¡£æ›´æ–°æ—¥æœŸï¼š			2014å¹´5æœˆ02æ—¥
-//						æ–‡æ¡£åˆ›å»ºè€…ï¼š				å¾è£
-//						æ–‡æ¡£æ›´æ–°è€…ï¼š				å¾è£
-//						æ–‡æ¡£åˆ›å»ºè€…è”ç³»æ–¹å¼ï¼šEmail:twtfcu3@126.com
+//						ÎÄµµ´´½¨ÈÕÆÚ£º			2014Äê2ÔÂ22ÈÕ
+//						ÎÄµµ¸üĞÂÈÕÆÚ£º			2014Äê5ÔÂ02ÈÕ
+//						ÎÄµµ´´½¨Õß£º				ĞìÈÙ
+//						ÎÄµµ¸üĞÂÕß£º				ĞìÈÙ
+//						ÎÄµµ´´½¨ÕßÁªÏµ·½Ê½£ºEmail:twtfcu3@126.com
 //																QQ:12880312(twtfcu3@126.com)
-//																ç½‘ç«™:http://sdl.my-mx.cn
+//																ÍøÕ¾:http://sdl.my-mx.cn
 //
-//						ç‰ˆæƒè¯´æ˜ï¼š
-//						1.æœ¬æ–‡æ¡£ä½¿ç”¨è€…çš„æƒåˆ©
-//							a)æœ¬æ–‡æ¡£ä½¿ç”¨è€…å¯ä»¥éšæ—¶åˆ©ç”¨æœ¬æ–‡æ¡£åˆ›å»ºå…¶å®ƒæ–‡ä»¶ã€‚
-//							b)æœ¬æ–‡æ¡£ä½¿ç”¨è€…å¯ä»¥éšæ—¶ä¿®æ”¹æœ¬æ–‡æ¡£æœ‰æ•ˆä»£ç å†…å®¹ï¼Œ
-//								ä½†ä¸èƒ½æ›´æ”¹æœ¬æ–‡æ¡£ç”¨//å¼€å¤´åŠç”¨/**/åŒ…å«çš„ä»»ä½•æ³¨é‡Šè¯­å¥ã€‚
-//						2.æœ¬æ–‡æ¡£ä½¿ç”¨è€…çš„ä¹‰åŠ¡
-//							a)ä½¿ç”¨è€…ä¸å¾—æ›´æ”¹æœ¬æ–‡æ¡£çš„æ–‡æ¡£å
-//							b)æœ¬æ–‡æ¡£ä½¿ç”¨è€…åœ¨ä½¿ç”¨æœ¬æ–‡æ¡£æ—¶è¯·åœ¨æ‚¨çš„æ–‡æ¡£å¼€å§‹å¤„
-//								è¯´æ˜æœ¬æ–‡æ¡£ç‰ˆæƒå½’æœ¬æ–‡æ¡£åˆ›å»ºè€…æ‰€æœ‰ã€‚
-//							c)æœ¬æ–‡æ¡£ä½¿ç”¨è€…æ›´æ”¹æœ¬æ–‡æ¡£å
-//								è¯·æ‚¨ä¸Šä¼ æ›´æ–°åçš„æ–‡æ¡£åˆ°http://github.com/sdlgui/sdlgui/
-//							d)æœ¬æ–‡æ¡£ä½¿ç”¨è€…æœ¬äººæ‰¿æ‹…
-//								ä½¿ç”¨æœ¬æ–‡æ¡£åçš„æ‰€æœ‰æ³•å¾‹è´£ä»»,
-//								æœ¬æ–‡æ¡£åˆ›å»ºè€…ä¸ä¸ºæ‚¨çš„æ–‡ä»¶å†…å®¹æ‰¿æ‹…ä»»ä½•æ³•å¾‹è´£ä»»ã€‚
+//						°æÈ¨ËµÃ÷£º
+//						1.±¾ÎÄµµÊ¹ÓÃÕßµÄÈ¨Àû
+//							a)±¾ÎÄµµÊ¹ÓÃÕß¿ÉÒÔËæÊ±ÀûÓÃ±¾ÎÄµµ´´½¨ÆäËüÎÄ¼ş¡£
+//							b)±¾ÎÄµµÊ¹ÓÃÕß¿ÉÒÔËæÊ±ĞŞ¸Ä±¾ÎÄµµÓĞĞ§´úÂëÄÚÈİ£¬
+//								µ«²»ÄÜ¸ü¸Ä±¾ÎÄµµÓÃ//¿ªÍ·¼°ÓÃ/**/°üº¬µÄÈÎºÎ×¢ÊÍÓï¾ä¡£
+//						2.±¾ÎÄµµÊ¹ÓÃÕßµÄÒåÎñ
+//							a)Ê¹ÓÃÕß²»µÃ¸ü¸Ä±¾ÎÄµµµÄÎÄµµÃû
+//							b)±¾ÎÄµµÊ¹ÓÃÕßÔÚÊ¹ÓÃ±¾ÎÄµµÊ±ÇëÔÚÄúµÄÎÄµµ¿ªÊ¼´¦
+//								ËµÃ÷±¾ÎÄµµ°æÈ¨¹é±¾ÎÄµµ´´½¨ÕßËùÓĞ¡£
+//							c)±¾ÎÄµµÊ¹ÓÃÕß¸ü¸Ä±¾ÎÄµµºó
+//								ÇëÄúÉÏ´«¸üĞÂºóµÄÎÄµµµ½http://github.com/sdlgui/sdlgui/
+//							d)±¾ÎÄµµÊ¹ÓÃÕß±¾ÈË³Ğµ£
+//								Ê¹ÓÃ±¾ÎÄµµºóµÄËùÓĞ·¨ÂÉÔğÈÎ,
+//								±¾ÎÄµµ´´½¨Õß²»ÎªÄúµÄÎÄ¼şÄÚÈİ³Ğµ£ÈÎºÎ·¨ÂÉÔğÈÎ¡£
 //
 //
 //
@@ -49,7 +49,7 @@ class sdl_view;
 
 /* --------------------------------------------
 	 
-	æ–‡æœ¬è¾“å…¥æ¡† 
+	ÎÄ±¾ÊäÈë¿ò 
 	 
 	 -------------------------------------------- */
 typedef class sdl_edit : public GUI<sdl_edit,sdl_widget>
@@ -59,13 +59,13 @@ typedef class sdl_edit : public GUI<sdl_edit,sdl_widget>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
-		/* è¿½åŠ æ–‡æœ¬ */
+		/* ×·¼ÓÎÄ±¾ */
 		int push(const char*);
-		/* åˆ é™¤æ–‡æœ¬æœ€åä¸€ä¸ªå­— */
+		/* É¾³ıÎÄ±¾×îºóÒ»¸ö×Ö */
 		int kill();
-		/* æ¸…é™¤æ–‡æœ¬å†…å®¹ */
+		/* Çå³ıÎÄ±¾ÄÚÈİ */
 		int clear();
-		/* è¿”å›æ–‡æœ¬å†…å®¹é•¿åº¦ */
+		/* ·µ»ØÎÄ±¾ÄÚÈİ³¤¶È */
 		int length();
 	protected:
 		int _count;
@@ -142,84 +142,82 @@ int sdl_edit::kill()
 }
 
 
-
-
 /*----------------------------------------------------------
 
-				æ»šåŠ¨æ¡
+				¹ö¶¯Ìõ
 
 
 ------------------------------------------------------------ */
 typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 {
 	public:
-		/* ç©ºç™½æ„é€ å‡½æ•° */
+		/* ¿Õ°×¹¹Ôìº¯Êı */
 		sdl_scroll();
-		/* å¸¦å‚æ„é€ å‡½æ•° */
+		/* ´ø²Î¹¹Ôìº¯Êı */
 		sdl_scroll(const char*,int,int,int,int,Uint32);
-		/* ç©ºç™½åˆå§‹åŒ–å‡½æ•° */
+		/* ¿Õ°×³õÊ¼»¯º¯Êı */
 		virtual int init();
-		/* å¸¦å‚æ„é€ å‡½æ•° */
+		/* ´ø²Î¹¹Ôìº¯Êı */
 		virtual int init(const char*,int,int,int,int,Uint32);
-		/* æ»šåŠ¨å‡½æ•° */
+		/* ¹ö¶¯º¯Êı */
 		virtual float scroll(float);
-		/* è®¾ç½®æ»šåŠ¨åˆå§‹é€Ÿåº¦ */
+		/* ÉèÖÃ¹ö¶¯³õÊ¼ËÙ¶È */
 		virtual int scroll(int);
 		/*  */
 		virtual float scroll();
-		/* è¿”å›æ»šåŠ¨ç‚¹çš„å€¼ */
+		/* ·µ»Ø¹ö¶¯µãµÄÖµ */
 		virtual float point();
-		/* è®¾ç½®æ»šåŠ¨ç‚¹çš„å€¼ */
+		/* ÉèÖÃ¹ö¶¯µãµÄÖµ */
 		virtual int point(float);
-		/* å‘é€æ»šåŠ¨ç‚¹äº‹ä»¶ */
+		/* ·¢ËÍ¹ö¶¯µãÊÂ¼ş */
 		virtual int scroll_event(sdl_board*);
-		/* å‘ä¸Šæ»šåŠ¨ä¸€æ ¼ */
+		/* ÏòÉÏ¹ö¶¯Ò»¸ñ */
 		int up();
-		/* å‘ä¸‹æ»šåŠ¨ä¸€æ ¼ */
+		/* ÏòÏÂ¹ö¶¯Ò»¸ñ */
 		int down();
-		/* è¿”å›æ»šåŠ¨å¯¹è±¡æœ€é«˜ç‚¹ */
+		/* ·µ»Ø¹ö¶¯¶ÔÏó×î¸ßµã */
 		int top();
-		/* è¿”å›æ»šåŠ¨å¯¹è±¡æœ€ä½ç‚¹ */
+		/* ·µ»Ø¹ö¶¯¶ÔÏó×îµÍµã */
 		int bottom();
-		/* è®¾ç½®æ»šåŠ¨çª—å£,å¹¶è®¾ç½®å¥½æ»šåŠ¨å¯¹è±¡çš„æ»šåŠ¨é«˜ä½ç‚¹*/
+		/* ÉèÖÃ¹ö¶¯´°¿Ú,²¢ÉèÖÃºÃ¹ö¶¯¶ÔÏóµÄ¹ö¶¯¸ßµÍµã*/
 		virtual int scroll(sdl_board*,int,int);
-		/* ç³»ç»Ÿäº‹ä»¶ */
+		/* ÏµÍ³ÊÂ¼ş */
 		virtual int sysevent(SDL_Event*);
-		/* æ˜¾ç¤ºçª—å£
-			å‚æ•°ä¸º0æ—¶è¡¨ç¤ºè‡ªåŠ¨æ˜¾ç¤º,ä¸º1æ—¶è¡¨ç¤ºæ°¸è¿œæ˜¾ç¤º 
+		/* ÏÔÊ¾´°¿Ú
+			²ÎÊıÎª0Ê±±íÊ¾×Ô¶¯ÏÔÊ¾,Îª1Ê±±íÊ¾ÓÀÔ¶ÏÔÊ¾ 
 		 */
 		int show(int);
-		/* æ›´æ–°æ»šåŠ¨æ¡ */
+		/* ¸üĞÂ¹ö¶¯Ìõ */
 		int update();
 	public:
-		/* æ»šåŠ¨æ¡èƒŒæ™¯ */
+		/* ¹ö¶¯Ìõ±³¾° */
 		sdlsurface bg;
 		sdlsurface bar;
-		/* æ»šåŠ¨æ¡æ»‘å— */
+		/* ¹ö¶¯Ìõ»¬¿é */
 	protected:
-		/* æ»šåŠ¨ç‚¹çš„å€¼ */
+		/* ¹ö¶¯µãµÄÖµ */
 		float _scroll_point;
-		/* æ»šåŠ¨çª—å£ */
+		/* ¹ö¶¯´°¿Ú */
 		sdl_board* _scroll_board;
-		/* æ»šåŠ¨è®¾æ—¶å™¨ */
+		/* ¹ö¶¯ÉèÊ±Æ÷ */
 		SDL_TimerID _scroll_timer;
-		/* æ»šåŠ¨åˆå§‹æ­¥é•¿ */
+		/* ¹ö¶¯³õÊ¼²½³¤ */
 		float _scroll_step;
-		/* æ»šåŠ¨é€Ÿåº¦ */
+		/* ¹ö¶¯ËÙ¶È */
 		float _scroll_speed;
-		/* æ»šåŠ¨æ­¥é•¿ç³»æ•° */
+		/* ¹ö¶¯²½³¤ÏµÊı */
 		float _scroll_step_sx;
-		/* æ»šåŠ¨å¯¹åƒæœ€é«˜ç‚¹å’Œæœ€ä½ç‚¹ */
+		/* ¹ö¶¯¶ÔÏñ×î¸ßµãºÍ×îµÍµã */
 		SDL_Point _scroll_object_rect;
-		/* æ˜¯å¦è‡ªåŠ¨æ˜¾ç¤º */
+		/* ÊÇ·ñ×Ô¶¯ÏÔÊ¾ */
 		int _scroll_auto_show;
-		/* çª—å£æ»šåŠ¨å¼€å§‹æ—¶é—´ */
+		/* ´°¿Ú¹ö¶¯¿ªÊ¼Ê±¼ä */
 		clock_t _scroll_start_time;
-		/* çª—å£æ»šåŠ¨å¼€å§‹åæ ‡ */
+		/* ´°¿Ú¹ö¶¯¿ªÊ¼×ø±ê */
 		float _scroll_start_y;
-		/* æ»šåŠ¨æ»‘å—åŒºåŸŸ */
+		/* ¹ö¶¯»¬¿éÇøÓò */
 		SDL_Rect _scroll_bar_rect;
-		/* æ˜¯å¦æ»šåŠ¨ */
+		/* ÊÇ·ñ¹ö¶¯ */
 		int _scroll_is_change;
 }*sdl_scroll_ptr;
 sdl_scroll::sdl_scroll()
@@ -274,14 +272,18 @@ float sdl_scroll::scroll(float ps)
 }
 int sdl_scroll::scroll(int pstep)
 {
-	//æ›´æ–°æ»šåŠ¨æ­¥é•¿
+	//¸üĞÂ¹ö¶¯²½³¤
 	_scroll_step = pstep;
-	//æ›´æ–°æ»šåŠ¨æ­¥é•¿ç³»æ•°
+	//¸üĞÂ¹ö¶¯²½³¤ÏµÊı
 	_scroll_step_sx = 1.0;
-	//å¦‚æœæ²¡æœ‰è®¡æ—¶å™¨æˆ–æ¶ˆé™¤äº†è®¡æ—¶å™¨,åˆ™åŠ å…¥è®¡æ—¶å™¨
+	//Èç¹ûÃ»ÓĞ¼ÆÊ±Æ÷»òÏû³ıÁË¼ÆÊ±Æ÷,Ôò¼ÓÈë¼ÆÊ±Æ÷
 	if(!_scroll_timer)_scroll_timer = add_timer(100);
 	//
 	return 0;
+}
+float sdl_scroll::scroll()
+{
+
 }
 float sdl_scroll::point()
 {
@@ -296,11 +298,11 @@ int sdl_scroll::point(float p)
 int sdl_scroll::scroll(sdl_board* b,int pt,int pb)
 {
 	if(!b)return -1;
-	/* æ»šåŠ¨æ¡æ§åˆ¶çª—å£ */
+	/* ¹ö¶¯Ìõ¿ØÖÆ´°¿Ú */
 	_scroll_board = b;
-	/* æ»šåŠ¨æ¡æœ€é«˜ç‚¹ */
+	/* ¹ö¶¯Ìõ×î¸ßµã */
 	_scroll_object_rect.x = pt;
-	/* æ»šåŠ¨æ¡æœ€ä½ç‚¹ */
+	/* ¹ö¶¯Ìõ×îµÍµã */
 	_scroll_object_rect.y = pb;
 	return 0;
 }
@@ -328,10 +330,10 @@ int sdl_scroll::scroll_event(sdl_board* obj)
 	SDL_Event te;
 	float p[2];
 	if(!obj)return -1;
-	//è®¡ç®—æ»šåŠ¨çª—å£åæ ‡
+	//¼ÆËã¹ö¶¯´°¿Ú×ø±ê
 	p[1] = (_scroll_object_rect.y - _scroll_object_rect.x)*_scroll_point + _scroll_object_rect.x;
 	p[0] = _scroll_point;
-	//å‘æŒ‡å®šçª—å£æˆ–çˆ¶çº§çª—å£å‘é€æ¶ˆæ¯
+	//ÏòÖ¸¶¨´°¿Ú»ò¸¸¼¶´°¿Ú·¢ËÍÏûÏ¢
 	ue.type = SDL_USEREVENT;
 	ue.code = sdlgui_scroll_point;
 	ue.data1 = (void*)this;
@@ -352,36 +354,36 @@ int sdl_scroll::sysevent(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 			_scroll_start_time = clock();
-			//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
+			//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
 			//_scroll_start_y = e->button.y;
 			_scroll_is_change = 1;
 		break;
 		case SDL_FINGERDOWN:
 			_scroll_start_time = clock();
-			//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
+			//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
 			//_scroll_start_y = e->tfinger.y*50;
 			_scroll_is_change = 1;
 		break;
 		case SDL_MOUSEBUTTONUP:
 			_scroll_is_change = 0;
-			//è®¡ç®—æ­¥é•¿(è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤)
+			//¼ÆËã²½³¤(ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı)
 		  //_scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
-			//å¼€å§‹æ»šåŠ¨äº‹ä»¶
+			//¿ªÊ¼¹ö¶¯ÊÂ¼ş
 			scroll(int(_scroll_step*20)); break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
-			//è®¡ç®—æ­¥é•¿(è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤)
+			//¼ÆËã²½³¤(ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı)
 		  //_scroll_step = (e->tfinger.y*50 - _scroll_start_y)/(clock()-_scroll_start_time);
-			//å¼€å§‹æ»šåŠ¨äº‹ä»¶
+			//¿ªÊ¼¹ö¶¯ÊÂ¼ş
 			scroll(int(_scroll_step*20));
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
 			{
-				//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
+				//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
 				//_scroll_point = (((float)(e->button.y-global_pos_y()))/(float)_rect.h);
 				point(_scroll_point);
-				//å‘é€æ¶ˆæ¯
+				//·¢ËÍÏûÏ¢
 				if(_scroll_board)
 				{
 					scroll_event(_scroll_board);
@@ -401,16 +403,16 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		   switch(e->user.code)
 			 {
 				  case sdlgui_event_timer:
-						//å¦‚æœæ­¥é•¿ç³»æ•°ä¸ä¸º0ï¼Œå¹¶ä¸”æ»‘åŠ¨ç‚¹ä¸ä¸º1åˆ™æ»‘åŠ¨çª—å£
-						//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
+						//Èç¹û²½³¤ÏµÊı²»Îª0£¬²¢ÇÒ»¬¶¯µã²»Îª1Ôò»¬¶¯´°¿Ú
+						//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
 						//_scroll_step_sx -= 0.002;
-						//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
+						//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
 						//if(_scroll_step_sx<0)_scroll_step_sx = 0;
-						//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
+						//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
 						//_scroll_point += _scroll_speed*_scroll_step_sx;
-						//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
-						//æ›´æ–°æ»šåŠ¨æ»‘å—
-						//è¿™æ¡è¡¨è¾¾å¼å¯ä»¥åˆ é™¤
+						//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
+						//¸üĞÂ¹ö¶¯»¬¿é
+						//ÕâÌõ±í´ïÊ½¿ÉÒÔÉ¾³ı
 						//point(_scroll_point);
 						//
 						if((_scroll_step_sx<=0.0 )|| (_scroll_point <= 0.0)|| (_scroll_point>=1.0))
@@ -418,7 +420,7 @@ int sdl_scroll::sysevent(SDL_Event* e)
 							SDL_RemoveTimer(_scroll_timer);
 							_scroll_timer = 0;
 						}
-						//å‘é€æ¶ˆæ¯
+						//·¢ËÍÏûÏ¢
 						if(_scroll_board)
 						{
 							scroll_event(_scroll_board);
@@ -440,7 +442,7 @@ int sdl_scroll::sysevent(SDL_Event* e)
 //
 //
 //
-//						æ°´å¹³æ»šåŠ¨æ¡ç±»
+//						Ë®Æ½¹ö¶¯ÌõÀà
 //
 //
 //
@@ -451,24 +453,24 @@ int sdl_scroll::sysevent(SDL_Event* e)
 typedef class sdl_v_scroll : public GUI<sdl_v_scroll,sdl_scroll>
 {
 	public:
-		// ç©ºç™½æ„é€ å‡½æ•° //
+		// ¿Õ°×¹¹Ôìº¯Êı //
 		sdl_v_scroll();
-		// å¸¦å‚æ„é€ å‡½æ•° //
+		// ´ø²Î¹¹Ôìº¯Êı //
 		sdl_v_scroll(const char*,int,int,int,int,Uint32);
-		// ç©ºç™½åˆå§‹åŒ–å‡½æ•° //
+		// ¿Õ°×³õÊ¼»¯º¯Êı //
 		int init();
-		// å¸¦å‚åˆå§‹åŒ–å‡½æ•° //
+		// ´ø²Î³õÊ¼»¯º¯Êı //
 		int init(const char*,int,int,int,int,Uint32);
-		// ç³»ç»Ÿäº‹ä»¶å¤„ç†å‡½æ•° //
+		// ÏµÍ³ÊÂ¼ş´¦Àíº¯Êı //
 		int sysevent(SDL_Event*);
 	public:
-		// æœ€å·¦ç‚¹ //
+		// ×î×óµã //
 		int left();
-		// æœ€å³ç‚¹ //
+		// ×îÓÒµã //
 		int right();
-		/* è®¾ç½®æ»šåŠ¨åˆå§‹é€Ÿåº¦ */
+		/* ÉèÖÃ¹ö¶¯³õÊ¼ËÙ¶È */
 		int scroll(int);
-		/* è®¾ç½®æ»šåŠ¨ç‚¹çš„å€¼ */
+		/* ÉèÖÃ¹ö¶¯µãµÄÖµ */
 		int point(float);
 }*sdl_v_scroll_ptr;
 sdl_v_scroll::sdl_v_scroll()
@@ -523,11 +525,11 @@ int sdl_v_scroll::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_event_timer:
-					//å¦‚æœæ­¥é•¿ç³»æ•°ä¸ä¸º0ï¼Œå¹¶ä¸”æ»‘åŠ¨ç‚¹ä¸ä¸º1åˆ™æ»‘åŠ¨çª—å£
+					//Èç¹û²½³¤ÏµÊı²»Îª0£¬²¢ÇÒ»¬¶¯µã²»Îª1Ôò»¬¶¯´°¿Ú
 					_scroll_step_sx -= 0.002;
 					if(_scroll_step_sx<0)_scroll_step_sx = 0;
 					_scroll_point += _scroll_speed*_scroll_step_sx;
-					//æ›´æ–°æ»šåŠ¨æ»‘å—
+					//¸üĞÂ¹ö¶¯»¬¿é
 					point(_scroll_point);
 				break;
 			}
@@ -545,7 +547,7 @@ int sdl_v_scroll::right()
 }
 int sdl_v_scroll::scroll(int pstep)
 {
-	//æ›´æ–°æ»šåŠ¨æ­¥é•¿é€Ÿåº¦
+	//¸üĞÂ¹ö¶¯²½³¤ËÙ¶È
 	_scroll_speed = pstep/_rect.w*1.0;
 	return sdl_scroll::scroll(pstep);
 }
@@ -562,7 +564,7 @@ int sdl_v_scroll::point(float p)
 	{
 		_scroll_point = 0;
 	}
-	//æ›´æ–°æ»šåŠ¨æ»‘å—
+	//¸üĞÂ¹ö¶¯»¬¿é
 	pt = (_rect.w-bar.clip_rect()->w)*_scroll_point;
 	_scroll_bar_rect.x = pt;
 	//
@@ -575,7 +577,7 @@ int sdl_v_scroll::point(float p)
 //
 //
 //
-//						å‚ç›´æ»šåŠ¨æ¡ç±»
+//						´¹Ö±¹ö¶¯ÌõÀà
 //
 //
 //
@@ -586,24 +588,24 @@ int sdl_v_scroll::point(float p)
 typedef class sdl_h_scroll : public GUI<sdl_h_scroll,sdl_scroll>
 {
 	public:
-		/* ç©ºç™½æ„é€ å‡½æ•° */
+		/* ¿Õ°×¹¹Ôìº¯Êı */
 		sdl_h_scroll();
-		/* å¸¦å‚æ„é€ å‡½æ•° */
+		/* ´ø²Î¹¹Ôìº¯Êı */
 		sdl_h_scroll(const char*,int,int,int,int,Uint32);
-		/* ç©ºç™½åˆå§‹å‡½æ•° */
+		/* ¿Õ°×³õÊ¼º¯Êı */
 		int init();
-		/* å¸¦å‚åˆå§‹å‡½æ•° */
+		/* ´ø²Î³õÊ¼º¯Êı */
 		int init(const char*,int,int,int,int,Uint32);
-		/* ç³»ç»Ÿäº‹ä»¶å¤„ç†å‡½æ•° */
+		/* ÏµÍ³ÊÂ¼ş´¦Àíº¯Êı */
 		int sysevent(SDL_Event*);
 	public:
-		/* æœ€é¡¶ç‚¹ */
+		/* ×î¶¥µã */
 		int top();
-		/* æœ€åº•ç‚¹ */
+		/* ×îµ×µã */
 		int bottom();
-		/* è®¾ç½®æ»šåŠ¨åˆå§‹é€Ÿåº¦ */
+		/* ÉèÖÃ¹ö¶¯³õÊ¼ËÙ¶È */
 		int scroll(int);
-		/* è®¾ç½®æ»šåŠ¨ç‚¹çš„å€¼ */
+		/* ÉèÖÃ¹ö¶¯µãµÄÖµ */
 		int point(float);
 }*sdl_h_scroll_ptr;
 sdl_h_scroll::sdl_h_scroll()
@@ -656,11 +658,11 @@ int sdl_h_scroll::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_event_timer:
-					//å¦‚æœæ­¥é•¿ç³»æ•°ä¸ä¸º0ï¼Œå¹¶ä¸”æ»‘åŠ¨ç‚¹ä¸ä¸º1åˆ™æ»‘åŠ¨çª—å£
+					//Èç¹û²½³¤ÏµÊı²»Îª0£¬²¢ÇÒ»¬¶¯µã²»Îª1Ôò»¬¶¯´°¿Ú
 					_scroll_step_sx -= 0.002;
 					if(_scroll_step_sx<0)_scroll_step_sx = 0;
 					_scroll_point += _scroll_speed*_scroll_step_sx;
-					//æ›´æ–°æ»šåŠ¨æ»‘å—
+					//¸üĞÂ¹ö¶¯»¬¿é
 					point(_scroll_point);
 				break;
 			}
@@ -678,7 +680,7 @@ int sdl_h_scroll::bottom()
 }
 int sdl_h_scroll::scroll(int pstep)
 {
-	//æ›´æ–°æ»šåŠ¨æ­¥é•¿é€Ÿåº¦
+	//¸üĞÂ¹ö¶¯²½³¤ËÙ¶È
 	_scroll_speed = pstep/_rect.h*1.0;
 	return sdl_scroll::scroll(pstep);
 
@@ -696,22 +698,17 @@ int sdl_h_scroll::point(float p)
 	{
 		_scroll_point = 0;
 	}
-	//æ›´æ–°æ»šåŠ¨æ»‘å—
+	//¸üĞÂ¹ö¶¯»¬¿é
 	pt = (_rect.h-bar.clip_rect()->h)*_scroll_point;
 	_scroll_bar_rect.y = pt;
 	//
 	return sdl_scroll::point(pt);
 }
-
-
-
-
-
 //---------------------------------------------------------------
 //
 //
 //
-//									sdl_viewç±»
+//									sdl_viewÀà
 //
 //
 //
@@ -720,17 +717,17 @@ int sdl_h_scroll::point(float p)
 typedef class sdl_view_plane : public GUI<sdl_view_plane,sdl_widget>
 {
 	public:
-		/* è§†å›¾å­çª—å£é¢æ¿ç©ºç™½æ„é€ å‡½æ•° */
+		/* ÊÓÍ¼×Ó´°¿ÚÃæ°å¿Õ°×¹¹Ôìº¯Êı */
 		sdl_view_plane();
-		/* è§†å›¾å­çª—å£é¢æ¿å¸¦å‚æ„é€ å‡½æ•° */
+		/* ÊÓÍ¼×Ó´°¿ÚÃæ°å´ø²Î¹¹Ôìº¯Êı */
 		sdl_view_plane(const char*,int,int,int,int,Uint32);
-		/* è§†å›¾å­çª—å£é¢æ¿ç©ºç™½åˆå§‹åŒ–å‡½æ•° */
+		/* ÊÓÍ¼×Ó´°¿ÚÃæ°å¿Õ°×³õÊ¼»¯º¯Êı */
 		int init();
-		/* è§†å›¾å­çª—å£é¢æ¿å¸¦å‚åˆå§‹åŒ–å‡½æ•° */
+		/* ÊÓÍ¼×Ó´°¿ÚÃæ°å´ø²Î³õÊ¼»¯º¯Êı */
 		int init(const char*,int,int,int,int,Uint32);
-		/* è§†å›¾å­çª—å£é¢æ¿ç³»ç»Ÿäº‹ä»¶å¤„ç†å‡½æ•° */
+		/* ÊÓÍ¼×Ó´°¿ÚÃæ°åÏµÍ³ÊÂ¼ş´¦Àíº¯Êı */
 		int sysevent(SDL_Event*);
-		/* è§†å›¾å­çª—å£æ»šåŠ¨æ§åˆ¶å¯¹è±¡ */
+		/* ÊÓÍ¼×Ó´°¿Ú¹ö¶¯¿ØÖÆ¶ÔÏó */
 		int scroll_bar(sdl_scroll*,sdl_scroll*);
 	protected:
 		int _is_down;
@@ -802,32 +799,32 @@ int sdl_view_plane::sysevent(SDL_Event* e)
 typedef class sdl_view : public GUI<sdl_view,sdl_widget>
 {
 	public:
-		/* è§†å›¾ç±»çš„ç©ºç™½æ„é€ å‡½æ•° */
+		/* ÊÓÍ¼ÀàµÄ¿Õ°×¹¹Ôìº¯Êı */
 		sdl_view();
-		/* è§†å›¾ç±»çš„å¸¦å‚æ„é€ å‡½æ•° */
+		/* ÊÓÍ¼ÀàµÄ´ø²Î¹¹Ôìº¯Êı */
 		sdl_view(const char*,int,int,int,int,Uint32);
-		/* è§†å›¾ç±»çš„ç©ºç™½æ„é€ å‡½æ•° */
+		/* ÊÓÍ¼ÀàµÄ¿Õ°×¹¹Ôìº¯Êı */
 		int init();
-		/* è§†å›¾ç±»çš„å¸¦å‚åˆå§‹åŒ–å‡½æ•° */
+		/* ÊÓÍ¼ÀàµÄ´ø²Î³õÊ¼»¯º¯Êı */
 		int init(const char*,int,int,int,int,Uint32);
-		/* ç³»ç»Ÿäº‹ä»¶å¤„ç†å‡½æ•° */
+		/* ÏµÍ³ÊÂ¼ş´¦Àíº¯Êı */
 		int sysevent(SDL_Event*);
-		/* è®¾ç½®è§†å›¾æ»šåŠ¨å‚æ•° */
+		/* ÉèÖÃÊÓÍ¼¹ö¶¯²ÎÊı */
 		int scroll(Uint32,SDL_Rect*);
 	protected:
-		/* è§†å›¾é¢æ¿çš„ç³»ç»Ÿå‡½æ•° */
+		/* ÊÓÍ¼Ãæ°åµÄÏµÍ³º¯Êı */
 	public:
 		sdl_view_plane view;
 	protected:
-		/* å‚ç›´æ»šåŠ¨æ¡ */
+		/* ´¹Ö±¹ö¶¯Ìõ */
 		sdl_scroll* _vertical;
-		/* æ°´å¹³æ»šåŠ¨æ¡ */
+		/* Ë®Æ½¹ö¶¯Ìõ */
 		sdl_scroll* _horizontal;
-		/* æ»šåŠ¨æ–¹å¼*/
+		/* ¹ö¶¯·½Ê½*/
 		Uint32 _scroll_type;
-		/* é¼ æ ‡åæ ‡ */
+		/* Êó±ê×ø±ê */
 		SDL_Point _mouse_pt;
-		/* é¼ æ ‡æ‹–åŠ¨æ—¶é—´ */
+		/* Êó±êÍÏ¶¯Ê±¼ä */
 		int _mouse_drag_time;
 }*sdl_view_ptr;
 sdl_view::sdl_view()
@@ -907,27 +904,27 @@ int sdl_view::sysevent(SDL_Event*e)
 	}
 }
 /* 
-	pflagä½¿ç”¨ä½æ ‡ç­¾1ä¸2ç»„åˆ,
-	1è¡¨ç¤ºå‚ç›´æ»šåŠ¨,
-	2è¡¨ç¤ºæ°´å¹³æ»šåŠ¨ï¼Œ
-	1|2è¡¨ç¤ºæ°´å¹³ä¸å‚ç›´æ»šåŠ¨
-	rtå‚æ•°è¡¨ç¤ºæ»šåŠ¨èŒƒå›´
-	xä¸wä¸€ç»„è¡¨ç¤ºæ°´å¹³èŒƒå›´
-	yä¸hä¸€çº§è¡¨ç¤ºå‚ç›´èŒƒå›´
+	pflagÊ¹ÓÃÎ»±êÇ©1Óë2×éºÏ,
+	1±íÊ¾´¹Ö±¹ö¶¯,
+	2±íÊ¾Ë®Æ½¹ö¶¯£¬
+	1|2±íÊ¾Ë®Æ½Óë´¹Ö±¹ö¶¯
+	rt²ÎÊı±íÊ¾¹ö¶¯·¶Î§
+	xÓëwÒ»×é±íÊ¾Ë®Æ½·¶Î§
+	yÓëhÒ»¼¶±íÊ¾´¹Ö±·¶Î§
  */
 int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 {
 	_scroll_type = pflag;
 	if(_scroll_type&1)
 	{
-		//å‚ç›´æ»šåŠ¨æ¡
+		//´¹Ö±¹ö¶¯Ìõ
 		if(!_vertical)
 		{
 			_vertical = add<sdl_scroll>("",_rect.w-30,0,30,_rect.h,1);
 			_vertical->fill_rect(NULL,0xff00ff);
 			_vertical->update();
 		}
-		//å¦‚æœæ”¹å˜æ»šåŠ¨èŒƒå›´
+		//Èç¹û¸Ä±ä¹ö¶¯·¶Î§
 		if(rt)
 		{
 			_vertical->scroll(&view,rt->y,rt->h);
@@ -945,7 +942,7 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 			_horizontal->fill_rect(NULL,0xff00ff);
 			_horizontal->update();
 		}
-		//å¦‚æœæ”¹å˜æ»šåŠ¨èŒƒå›´
+		//Èç¹û¸Ä±ä¹ö¶¯·¶Î§
 		if(rt)
 		{
 			_horizontal->scroll(&view,rt->x,rt->w);
@@ -963,7 +960,7 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 //
 //
 //
-//							åˆ—è¡¨ç±»
+//							ÁĞ±íÀà
 //
 //
 //
@@ -979,7 +976,7 @@ typedef class sdl_listbox_plane : public GUI<sdl_listbox_plane,sdl_view>
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
 	protected:
-		/* è§†å›¾æ»šåŠ¨èŒƒå›´ */
+		/* ÊÓÍ¼¹ö¶¯·¶Î§ */
 		SDL_Rect _view_scroll_rect;
 }* sdl_listbox_plane_ptr;
 sdl_listbox_plane::sdl_listbox_plane()
@@ -1003,7 +1000,7 @@ int sdl_listbox_plane::init(const char* ptitle,int px,int py,int pw,int ph,Uint3
 {
 	if(sdl_view::init(ptitle,px,py,pw,ph,pflag))return -1;
 	view.fill_rect(NULL,0xffffff);
-	/* è®¾ç½®æ»šåŠ¨æ–¹å¼ */
+	/* ÉèÖÃ¹ö¶¯·½Ê½ */
 	_view_scroll_rect.x = 0;
 	_view_scroll_rect.w = 0;
 	_view_scroll_rect.y = 0;
@@ -1019,7 +1016,7 @@ int sdl_listbox_plane::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_window_focus:
-					/* å¦‚æœå¤±å»ç„¦ç‚¹ï¼Œåˆ†ææ˜¯å¦è¢«å­çº§çª—å£è·å–ç„¦ç‚¹ */
+					/* Èç¹ûÊ§È¥½¹µã£¬·ÖÎöÊÇ·ñ±»×Ó¼¶´°¿Ú»ñÈ¡½¹µã */
 					if(!(int)(e->user.data1))
 					{
 						if(!is_child((sdl_board*)(e->user.data2)))
@@ -1043,52 +1040,52 @@ typedef class sdl_listbox : public GUI<sdl_listbox,sdl_widget>
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
 		/* 
-			 é‡è½½çª—å£åæ ‡è®¾ç½®å‡½æ•°
-			 ç”¨äºåŒæ­¥æ›´æ–°æ»‘åŠ¨é¢æ¿åæ ‡ 
+			 ÖØÔØ´°¿Ú×ø±êÉèÖÃº¯Êı
+			 ÓÃÓÚÍ¬²½¸üĞÂ»¬¶¯Ãæ°å×ø±ê 
 		 */
 		int pos(int,int);
 		int pos_x(int);
 		int pos_y(int);
 	public:
 		/* 
-			åŠ å…¥æˆ–ç§»é™¤åˆ—è¡¨é¡¹ç›®
-			å½“é¡¹ç›®å¯¹è±¡ä¸ºNULLæ—¶è¡¨ç¤ºç§»é™¤ç¬¬Nä¸ªé¡¹ç›®
-			å½“é¡¹ç›®å¯¹è±¡å­˜åœ¨æ—¶è¡¨ç¤ºåœ¨ç¬¬Nä¸ªåŠ å…¥é¡¹ç›®
+			¼ÓÈë»òÒÆ³ıÁĞ±íÏîÄ¿
+			µ±ÏîÄ¿¶ÔÏóÎªNULLÊ±±íÊ¾ÒÆ³ıµÚN¸öÏîÄ¿
+			µ±ÏîÄ¿¶ÔÏó´æÔÚÊ±±íÊ¾ÔÚµÚN¸ö¼ÓÈëÏîÄ¿
 		 */
 		template<class T>T* item(int,T*);
 		/* 
-			è¿”å›ç¬¬Nä¸ªé¡¹ç›®å¯¹è±¡æŒ‡é’ˆï¼Œå¤±è´¥æ—¶è¿”å›NULL
+			·µ»ØµÚN¸öÏîÄ¿¶ÔÏóÖ¸Õë£¬Ê§°ÜÊ±·µ»ØNULL
 		 */
 		template<class T>T* item(int);
 		/* 
-			æ‹‰å¼€åˆ—è¡¨
-			æ‹‰å¼€æ—¶è¦çˆ¶çº§çª—å£æ–°å»ºä¸€ä¸ªä¾›åˆ—è¡¨é¡¹æ»‘åŠ¨çš„çª—å£
-			å‚æ•°ä¸ºæ‹‰å¼€æ—¶åˆå§‹é•¿åº¦
-			æˆåŠŸæ—¶è¿”å›0ï¼Œå¤±è´¥æ—¶è¿”å›-1
+			À­¿ªÁĞ±í
+			À­¿ªÊ±Òª¸¸¼¶´°¿ÚĞÂ½¨Ò»¸ö¹©ÁĞ±íÏî»¬¶¯µÄ´°¿Ú
+			²ÎÊıÎªÀ­¿ªÊ±³õÊ¼³¤¶È
+			³É¹¦Ê±·µ»Ø0£¬Ê§°ÜÊ±·µ»Ø-1
 		*/
 		int pull(int);
 		/* 
-			æ¨å…¥åˆ—è¡¨ 
-			æ¨å…¥æ—¶æŠŠé¡¹ç›®æ»‘åŠ¨çª—å£å…³é—­
-			æˆåŠŸæ—¶è¿”å›0ï¼Œå¤±è´¥æ—¶è¿”å›-1
+			ÍÆÈëÁĞ±í 
+			ÍÆÈëÊ±°ÑÏîÄ¿»¬¶¯´°¿Ú¹Ø±Õ
+			³É¹¦Ê±·µ»Ø0£¬Ê§°ÜÊ±·µ»Ø-1
 		 */
 		int push();
 		/* 
-			é€‰æ‹©ç¬¬Né¡¹,æˆåŠŸæ—¶è¿”å›ä¸Šæ¬¡é€‰æ‹©çš„IDï¼Œå¤±è´¥æ—¶è¿”å›-1 
+			Ñ¡ÔñµÚNÏî,³É¹¦Ê±·µ»ØÉÏ´ÎÑ¡ÔñµÄID£¬Ê§°ÜÊ±·µ»Ø-1 
 		 */
 		int select(int);
 	protected:
-		/* é¡¹ç›®ä¸ªæ•° */
+		/* ÏîÄ¿¸öÊı */
 		int _item_count;
-		/* å½“å‰é€‰ä¸­é¡¹ç›®ID */
+		/* µ±Ç°Ñ¡ÖĞÏîÄ¿ID */
 		int _current_item_id;
-		/* é¡¹ç›®æ»‘åŠ¨é¢æ¿é•¿åº¦ */
+		/* ÏîÄ¿»¬¶¯Ãæ°å³¤¶È */
 		int _item_plane_length;
-		/* é¡¹ç›®æ»‘åŠ¨é¢æ¿æŒ‡é’ˆ */
+		/* ÏîÄ¿»¬¶¯Ãæ°åÖ¸Õë */
 		sdl_listbox_plane* _item_plane;
-		/* é¡¹ç›®ä¸‹æ‹‰æŒ‰é’®æŒ‡é’ˆ */
+		/* ÏîÄ¿ÏÂÀ­°´Å¥Ö¸Õë */
 		sdl_button* _list_button;
-		/* é¡¹ç›®åˆ—è¡¨çŠ¶æ€ */
+		/* ÏîÄ¿ÁĞ±í×´Ì¬ */
 		int _list_status;
 }*sdl_listbox_ptr;
 sdl_listbox::sdl_listbox()
@@ -1118,7 +1115,7 @@ int sdl_listbox::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pfla
 {
 	SDL_Rect rt;
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
-	/* åˆ›å»ºé¡¹ç›®æ»‘åŠ¨é¢æ¿ */
+	/* ´´½¨ÏîÄ¿»¬¶¯Ãæ°å */
 	_item_plane = new sdl_listbox_plane("",px,py+ph,pw,_item_plane_length,1);
 	rt.y = -ph;
 	rt.h = 0;
@@ -1154,16 +1151,16 @@ int sdl_listbox::sysevent(SDL_Event* e)
 			{
 				case sdlgui_window_focus:
 					/* 
-					 å½“ä¸‹æ‹‰åˆ—è¡¨ç„¦ç‚¹æ”¹å˜æ—¶ 
-					 åˆ†ææ˜¯å¦è¢«åˆ—è¡¨æ»‘åŠ¨é¢æ¿è·å–äº† 
+					 µ±ÏÂÀ­ÁĞ±í½¹µã¸Ä±äÊ± 
+					 ·ÖÎöÊÇ·ñ±»ÁĞ±í»¬¶¯Ãæ°å»ñÈ¡ÁË 
 					*/
 					if(!(int)(e->user.data1))
 					{
-						/* å…ˆå–è·å–ç„¦ç‚¹çš„å¯¹è±¡ */
+						/* ÏÈÈ¡»ñÈ¡½¹µãµÄ¶ÔÏó */
 						tobj = (sdl_board*)(e->user.data2);
 						/* 
-							 å¦‚æœç„¦ç‚¹å¯¹è±¡æ˜¯æ»‘åŠ¨é¢æ¿æˆ–æ»‘åŠ¨é¢æ¿çš„å­çº§çª—å£ 
-							 åˆ™å¤„ç†æ•°æ®ï¼Œå¦åˆ™å…³é—­æ»‘åŠ¨é¢æ¿ 
+							 Èç¹û½¹µã¶ÔÏóÊÇ»¬¶¯Ãæ°å»ò»¬¶¯Ãæ°åµÄ×Ó¼¶´°¿Ú 
+							 Ôò´¦ÀíÊı¾İ£¬·ñÔò¹Ø±Õ»¬¶¯Ãæ°å 
 						 */
 						if((tobj == _item_plane) || (_item_plane->is_child(tobj)))
 						{
@@ -1197,18 +1194,18 @@ T* sdl_listbox::item(int pid)
 }
 int sdl_listbox::pull(int plength=0)
 {
-	/* å¦‚æœæŒ‡å®šé•¿åº¦ä¸ä¸º0ï¼Œæ›´æ–°æ»‘åŠ¨çª—å£é•¿åº¦ */
+	/* Èç¹ûÖ¸¶¨³¤¶È²»Îª0£¬¸üĞÂ»¬¶¯´°¿Ú³¤¶È */
 	if(plength)
 	{
 		_item_plane_length = plength;
 		if(_item_plane)_item_plane->height(_item_plane_length);
 	}
-	/* å¦åˆ™å¦‚æœæ»‘åŠ¨é¢æ¿ä¸å­˜åœ¨çˆ¶çº§,åˆ™æŠŠé¢æ¿åŠ å…¥åˆ°çˆ¶çº§çª—å£ */
+	/* ·ñÔòÈç¹û»¬¶¯Ãæ°å²»´æÔÚ¸¸¼¶,Ôò°ÑÃæ°å¼ÓÈëµ½¸¸¼¶´°¿Ú */
 	if(_item_plane && !_item_plane->parent())
 	{
 		parent()->add<sdl_listbox_plane>(_item_plane);
 	}
-	/* å¦‚æœæ»‘åŠ¨é¢æ¿å­˜åœ¨,åˆ™æ˜¾ç¤ºé¢æ¿ */
+	/* Èç¹û»¬¶¯Ãæ°å´æÔÚ,ÔòÏÔÊ¾Ãæ°å */
 	if(_item_plane)
 	{
 		_item_plane->show();
@@ -1223,4 +1220,5 @@ int sdl_listbox::select(int pid)
 {
 	return 0;
 }
+
 #endif// __SDLGUI_TOOLS_HANDLE__
