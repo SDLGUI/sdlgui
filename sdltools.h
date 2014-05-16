@@ -97,7 +97,6 @@ int sdl_edit::sysevent(SDL_Event* e)
 			{
 				case sdlgui_ime_cn_up:
 				case sdlgui_ime_en:
-					//cout<<e->user.data1<<endl;
 					push((char*)(e->user.data1));
 				break;
 				case sdlgui_ime_cn_ctrl:
@@ -125,7 +124,6 @@ int sdl_edit::push(const char* p = NULL)
 	t = strcat(t,p);
 	//text(t);
 	//text("123456");
-	//cout<<"sdl_edit printf:"<<t<<endl;
 	delete t;
 	return 0;
 }
@@ -262,12 +260,6 @@ int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 }
 float sdl_scroll::scroll(float ps)
 {
-	SDL_Event e;
-	SDL_UserEvent ue;
-	if(_scroll_board)
-	{
-		//_scroll_board->event(NULL);
-	}
 	return ps;
 }
 int sdl_scroll::scroll(int pstep)
@@ -283,7 +275,7 @@ int sdl_scroll::scroll(int pstep)
 }
 float sdl_scroll::scroll()
 {
-
+	return _scroll_point;
 }
 float sdl_scroll::point()
 {
@@ -353,27 +345,14 @@ int sdl_scroll::sysevent(SDL_Event* e)
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
-			_scroll_start_time = clock();
-			//这条表达式可以删除
-			//_scroll_start_y = e->button.y;
-			_scroll_is_change = 1;
-		break;
 		case SDL_FINGERDOWN:
 			_scroll_start_time = clock();
-			//这条表达式可以删除
-			//_scroll_start_y = e->tfinger.y*50;
 			_scroll_is_change = 1;
 		break;
 		case SDL_MOUSEBUTTONUP:
-			_scroll_is_change = 0;
-			//计算步长(这条表达式可以删除)
 		  //_scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
-			//开始滚动事件
-			scroll(int(_scroll_step*20)); 
-		break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
-			//计算步长(这条表达式可以删除)
 		  //_scroll_step = (e->tfinger.y*50 - _scroll_start_y)/(clock()-_scroll_start_time);
 			//开始滚动事件
 			scroll(int(_scroll_step*20));
@@ -512,10 +491,12 @@ int sdl_v_scroll::sysevent(SDL_Event* e)
 			_scroll_start_y = e->tfinger.x*50;
 		break;
 		case SDL_MOUSEBUTTONUP:
-			_scroll_step = (e->button.x - _scroll_start_y);
+			//_scroll_step = (e->button.x - _scroll_start_y);
+		  _scroll_step = (e->button.x - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
 		break;
 		case SDL_FINGERUP:
-			_scroll_step = (e->tfinger.x*50 - _scroll_start_y);
+			//_scroll_step = (e->tfinger.x*50 - _scroll_start_y);
+		  _scroll_step = (e->tfinger.x*50 - _scroll_start_y)/(clock()-_scroll_start_time);
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
@@ -550,7 +531,7 @@ int sdl_v_scroll::right()
 int sdl_v_scroll::scroll(int pstep)
 {
 	//更新滚动步长速度
-	_scroll_speed = pstep/_rect.w*1.0;
+	_scroll_speed = (float)pstep/_rect.w*1.0;
 	return sdl_scroll::scroll(pstep);
 }
 int sdl_v_scroll::scroll(sdl_board* o,int x,int y)
@@ -652,7 +633,9 @@ int sdl_h_scroll::sysevent(SDL_Event* e)
 			_scroll_start_y = e->tfinger.y*50;
 		break;
 		case SDL_MOUSEBUTTONUP:
-			_scroll_step = (e->button.y - _scroll_start_y);
+		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
+			//cout<<_scroll_step<<endl;
+			//_scroll_step = (e->button.y - _scroll_start_y);
 		break;
 		case SDL_FINGERUP:
 			_scroll_step = (e->tfinger.y*50 - _scroll_start_y);
@@ -668,10 +651,11 @@ int sdl_h_scroll::sysevent(SDL_Event* e)
 			{
 				case sdlgui_event_timer:
 					//如果步长系数不为0，并且滑动点不为1则滑动窗口
-					_scroll_step_sx -= 0.002;
+					_scroll_step_sx -= 0.02;
 					if(_scroll_step_sx<0)_scroll_step_sx = 0;
 					_scroll_point += _scroll_speed*_scroll_step_sx;
 					//更新滚动滑块
+					//cout<<_scroll_speed<<endl;
 					point(_scroll_point);
 				break;
 			}
@@ -690,7 +674,7 @@ int sdl_h_scroll::bottom()
 int sdl_h_scroll::scroll(int pstep)
 {
 	//更新滚动步长速度
-	_scroll_speed = pstep/_rect.h*1.0;
+	_scroll_speed = (float)pstep/_rect.h*1.0;
 	return sdl_scroll::scroll(pstep);
 
 }
@@ -784,10 +768,9 @@ int sdl_view_plane::sysevent(SDL_Event* e)
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEMOTION:
-		case SDL_FINGERDOWN:
 		case SDL_FINGERUP:
+		case SDL_FINGERDOWN:
 		case SDL_FINGERMOTION:
-			//cout<<"this:"<<this<<":"<<parent()<<endl;
 			if(parent())parent()->event(e);
 		break;
 		case SDL_USEREVENT:
@@ -795,7 +778,6 @@ int sdl_view_plane::sysevent(SDL_Event* e)
 			{
 				case sdlgui_scroll_point:
 					pt = (((float*)(e->user.data2))[1]);
-					//cout<<pt<<endl;
 					if(e->user.data1 == _vertical)
 					{
 						pos_x(pt);
@@ -870,7 +852,7 @@ int sdl_view::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 }
 int sdl_view::sysevent(SDL_Event*e)
 {
-	int scroll_step;
+	float scroll_step;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
@@ -882,19 +864,20 @@ int sdl_view::sysevent(SDL_Event*e)
 		case SDL_MOUSEBUTTONUP:
 			if(_vertical)
 			{
-				//cout<<this<<endl;
-				scroll_step = e->motion.y-_mouse_pt.y;
-				//cout<<scroll_step<<endl;
-				_vertical->scroll(scroll_step);
+				scroll_step = (e->button.x - _mouse_pt.x)/(clock()-_mouse_drag_time+0.0001)*1;
+				//scroll_step = (e->motion.x-_mouse_pt.x);
+				_vertical->scroll(scroll_step*200);
 				_vertical->scroll_event(&view);
 				//_vertical->scroll(int((e->motion.y-_mouse_pt.y)/(clock()-_mouse_drag_time)));
 			}
 			if(_horizontal)
 			{
-				scroll_step = e->motion.x-_mouse_pt.x;
-				_horizontal->scroll(scroll_step);
-				_horizontal->scroll_event(&view);
+				cout<<e<<endl;
+				scroll_step = (e->button.y - _mouse_pt.y)/(clock()-_mouse_drag_time+0.0001)*1;
+				//scroll_step = e->motion.y-_mouse_pt.y;
+				_horizontal->scroll(scroll_step*200);
 				//_horizontal->scroll(int((e->motion.x-_mouse_pt.x)/(clock()-_mouse_drag_time)));
+				_horizontal->scroll_event(&view);
 			}
 		break;
 		case SDL_USEREVENT:
@@ -1189,7 +1172,6 @@ int sdl_listbox::sysevent(SDL_Event* e)
 						 */
 						if((tobj == _item_plane) || (_item_plane->is_child(tobj)))
 						{
-							cout<<tobj<<endl;
 						}
 						else
 						{
