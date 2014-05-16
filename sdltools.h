@@ -369,7 +369,8 @@ int sdl_scroll::sysevent(SDL_Event* e)
 			//计算步长(这条表达式可以删除)
 		  //_scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
 			//开始滚动事件
-			scroll(int(_scroll_step*20)); break;
+			scroll(int(_scroll_step*20)); 
+		break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
 			//计算步长(这条表达式可以删除)
@@ -470,6 +471,7 @@ typedef class sdl_v_scroll : public GUI<sdl_v_scroll,sdl_scroll>
 		int right();
 		/* 设置滚动初始速度 */
 		int scroll(int);
+		int scroll(sdl_board*,int,int);
 		/* 设置滚动点的值 */
 		int point(float);
 }*sdl_v_scroll_ptr;
@@ -551,6 +553,11 @@ int sdl_v_scroll::scroll(int pstep)
 	_scroll_speed = pstep/_rect.w*1.0;
 	return sdl_scroll::scroll(pstep);
 }
+int sdl_v_scroll::scroll(sdl_board* o,int x,int y)
+{
+	return sdl_scroll::scroll(o,x,y);
+}
+
 int sdl_v_scroll::point(float p)
 {
 	int pt;
@@ -605,6 +612,8 @@ typedef class sdl_h_scroll : public GUI<sdl_h_scroll,sdl_scroll>
 		int bottom();
 		/* 设置滚动初始速度 */
 		int scroll(int);
+		/* 设置滚动对象及范围 */
+		int scroll(sdl_board*,int,int);
 		/* 设置滚动点的值 */
 		int point(float);
 }*sdl_h_scroll_ptr;
@@ -684,6 +693,10 @@ int sdl_h_scroll::scroll(int pstep)
 	_scroll_speed = pstep/_rect.h*1.0;
 	return sdl_scroll::scroll(pstep);
 
+}
+int sdl_h_scroll::scroll(sdl_board* o,int a,int b)
+{
+	return sdl_scroll::scroll(o,a,b);
 }
 int sdl_h_scroll::point(float p)
 {
