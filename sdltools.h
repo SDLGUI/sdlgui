@@ -634,8 +634,6 @@ int sdl_h_scroll::sysevent(SDL_Event* e)
 		break;
 		case SDL_MOUSEBUTTONUP:
 		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
-			//cout<<_scroll_step<<endl;
-			//_scroll_step = (e->button.y - _scroll_start_y);
 		break;
 		case SDL_FINGERUP:
 			_scroll_step = (e->tfinger.y*50 - _scroll_start_y);
@@ -655,7 +653,6 @@ int sdl_h_scroll::sysevent(SDL_Event* e)
 					if(_scroll_step_sx<0)_scroll_step_sx = 0;
 					_scroll_point += _scroll_speed*_scroll_step_sx;
 					//¸üÐÂ¹ö¶¯»¬¿é
-					//cout<<_scroll_speed<<endl;
 					point(_scroll_point);
 				break;
 			}
@@ -865,18 +862,13 @@ int sdl_view::sysevent(SDL_Event*e)
 			if(_vertical)
 			{
 				scroll_step = (e->button.x - _mouse_pt.x)/(clock()-_mouse_drag_time+0.0001)*1;
-				//scroll_step = (e->motion.x-_mouse_pt.x);
 				_vertical->scroll(scroll_step*200);
 				_vertical->scroll_event(&view);
-				//_vertical->scroll(int((e->motion.y-_mouse_pt.y)/(clock()-_mouse_drag_time)));
 			}
 			if(_horizontal)
 			{
-				cout<<e<<endl;
 				scroll_step = (e->button.y - _mouse_pt.y)/(clock()-_mouse_drag_time+0.0001)*1;
-				//scroll_step = e->motion.y-_mouse_pt.y;
 				_horizontal->scroll(scroll_step*200);
-				//_horizontal->scroll(int((e->motion.x-_mouse_pt.x)/(clock()-_mouse_drag_time)));
 				_horizontal->scroll_event(&view);
 			}
 		break;
@@ -1020,6 +1012,14 @@ int sdl_listbox_plane::sysevent(SDL_Event* e)
 {
 	switch(e->type)
 	{
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+		case SDL_MOUSEMOTION:
+		case SDL_FINGERDOWN:
+		case SDL_FINGERUP:
+		case SDL_FINGERMOTION:
+			if(parent())parent()->event(e);
+		break;
 		case SDL_USEREVENT:
 			switch(e->user.code)
 			{
