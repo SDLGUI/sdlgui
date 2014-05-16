@@ -941,12 +941,17 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 		//如果改变滚动范围
 		if(rt)
 		{
-			_vertical->scroll(&view,rt->x,rt->w);
+			_vertical->scroll(&view,rt->w,rt->x);
 		}
 		else
 		{
-			_vertical->scroll(&view,-_rect.w,0);
+			_vertical->scroll(&view,0,-_rect.w);
 		}
+	}
+	else
+	if(_vertical)
+	{
+		_vertical->destroy();
 	}
 	if(_scroll_type&2)
 	{
@@ -960,12 +965,17 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 		//如果改变滚动范围
 		if(rt)
 		{
-			_horizontal->scroll(&view,rt->y,rt->h);
+			_horizontal->scroll(&view,rt->h,rt->y);
 		}
 		else
 		{
-			_horizontal->scroll(&view,-_rect.h,0);
+			_horizontal->scroll(&view,0,-_rect.h);
 		}
+	}
+	else
+	if(_horizontal)
+	{
+		_horizontal->destroy();
 	}
 	view.scroll_bar((_vertical)?_vertical:NULL,(_horizontal)?_horizontal:NULL);
 	return 0;
@@ -1134,7 +1144,7 @@ int sdl_listbox::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pfla
 	_item_plane = new sdl_listbox_plane("",px,py+ph,pw,_item_plane_length,1);
 	rt.y = -ph;
 	rt.h = 0;
-	_item_plane->scroll(1,&rt);
+	_item_plane->scroll(2,&rt);
 	_item_plane->fill_rect(NULL,0x0f00fa);
 	return 0;
 }
