@@ -741,11 +741,12 @@ typedef class sdl_view_plane : public GUI<sdl_view_plane,sdl_widget>
 		/* 视图子窗口面板系统事件处理函数 */
 		int sysevent(SDL_Event*);
 		/* 视图子窗口滚动控制对象 */
-		int scroll_bar(sdl_scroll*,sdl_scroll*);
+		int scroll_bar(sdl_v_scroll*,sdl_h_scroll*);
 	protected:
 		int _is_down;
 		int _spte;
-		sdl_scroll *_vertical,*_horizontal;
+		sdl_v_scroll* _vertical;
+		sdl_h_scroll* _horizontal;
 }*sdl_view_plane_ptr;
 sdl_view_plane::sdl_view_plane()
 :
@@ -769,7 +770,7 @@ int sdl_view_plane::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 p
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
 	return 0;
 }
-int sdl_view_plane::scroll_bar(sdl_scroll* v,sdl_scroll* h)
+int sdl_view_plane::scroll_bar(sdl_v_scroll* v,sdl_h_scroll* h)
 {
 	_vertical = v;
 	_horizontal = h;
@@ -797,12 +798,12 @@ int sdl_view_plane::sysevent(SDL_Event* e)
 					//cout<<pt<<endl;
 					if(e->user.data1 == _vertical)
 					{
-						pos_y(pt);
+						pos_x(pt);
 					}
 					else
 					if(e->user.data1 == _horizontal)
 					{
-						pos_x(pt);
+						pos_y(pt);
 					}
 				break;
 			}
@@ -830,9 +831,9 @@ typedef class sdl_view : public GUI<sdl_view,sdl_widget>
 		sdl_view_plane view;
 	protected:
 		/* 垂直滚动条 */
-		sdl_scroll* _vertical;
+		sdl_v_scroll* _vertical;
 		/* 水平滚动条 */
-		sdl_scroll* _horizontal;
+		sdl_h_scroll* _horizontal;
 		/* 滚动方式*/
 		Uint32 _scroll_type;
 		/* 鼠标坐标 */
@@ -930,39 +931,40 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 	_scroll_type = pflag;
 	if(_scroll_type&1)
 	{
-		//垂直滚动条
+		//水平滚动条
 		if(!_vertical)
 		{
-			_vertical = add<sdl_scroll>("",_rect.w-30,0,30,_rect.h,1);
+			_vertical = add<sdl_v_scroll>("",0,_rect.h-30,_rect.w,30,1);
 			_vertical->fill_rect(NULL,0xff00ff);
 			_vertical->update();
 		}
 		//如果改变滚动范围
 		if(rt)
 		{
-			_vertical->scroll(&view,rt->y,rt->h);
+			_vertical->scroll(&view,rt->x,rt->w);
 		}
 		else
 		{
-			_vertical->scroll(&view,-_rect.h,0);
+			_vertical->scroll(&view,-_rect.w,0);
 		}
 	}
 	if(_scroll_type&2)
 	{
+		//垂直滚动条
 		if(!_horizontal)
 		{
-			_horizontal= add<sdl_scroll>("",0,_rect.h-30,_rect.w-30,30,1);
+			_horizontal= add<sdl_h_scroll>("",_rect.w - 30,0,30,_rect.h,1);
 			_horizontal->fill_rect(NULL,0xff00ff);
 			_horizontal->update();
 		}
 		//如果改变滚动范围
 		if(rt)
 		{
-			_horizontal->scroll(&view,rt->x,rt->w);
+			_horizontal->scroll(&view,rt->y,rt->h);
 		}
 		else
 		{
-			_horizontal->scroll(&view,-_rect.w,0);
+			_horizontal->scroll(&view,-_rect.h,0);
 		}
 	}
 	view.scroll_bar((_vertical)?_vertical:NULL,(_horizontal)?_horizontal:NULL);
