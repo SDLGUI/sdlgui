@@ -1187,6 +1187,11 @@ int sdl_board::size(int w,int h)
 {
 	if(w>0)_rect.w = w;
 	if(h>0)_rect.h = h;
+	//初始化窗口表面大小
+	//sdlsurface t(0,w,h,32,0,0,0,0);
+	//blit_surface(NULL,&t,NULL);
+	//sdlsurface::init(0,w,h,32,0,0,0,0);
+	_board->init(0,w,h,32,0,0,0,0);
 	return 0;
 }
 //--------------------------------------
