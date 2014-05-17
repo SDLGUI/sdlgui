@@ -283,9 +283,7 @@ float sdl_scroll::point()
 }
 int sdl_scroll::point(float p)
 {
-	bg.blit_surface(NULL,this,NULL);
-	bar.blit_surface(NULL,this,&_scroll_bar_rect);
-	return 0;
+	return update();
 }
 int sdl_scroll::scroll(sdl_board* b,int pt,int pb)
 {
@@ -346,22 +344,24 @@ int sdl_scroll::sysevent(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
-			_scroll_start_time = clock();
-			_scroll_is_change = 1;
+			if(!_scroll_is_change)
+			{
+				_scroll_start_time = clock();
+				_scroll_is_change = 1;
+			}
 		break;
 		case SDL_MOUSEBUTTONUP:
-		  //_scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
+			_scroll_is_change = 0;
+			scroll(int(_scroll_step*20));
+		break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
-		  //_scroll_step = (e->tfinger.y*50 - _scroll_start_y)/(clock()-_scroll_start_time);
 			//开始滚动事件
-			scroll(int(_scroll_step*20));
+			scroll(int(_scroll_step*200));
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
 			{
-				//这条表达式可以删除
-				//_scroll_point = (((float)(e->button.y-global_pos_y()))/(float)_rect.h);
 				point(_scroll_point);
 				//发送消息
 				if(_scroll_board)
@@ -496,12 +496,18 @@ int sdl_v_scroll::sysevent(SDL_Event* e)
 		break;
 		case SDL_FINGERUP:
 			//_scroll_step = (e->tfinger.x*50 - _scroll_start_y);
-		  _scroll_step = (e->tfinger.x*50 - _scroll_start_y)/(clock()-_scroll_start_time);
+		  _scroll_step = (e->tfinger.x*50 - _scroll_start_y)/(clock()-_scroll_start_time+0.0001);
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
 			{
 				_scroll_point = (((float)(e->button.x-global_pos_x()))/(float)_rect.w);
+			}
+		break;
+		case SDL_FINGERMOTION:
+			if(_scroll_is_change)
+			{
+				//_scroll_point = (((float)(e->tfinger.x-global_pos_x()))/(float)_rect.w);
 			}
 		break;
 		case SDL_USEREVENT:

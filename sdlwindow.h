@@ -711,6 +711,8 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		sdlwindow* _window;
 		sdl_board _screen;
 		SDL_Event _main_event;
+		/* SDLGUI框架退出ID */
+		int _is_exit;
 		double _fps;
 		SDL_Point _window_rect;
 		/* 处理消息流的子级线程 */
@@ -1634,6 +1636,7 @@ int sdl_frame::init()
 	_renderer = NULL;
 	_event_thread = NULL;
 	_active_win = this;
+	_is_exit = 0;
 }
 //-------------------------
 //窗口框架初始函数
@@ -1795,7 +1798,6 @@ int sdl_frame::sysevent(SDL_Event* e)
 	switch(e->type)
 	{
 		case SDL_QUIT:
-			exit(0);
 		break;
 	}
 	return sdl_board::sysevent(e);
@@ -1807,7 +1809,7 @@ int sdl_frame::run()
 	clock_t _frame_timer;
 	double sleep = 0;
 	sdltexture* tex=NULL;
-	while(1)
+	while(!_is_exit)
 	{
 		_frame_timer = clock();
 		while(SDL_PollEvent(&_main_event))
@@ -1816,6 +1818,8 @@ int sdl_frame::run()
 			{
 				case SDL_QUIT:
 					event(&_main_event);
+					/* 设置退出状态为真 */
+					_is_exit = 1;
 				break;
 				case SDL_WINDOWEVENT:
 					cout<<"Window Event"<<endl;
