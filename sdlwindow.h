@@ -1621,6 +1621,7 @@ sdl_frame::sdl_frame(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 :
 GUI<sdl_frame,sdl_board>()
 {
+	init();
 	init(ptitle,px,py,pw,ph,pflags);	
 }
 //--------------------------------------
@@ -1647,8 +1648,8 @@ int sdl_frame::init()
 //窗口框架初始函数
 int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
-	init();
-	if(sdl_board::init("",px,py,pw,ph,0))return -1;
+	//init();
+	if(sdl_board::init("",px,py,pw,ph,1))return -1;
 	/* 设置窗口位置 */
 	_rect.x = 0;
 	_rect.y = 0;
@@ -1656,13 +1657,16 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_screen.init(ptitle,px,py,pw,ph,pflags);
 	//创建窗口
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
+	_window->size(&_rect.w,&_rect.h);
+	//sdl_board::init("",px,py,_rect.w,_rect.h,1);
+	size(_rect.w,_rect.h);
 	/* 创建渲染器 */
 	if(_window)
 	{
-		_renderer = _window->create_renderer(-1,0);
+		//_renderer = _window->create_renderer(-1,0);
 		//_texture = _renderer->create_texture(SDL_PIXELTYPE(SDL_PIXELFORMAT_RGBA8888),SDL_TEXTUREACCESS_STATIC,pw,ph);
 	}
-	//_screen._surface = _window->get_window_surface()->surface();
+	_screen._surface = _window->get_window_surface()->surface();
 	//创建输入法
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
@@ -1843,12 +1847,12 @@ int sdl_frame::run()
 			}
 		}
 		redraw();
-		_texture = _renderer->create_texture_from_surface(&_screen);
+		//if(_texture)_texture->destroy();
+		//_texture = _renderer->create_texture_from_surface(&_screen);
 		//_renderer->render_target(_texture);
-		_renderer->copy(_texture,NULL,NULL);
-		_renderer->present();
-		_texture->destroy();
-		//_window->update_window_surface();
+		//_renderer->copy(_texture,NULL,NULL);
+		//_renderer->present();
+		_window->update_window_surface();
 		_fps = 1000 / ((clock() - _frame_timer + 0.001));
 		sleep = 1000/60-1000/_fps;
 		sleep = (sleep>0)?sleep:0;

@@ -84,6 +84,9 @@ typedef class sdlsurface
 		SDL_Rect* clip_rect();
 		int pixel(int,int);
 		int pixel(int,int,Uint32);
+		/* 画一条任意直线 */
+		int line(int,int,int,int,Uint32);
+		int must_lock();
 		int lock_surface();
 		int unlock_surface();
 		int surface_alpha_mod(Uint8);
@@ -778,6 +781,74 @@ int sdlsurface::pixel(int x,int y,Uint32 v)
 	}
 	return 0;
 }
+/* 
+	 画线函数 
+	先确定是画水平线，垂直线，还是任意直线 
+	再锁定表面选择画线方式开始画线
+	最后解锁
+ */
+int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
+{
+	if(_surface == NULL)return -1;
+	//取出像素深度
+	int bpp = _surface->format->BytesPerPixel;
+	/* 取出像素数据首地址 */
+	Uint8 *p = (Uint8*)_surface->pixels+y0*_surface->pitch+x0*bpp;
+	int x_off=x1-x0;
+	int y_off=y1-y0;
+	int x,y;
+	float xy_s;
+	/* 如果线的终点超过了表面宽度则截取有效长度 */
+	x_off -= (x1>=_surface->pitch)?x_off-_surface->pitch : 0;
+	y_off -= (y1>=_surface->h)?y1-_surface->h:0;
+	xy_s = (float)x_off/y_off;
+	//选择格式
+	switch(bpp)
+	{
+		/* 单色 */
+		case 1:
+			/* 如果画水平线 */
+			if(!y_off)
+			{
+				memset((void*)p,color,x_off*bpp);
+			}
+		break;
+		/* 16色 */
+		case 2:
+		break;
+		/*  */
+		case 3:
+		break;
+		/* 32位 */
+		case 4:
+			/* 如果画水平线 */
+			if(!y_off)
+			{
+				memset((Uint32*)p,color,x_off*bpp);
+			}
+			else
+			/* 如果画垂直线 */
+			if(!x_off)
+			{
+				for(y=0;y<y_off;y++)
+				{
+					*(Uint32*)(p+y*_surface->pitch) = color;
+				}
+			}
+			else
+			/* 画45度斜线 */
+			if(abs(xy_s))
+			{
+
+			}
+			/* 画任意斜线 */
+			else
+			{
+				
+			}
+		break;
+	}
+}
 //-------------------------------------t--------------
 //加载一个图片，要SDL_img的支持
 int sdlsurface::img_load(const char* pfile)
@@ -786,6 +857,12 @@ int sdlsurface::img_load(const char* pfile)
 	if(_surface)SDL_FreeSurface(_surface);
 	_surface = IMG_Load(pfile);
 	return 0;
+}
+//--------------------------------------------
+//表面锁定状态
+int sdlsurface::must_lock()
+{
+	return SDL_MUSTLOCK(_surface);
 }
 //------------------------------------------------------
 //锁定表面

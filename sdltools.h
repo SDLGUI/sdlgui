@@ -488,7 +488,7 @@ int sdl_v_scroll::sysevent(SDL_Event* e)
 			_scroll_start_y = e->button.x;
 		break;
 		case SDL_FINGERDOWN:
-			_scroll_start_y = e->tfinger.x*50;
+			_scroll_start_y = e->tfinger.x;
 		break;
 		case SDL_MOUSEBUTTONUP:
 			//_scroll_step = (e->button.x - _scroll_start_y);
@@ -496,7 +496,7 @@ int sdl_v_scroll::sysevent(SDL_Event* e)
 		break;
 		case SDL_FINGERUP:
 			//_scroll_step = (e->tfinger.x*50 - _scroll_start_y);
-		  _scroll_step = (e->tfinger.x*50 - _scroll_start_y)/(clock()-_scroll_start_time+0.0001);
+		  _scroll_step = (e->tfinger.x - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*500;
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
@@ -636,13 +636,13 @@ int sdl_h_scroll::sysevent(SDL_Event* e)
 			_scroll_start_y = e->button.y;
 		break;
 		case SDL_FINGERDOWN:
-			_scroll_start_y = e->tfinger.y*50;
+			_scroll_start_y = e->tfinger.y;
 		break;
 		case SDL_MOUSEBUTTONUP:
 		  _scroll_step = (e->button.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*1;
 		break;
 		case SDL_FINGERUP:
-			_scroll_step = (e->tfinger.y*50 - _scroll_start_y);
+			_scroll_step = (e->tfinger.y - _scroll_start_y)/(clock()-_scroll_start_time+0.0001)*500;
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
@@ -863,6 +863,22 @@ int sdl_view::sysevent(SDL_Event*e)
 			_mouse_drag_time = clock();
 		break;
 		case SDL_MOUSEMOTION:
+			if(_vertical)
+			{
+				if(e->motion.state)
+				{
+					_vertical->point((float)(e->motion.x-global_pos_x())/_vertical->width());
+					_vertical->scroll_event(&view);
+				}
+			}
+			if(_horizontal)
+			{
+				if(e->motion.state)
+				{
+					_horizontal->point((float)(e->motion.y-global_pos_y())/_horizontal->height());
+					_horizontal->scroll_event(&view);
+				}
+			}
 		break;
 		case SDL_MOUSEBUTTONUP:
 			if(_vertical)
