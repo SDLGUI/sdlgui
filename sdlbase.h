@@ -40,6 +40,7 @@
 #include <SDL2/SDL2_rotozoom.h>
 #endif //__ANDROID_OS__
 #include <SDL2/SDL_ttf.h>
+#include <cmath>
 #include <iostream>
 using namespace std;
 /////////////////////////////////////////////////
@@ -86,6 +87,10 @@ typedef class sdlsurface
 		int pixel(int,int,Uint32);
 		/* 画一条任意直线 */
 		int line(int,int,int,int,Uint32);
+		/* 画或填充一个圆 */
+		//int circle(int,int,int,Uint32);
+		int circle(int,int,int,Uint32,int);
+		//
 		int must_lock();
 		int lock_surface();
 		int unlock_surface();
@@ -792,17 +797,28 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 	if(_surface == NULL)return -1;
 	//取出像素深度
 	int bpp = _surface->format->BytesPerPixel;
+	//计算小坐标
+	int tx0 = (x0>x1)?x1:x0;
+	int ty0 = (y0>y1)?y1:y0;
+	//计算大坐标
+	int tx1 = x0+x1-tx0;
+	int ty1 = y0+y1-ty0;
 	/* 取出像素数据首地址 */
-	Uint8 *p = (Uint8*)_surface->pixels+y0*_surface->pitch+x0*bpp;
-	int x_off=x1-x0;
-	int y_off=y1-y0;
+	Uint8 *p = (Uint8*)_surface->pixels+ty0*_surface->pitch+tx0*bpp;
+	//
+	int x_off=tx1-tx0;
+	int y_off=ty1-ty0;
 	int x,y;
 	float xy_s;
 	/* 如果线的终点超过了表面宽度则截取有效长度 */
-	x_off -= (x1>=_surface->pitch)?x_off-_surface->pitch : 0;
-	y_off -= (y1>=_surface->h)?y1-_surface->h:0;
+	x_off -= (tx1>=_surface->pitch)?x_off-_surface->pitch : 0;
+	x_off = (tx1<=0)?0:x_off;
+	y_off -= (ty1>=_surface->h)?ty1-_surface->h:0;
+	y_off = (ty1<=0)?0:y_off;
+	//
 	xy_s = (float)x_off/y_off;
 	//选择格式
+	//if(must_lock())lock_surface();
 	switch(bpp)
 	{
 		/* 单色 */
@@ -810,7 +826,7 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			/* 如果画水平线 */
 			if(!y_off)
 			{
-				memset((void*)p,color,x_off*bpp);
+				memset((Uint32*)p,color,x_off*bpp);
 			}
 		break;
 		/* 16色 */
@@ -824,7 +840,11 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			/* 如果画水平线 */
 			if(!y_off)
 			{
-				memset((Uint32*)p,color,x_off*bpp);
+				for(x=0;x<x_off;x++)
+				{
+					*(Uint32*)(p+x*bpp) = color;
+				}
+				//memset((Uint32*)p,color,abs(x_off)*bpp);
 			}
 			else
 			/* 如果画垂直线 */
@@ -837,14 +857,82 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			}
 			else
 			/* 画45度斜线 */
-			if(abs(xy_s))
+			if(abs(xy_s)==1)
 			{
-
+				for(y=0;y<y_off;y++)
+				{
+					x_off /= abs(x_off);
+				}
 			}
 			/* 画任意斜线 */
 			else
 			{
 				
+			}
+		break;
+	}
+	//if(must_lock())unlock_surface();
+}
+//------------------------------------------------------------
+//画一个不填充的圆
+int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
+{
+	if(_surface == NULL)return -1;
+	//如果半径小于3则表示无法绘制，直接退出
+	if(pr<3)return -1;
+	//取出像素深度
+	int bpp = _surface->format->BytesPerPixel;
+	int i = 0;
+	//新点坐标
+	float tx,ty,tx1,ty1;
+	float pj;
+	switch(bpp)
+	{
+		/* 单色 */
+		case 1:
+		break;
+		/* 16色 */
+		case 2:
+		break;
+		/*  */
+		case 3:
+		break;
+		/* 32位 */
+		case 4:
+			/* 从1度算到89度 */
+			for(i=1;i<90;i++)
+			{
+				pj = 3.1415926/180*i;
+				tx = sin(pj)*pr;
+				ty = cos(pj)*pr;
+				if(pm)
+				{
+					//计算第二项限再计算第一项限
+					tx1 = pr-tx;
+					ty1 = pr-ty;
+					line(px-tx,py-ty,px+tx,py-ty,color);
+					//计算第三项限再计算第四项限
+					line(px-tx,py+ty,px+tx,py+ty,color);
+				}
+				else
+				{
+					//计算第一项限起点的坐标
+					tx1 = pr+tx;
+					ty1 = pr-ty;
+					pixel(tx1,ty1,color);
+					//计算第二项限起点坐标
+					tx1 = pr-tx;
+					ty1 = pr-ty;
+					pixel(tx1,ty1,color);
+					//计算第三项限起点坐标
+					tx1 = pr-tx;
+					ty1 = pr+ty;
+					pixel(tx1,ty1,color);
+					//计算第四项限起点坐标
+					tx1 = pr+tx;
+					ty1 = pr+ty;
+					pixel(tx1,ty1,color);
+				}
 			}
 		break;
 	}
