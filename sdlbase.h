@@ -87,6 +87,8 @@ typedef class sdlsurface
 		int pixel(int,int,Uint32);
 		/* 画一条任意直线 */
 		int line(int,int,int,int,Uint32);
+		/* 画或填充一个矩形 */
+		int rectangle(int,int,int,int,Uint32,int);
 		/* 画或填充一个圆 */
 		//int circle(int,int,int,Uint32);
 		int circle(int,int,int,Uint32,int);
@@ -786,6 +788,30 @@ int sdlsurface::pixel(int x,int y,Uint32 v)
 	}
 	return 0;
 }
+//----------------------------------------------------------
+//画或填充一个矩形
+int sdlsurface::rectangle(int x0,int y0,int x1,int y1,Uint32 color,int pm=0)
+{
+	SDL_Rect rt;
+	if(pm)
+	{
+		rt.x = x0;
+		rt.y = y0;
+		rt.w = x1;
+		rt.h = y1;
+		return fill_rect(&rt,color);
+	}
+	else
+	{
+		/* 画两条水平线 */
+		line(x0,y0,x1,y0,color);
+		line(x0,y1,x1,y1,color);
+		/* 画两条垂直线 */
+		line(x0,y0,x0,y1,color);
+		line(x1,y0,x1,y1,color);
+		return 0;
+	}
+}
 /* 
 	 画线函数 
 	先确定是画水平线，垂直线，还是任意直线 
@@ -816,9 +842,8 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 	y_off -= (ty1>=_surface->h)?ty1-_surface->h:0;
 	y_off = (ty1<=0)?0:y_off;
 	//
-	xy_s = (float)x_off/y_off;
 	//选择格式
-	//if(must_lock())lock_surface();
+	if(must_lock())lock_surface();
 	switch(bpp)
 	{
 		/* 单色 */
@@ -844,7 +869,6 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 				{
 					*(Uint32*)(p+x*bpp) = color;
 				}
-				//memset((Uint32*)p,color,abs(x_off)*bpp);
 			}
 			else
 			/* 如果画垂直线 */
@@ -857,11 +881,19 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			}
 			else
 			/* 画45度斜线 */
-			if(abs(xy_s)==1)
+			if((x_off/y_off)==1)
 			{
-				for(y=0;y<y_off;y++)
+				/* 计算X,Y偏移 */
+				tx0 = x1-x0;
+				ty0 = y1-y0;
+				x_off = tx0/abs(tx0);
+				y_off = ty0/abs(ty0);
+				/* 取出像素数据首地址 */
+				p = (Uint8*)_surface->pixels+y0*_surface->pitch+x0*bpp;
+				//
+				for(x=tx0,y=ty0;x;x-=x_off,y-=y_off)
 				{
-					x_off /= abs(x_off);
+					*(Uint32*)(p+y*_surface->pitch+x*bpp) = color;				
 				}
 			}
 			/* 画任意斜线 */
@@ -871,7 +903,7 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			}
 		break;
 	}
-	//if(must_lock())unlock_surface();
+	if(must_lock())unlock_surface();
 }
 //------------------------------------------------------------
 //画一个圆,pm=0表示不填充,pm=1表示填充
