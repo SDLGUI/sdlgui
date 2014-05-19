@@ -874,7 +874,7 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 	//if(must_lock())unlock_surface();
 }
 //------------------------------------------------------------
-//画一个不填充的圆
+//画一个圆,pm=0表示不填充,pm=1表示填充
 int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
 {
 	if(_surface == NULL)return -1;
@@ -899,17 +899,16 @@ int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
 		break;
 		/* 32位 */
 		case 4:
-			/* 从1度算到89度 */
-			for(i=1;i<90;i++)
+			for(i=0;i<=pr;i++)
 			{
 				pj = 3.1415926/180*i;
-				tx = sin(pj)*pr;
-				ty = cos(pj)*pr;
+				ty = i;
+				tx = pr*sin(acos(ty/pr));
+				//tx = sin(pj)*pr;
+				//ty = cos(pj)*pr;
 				if(pm)
 				{
 					//计算第二项限再计算第一项限
-					tx1 = pr-tx;
-					ty1 = pr-ty;
 					line(px-tx,py-ty,px+tx,py-ty,color);
 					//计算第三项限再计算第四项限
 					line(px-tx,py+ty,px+tx,py+ty,color);
@@ -917,20 +916,20 @@ int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
 				else
 				{
 					//计算第一项限起点的坐标
-					tx1 = pr+tx;
-					ty1 = pr-ty;
+					tx1 = px+tx;
+					ty1 = py-ty;
 					pixel(tx1,ty1,color);
 					//计算第二项限起点坐标
-					tx1 = pr-tx;
-					ty1 = pr-ty;
+					tx1 = px-tx;
+					ty1 = py-ty;
 					pixel(tx1,ty1,color);
 					//计算第三项限起点坐标
-					tx1 = pr-tx;
-					ty1 = pr+ty;
+					tx1 = px-tx;
+					ty1 = py+ty;
 					pixel(tx1,ty1,color);
 					//计算第四项限起点坐标
-					tx1 = pr+tx;
-					ty1 = pr+ty;
+					tx1 = px+tx;
+					ty1 = py+ty;
 					pixel(tx1,ty1,color);
 				}
 			}
