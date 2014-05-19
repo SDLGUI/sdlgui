@@ -1806,6 +1806,15 @@ int sdl_frame::sysevent(SDL_Event* e)
 {
 	switch(e->type)
 	{
+		case SDL_WINDOWEVENT:
+			switch(e->window.event)
+			{
+				case SDL_WINDOWEVENT_RESTORED:
+					_screen._surface = _window->get_window_surface()->surface();
+					//cout<<"Window Event"<<endl;
+				break;
+			}
+		break;
 		case SDL_QUIT:
 		break;
 	}
@@ -1831,7 +1840,7 @@ int sdl_frame::run()
 					_is_exit = 1;
 				break;
 				case SDL_WINDOWEVENT:
-					cout<<"Window Event"<<endl;
+					event(&_main_event);	
 				break;
 				case SDL_USEREVENT:
 					/* 计时器消息分流 */
