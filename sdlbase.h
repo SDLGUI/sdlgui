@@ -89,9 +89,10 @@ typedef class sdlsurface
 		int line(int,int,int,int,Uint32);
 		/* 画或填充一个矩形 */
 		int rectangle(int,int,int,int,Uint32,int);
-		/* 画或填充一个圆 */
-		//int circle(int,int,int,Uint32);
+		/* 画或填充一个正圆 */
 		int circle(int,int,int,Uint32,int);
+		/* 画或填充一个椭圆 */
+		int ellipse(int,int,int,int,Uint32,int);
 		//
 		int must_lock();
 		int lock_surface();
@@ -967,6 +968,84 @@ int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
 			}
 		break;
 	}
+}
+//---------------------------------------------------------------
+//画一个椭圆，pm=0表示不填充，pm=1表示填充
+int sdlsurface::ellipse(int px,int py,int pr0,int pr1,Uint32 color,int pm=0)
+{
+	int x,y;
+	float d1,d2;
+	x = 0;
+	y = pr1;
+	d1 = pr1*pr1 + pr0*pr0*(-pr1+0.5);
+	if(pm)
+	{
+		line(x+px,y+py,-x+px,y+py,color);
+		line(x+px,-y+py,-x+px,-y+py,color);
+	}
+	else
+	{
+		pixel(x+px,y+py,color);
+		pixel(-x+px,-y+py,color);
+		pixel(-x+px,y+py,color);
+		pixel(x+px,-y+py,color);
+	}
+	while(pr1*pr1*(x+1)<pr0*pr0*(y-0.5))
+	{
+		if(d1<=0)
+		{
+			d1+=pr1*pr1*(2*x+3);
+			x++;
+		}
+		else
+		{
+			d1+=pr1*pr1*(2*x+3)+pr0*pr0*(-2*y+2);
+			x++;
+			y--;
+		}
+		//draw
+		if(pm)
+		{
+			line(x+px,y+py,-x+px,y+py,color);
+			line(x+px,-y+py,-x+px,-y+py,color);
+		}
+		else
+		{
+			pixel(x+px,y+py,color);
+			pixel(-x+px,-y+py,color);
+			pixel(-x+px,y+py,color);
+			pixel(x+px,-y+py,color);
+		}
+	}
+	d2 = pr1*pr1*(x+0.5)*(x+0.5)+pr0*pr0*(y-1)*(y-1)-pr0*pr0*pr1*pr1;
+	while(y>0)
+	{
+		if(d2<=0)
+		{
+			d2+=pr1*pr1*(2*x+2)+pr0*pr0*(-2*y+3);
+			x++;
+			y--;
+		}
+		else
+		{
+			d2+=pr0*pr0*(-2*y+3);
+			y--;
+		}
+		//draw
+		if(pm)
+		{
+			line(x+px,y+py,-x+px,y+py,color);
+			line(x+px,-y+py,-x+px,-y+py,color);
+		}
+		else
+		{
+			pixel(x+px,y+py,color);
+			pixel(-x+px,-y+py,color);
+			pixel(-x+px,y+py,color);
+			pixel(x+px,-y+py,color);
+		}
+	}
+	return 0;
 }
 //-------------------------------------t--------------
 //加载一个图片，要SDL_img的支持
