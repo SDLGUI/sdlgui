@@ -1654,11 +1654,11 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_rect.x = 0;
 	_rect.y = 0;
 	//-------------------
-	_screen.init(ptitle,px,py,pw,ph,pflags);
 	//创建窗口
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
 	_window->size(&_rect.w,&_rect.h);
 	//sdl_board::init("",px,py,_rect.w,_rect.h,1);
+	_screen.init(ptitle,px,py,_rect.w,_rect.h,pflags);
 	size(_rect.w,_rect.h);
 	/* 创建渲染器 */
 	if(_window)
