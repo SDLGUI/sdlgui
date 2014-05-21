@@ -825,11 +825,20 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 	//取出像素深度
 	int bpp = _surface->format->BytesPerPixel;
 	//计算小坐标
-	int tx0 = (x0>x1)?x1:x0;
-	int ty0 = (y0>y1)?y1:y0;
-	//计算大坐标
-	int tx1 = x0+x1-tx0;
-	int ty1 = y0+y1-ty0;
+	int tx0 = x0;
+	int ty0 = y0;
+	int tx1 = x1;
+	int ty1 = y1;
+	if(tx0>tx1)
+	{
+		tx0 += tx1;
+		tx1 =  tx0-tx1;
+		tx0 -= tx1;
+		//
+		ty0 += ty1;
+		ty1 =  ty0-ty1;
+		ty0 -= ty1;
+	}
 	/* 取出像素数据首地址 */
 	Uint8 *p = (Uint8*)_surface->pixels+ty0*_surface->pitch+tx0*bpp;
 	//
@@ -880,31 +889,19 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 					*(Uint32*)(p+y*_surface->pitch) = color;
 				}
 			}
-			else
-			/* 画45度斜线 */
-			if((x_off/y_off)==1)
-			{
-				/* 计算X,Y偏移 */
-				tx0 = x1-x0;
-				ty0 = y1-y0;
-				x_off = tx0/abs(tx0);
-				y_off = ty0/abs(ty0);
-				/* 取出像素数据首地址 */
-				p = (Uint8*)_surface->pixels+y0*_surface->pitch+x0*bpp;
-				//
-				for(x=tx0,y=ty0;x;x-=x_off,y-=y_off)
-				{
-					*(Uint32*)(p+y*_surface->pitch+x*bpp) = color;				
-				}
-			}
 			/* 画任意斜线 */
 			else
 			{
-				
+				for(x = 0;x<x_off;x++)
+				{
+					y = x/(x_off/y_off);	
+					*(Uint32*)(p+x*bpp+y*_surface->pitch) = color;
+				}
 			}
 		break;
 	}
 	if(must_lock())unlock_surface();
+	return 0;
 }
 //------------------------------------------------------------
 //画一个圆,pm=0表示不填充,pm=1表示填充
