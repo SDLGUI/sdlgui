@@ -1654,6 +1654,7 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_rect.x = 0;
 	_rect.y = 0;
 	//-------------------
+	_screen.init(ptitle,px,py,pw,ph,pflags);
 	//创建窗口
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
 	_window->size(&_rect.w,&_rect.h);
@@ -1665,7 +1666,6 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		//_renderer = _window->create_renderer(-1,0);
 		//_texture = _renderer->create_texture(SDL_PIXELTYPE(SDL_PIXELFORMAT_RGBA8888),SDL_TEXTUREACCESS_STATIC,pw,ph);
 	}
-	_screen.init(ptitle,px,py,_rect.w,_rect.h,pflags);
 	_screen._surface = _window->get_window_surface()->surface();
 	//创建输入法
 	ime.init("",0,ph-30,pw,30,1);
@@ -1748,22 +1748,22 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_FINGERDOWN:
 			if(t!=_active_win)
 			{
-				/* 先给失去焦点的窗口发送失去焦点消息 */
-				ue.type = SDL_USEREVENT;
-				ue.code = sdlgui_window_focus;
-				ue.data1 = (void*)0;
-				ue.data2 = (void*)t;
-				te.type = SDL_USEREVENT;
-				te.user = ue;
-				if(_active_win)_active_win->event(&te);
-				/* 然后给得到焦点的窗口发送得到焦点消息 */
-				ue.data1= (void*)1;
-				ue.data2 = (void*)_active_win;
-				te.type = SDL_USEREVENT;
-				te.user = ue;
-				t->event(&te);
-				/* 再更新焦点状态 */
-				t->active();
+			/* 先给失去焦点的窗口发送失去焦点消息 */
+			ue.type = SDL_USEREVENT;
+			ue.code = sdlgui_window_focus;
+			ue.data1 = (void*)0;
+			ue.data2 = (void*)t;
+			te.type = SDL_USEREVENT;
+			te.user = ue;
+			if(_active_win)_active_win->event(&te);
+			/* 然后给得到焦点的窗口发送得到焦点消息 */
+			ue.data1= (void*)1;
+			ue.data2 = (void*)_active_win;
+			te.type = SDL_USEREVENT;
+			te.user = ue;
+			t->event(&te);
+			/* 再更新焦点状态 */
+			t->active();
 			}
 			/* 最后发送当前消息 */
 			t->event(e);
@@ -1847,10 +1847,6 @@ int sdl_frame::run()
 					if(_main_event.user.code == sdlgui_event_timer)
 					{
 							((sdl_board*)_main_event.user.data1)->event(&_main_event);
-					}
-					else
-					{
-						event(&_main_event);
 					}
 				break;
 				default:
