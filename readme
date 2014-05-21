@@ -142,6 +142,29 @@ class sdl_button						为SDLGUI的按钮类，是
 class sdl_edit							为SDLGUI的文本编辑类，
 														是sdl_widget的子类，
 														用于处理文本输入及显示
+
+class sdl_scroll						为SDLGUI的滚动条父类
+														是sdl_widget的子类
+														用于处理窗口滑动处理
+
+class sdl_h_scroll					为SDLGUI的垂直滚动条
+														是sdl_scroll的子类
+														用于处理窗口垂直滑动
+
+class sdl_v_scroll
+														为SDLGUI的水平滚动条
+														是sdl_scroll的子类
+														用于处理窗口水平滑动
+
+class sdl_view							为SDLGUI的视图类
+														是sdl_widget的子类
+														用于处理视图显示
+
+class sdl_listbox						为SDLGUI的下拉列表类
+														是sdl_widget的子类
+														用于处理数据列表处理
+
+
 //--------------------------------------------------------------------------------
 
 
@@ -259,3 +282,6 @@ sdlgui.h							f6bc3340b21adb11a3d736f480c35402
 sdltools.h						1cd67fd5f23608336adb144bc1b45013
 wb.txt								1fa9b174a9ec2486011a44828848be50
 
+更新时间:2014年5月21日
+
+文件名								MD5值
