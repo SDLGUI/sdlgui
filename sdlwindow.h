@@ -3,2276 +3,1440 @@
 //
 //
 //
-//						文档名：						sdlwindow.h
+//						�ĵ�����						sdlbase.h
 //
-//						文档创建日期：			2014年2月22日
-//						文档更新日期：			2014年5月02日
-//						文档创建者：				徐荣
-//						文档更新者：				徐荣
-//						文档创建者联系方式：Email:twtfcu3@126.com
+//						�ĵ��������ڣ�			2014��2��22��
+//						�ĵ��������ڣ�			2014��5��02��
+//						�ĵ������ߣ�				����
+//						�ĵ������ߣ�				����
+//						�ĵ���������ϵ��ʽ��Email:twtfcu3@126.com
 //																QQ:12880312(twtfcu3@126.com)
-//																网站:http://sdl.my-mx.cn
+//																��վ:http://sdl.my-mx.cn
 //
-//						版权说明：
-//						1.本文档使用者的权利
-//							a)本文档使用者可以随时利用本文档创建其它文件。
-//							b)本文档使用者可以随时修改本文档有效代码内容，
-//								但不能更改或添加本文档用//开头及用/**/包含的任何注释语句。
-//						2.本文档使用者的义务
-//							a)使用者不得更改本文档的文档名
-//							b)本文档使用者在使用本文档时请在您的文档开始处
-//								说明本文档版权归本文档创建者所有。
-//							c)本文档使用者更改本文档后
-//								请您上传更新后的文档到http://github.com/sdlgui/sdlgui/
-//							d)本文档使用者本人承担
-//								使用本文档后的所有法律责任,
-//								本文档创建者不为您使用本文件的所有行为容承担任何法律责任。
+//						��Ȩ˵����
+//						1.���ĵ�ʹ���ߵ�Ȩ��
+//							a)���ĵ�ʹ���߿�����ʱ���ñ��ĵ����������ļ���
+//							b)���ĵ�ʹ���߿�����ʱ�޸ı��ĵ���Ч�������ݣ�
+//								�����ܸ��ı��ĵ���//��ͷ����/**/�������κ�ע����䡣
+//						2.���ĵ�ʹ���ߵ�����
+//							a)ʹ���߲��ø��ı��ĵ����ĵ���
+//							b)���ĵ�ʹ������ʹ�ñ��ĵ�ʱ���������ĵ���ʼ��
+//								˵�����ĵ���Ȩ�鱾�ĵ����������С�
+//							c)���ĵ�ʹ���߸��ı��ĵ���
+//								�����ϴ����º���ĵ���http://github.com/sdlgui/sdlgui/
+//							d)���ĵ�ʹ���߱��˳е�
+//								ʹ�ñ��ĵ�������з�������,
+//								���ĵ������߲�Ϊ�����ļ����ݳе��κη������Ρ�
 //
 //
 //
 //
 //------------------------------------------------------------------------------------------------------------------
-#ifndef __SDLWINDOW_HANDLE__
-#define __SDLWINDOW_HANDLE__
-#include "sdlbase.h"
-#include <SDL2/SDL_thread.h>
+#ifndef __sdlbase_head__
+#define __sdlbase_head__
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#ifndef __ANDROID_OS__
+#include <SDL2/SDL2_rotozoom.h>
+#endif //__ANDROID_OS__
+#include <SDL2/SDL_ttf.h>
+#include <cmath>
 #include <iostream>
-#include <fstream>
-#include <ctime>
-#include <string.h>
-//-----------------------------------------------
 using namespace std;
-//--------------------------------------------------
-class timer_node;
-class sdl_board;
-template<class T,class B> class GUI;
-class sdl_ime;
-class sdl_frame;
-class sdl_widget;
-class sdl_clip;
-//----------------------------------------------
-//
-// 					自定义消息常量定义
-// 					每个集合为七位数的编码
-//          前四位是这类集合的代码
-//          后三位是集合子消息的代码
-//
-//---------------------------------------------
-#define __event_macro__(x,y) x##y
-//计时器消息集合1000
-#define timer_event_macro(y) __event_macro__(1000,y) 
-const int sdlgui_event_timer = timer_event_macro(001);
-//
-//按钮类消息集合1001
-#define button_event_macro(y) __event_macro__(1001,y) 
-const int sdlgui_button_up= button_event_macro(001);
-const int sdlgui_button_down = button_event_macro(002);
-const int sdlgui_button_click = button_event_macro(003);
-//
-//IME类消息集合1002
-#define ime_event_macro(y) __event_macro__(1002,y) 
-/* 输入上屏 */
-const int sdlgui_ime_up= ime_event_macro(001);
-/* 输入英文 */
-const int sdlgui_ime_en= ime_event_macro(002);
-/* 中文编码状态 */
-const int sdlgui_ime_cn_edit= ime_event_macro(003);
-/* 中文上屏状态 */
-const int sdlgui_ime_cn_up= ime_event_macro(004);
-/* 中文输入不可打印的控制符 */
-const int sdlgui_ime_cn_ctrl= ime_event_macro(006);
-/* 显示输入法窗口 */
-const int sdlgui_ime_show= ime_event_macro(006);
-/* 隐藏输入法窗口 */
-const int sdlgui_ime_hide= ime_event_macro(007);
-//
-//文本输入框类消息集合1003
-#define edit_event_macro(y) __event_macro__(1003,y) 
-/* 文本更新 */
-const int sdlgui_edit_change= edit_event_macro(001);
-//滚动条类消息集合1004
-#define scroll_event_macro(y) __event_macro__(1004,y) 
-const int sdlgui_scroll_point= scroll_event_macro(001);
-const int sdlgui_scroll_show= scroll_event_macro(002);
-const int sdlgui_scroll_hide= scroll_event_macro(003);
-//窗口事件类消息集合1005
-#define window_event_macro(y) __event_macro__(1005,y) 
-/* 消息焦点改变时发送的消息 */
-const int sdlgui_window_focus= window_event_macro(001);
-
-//-------------------------------------------------------------
-//
-//
-//							消息事件结构
+/////////////////////////////////////////////////
+class sdlsurface;
+class sdltext;
+class sdltexture;
+class sdlrenderer;
+class sdlwidnow;
+///////////////////////////////////////////////////////////////////////
 //
 //
 //
-//-------------------------------------------------------------
-typedef class sdlgui_event_struct
+///////////////////////////////////////////////////////////////////////
+typedef class sdlsurface
 {
 	public:
-		sdlgui_event_struct();
-		sdlgui_event_struct(SDL_Event*,SDL_UserEvent*);
-		/* 事件对象储存器 */
-		SDL_Event event;
-		SDL_UserEvent user_event;
-		/* 列表节点 */
-	//protected:
-		sdlgui_event_struct *next,*last;
-}*sdlgui_event_struct_ptr;
-sdlgui_event_struct::sdlgui_event_struct()
-{
-	memset((char*)&event,0x00,sizeof(SDL_Event));
-	memset((char*)&user_event,0x00,sizeof(SDL_UserEvent));
-	next = NULL;
-	last = NULL;
-}
-sdlgui_event_struct::sdlgui_event_struct(SDL_Event* e,SDL_UserEvent* ue = NULL)
-{
-	sdlgui_event_struct();
-	if(e)memcpy((char*)&event,(char*)e,sizeof(SDL_Event));
-	if(ue)memcpy((char*)&user_event,(char*)ue,sizeof(SDL_UserEvent));
-}
-//---------------------------------------------
-//-------------------------------------
-//
-//
-//             用于继承的专用类
-//
-//
-//-------------------------------------
-//用于GUI类的继承与事件处理
-//事件处理分为两类，第一类是GUI类自身的系统和用户功能实现。
-//第二类是用户调用GUI对象的事件接口。
-//GUI类的自身实现分为系统功能和用户功能，系统功能是类成员，用户功能是类静态成员
-template <class T,class B>
-class GUI : public B
-{
-	//friend int event_process(void* obj);
-	friend class sdl_frame;
-	public:
-		int(*event_fun)(T*,SDL_Event*);
-	public:
-		T* This;
-	public:
-		GUI();
-		virtual int event(SDL_Event*);//GUI专用类事件统一调用函数
-		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
-		virtual int sysevent(SDL_Event*e){};//GUI专用类系统事件处理函数的虚类
-		sdlgui_event_struct_ptr event();//GUI专用类读取事件函数
-	//protected:
-		sdlgui_event_struct_ptr _head_event,_end_event;
-	protected:
-		int event_process();
-	protected:
-		static int sysprocess(T*,SDL_Event*);
-		static int userprocess(T*,SDL_Event*);
-};
-//-------------------------------------
-//
-//
-//             窗口底板类
-//
-//
-//-------------------------------------
-typedef class sdl_board : public GUI<sdl_board,sdlsurface>
-{
-	public:
-		friend class sdl_frame;
-	public:
-		sdl_board();
-	  sdl_board(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags);
-		~sdl_board();
-	  int init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags);
+		sdlsurface();
+		sdlsurface(SDL_Surface*);
+		sdlsurface(Uint32,int,int,int,Uint32,Uint32,Uint32,Uint32);
+		virtual ~sdlsurface();
 		int init();
-		
-	public:
-		/* 激活当前窗口 */
-		int active();
-		/* 显示当前窗口 */
-		int show();
-		/* 隐藏当前窗口 */
-		int hide();
-		/* 返回当前窗口的显示状态 */
-		int is_show();
-		/* 设置当前窗口标题 */
-		int text(const char*);
-		/* 返回当前窗口标题 */
-		const char* text();
-		/* 本地坐标 */
-		int pos(int,int);
-		int pos_x(int);
-		int pos_x();
-		int pos_y(int);
-		int pos_y();
-		int pos(SDL_Point);
-		SDL_Point pos();
-		/* 全局坐标 */
-		SDL_Point global_pos();
-		int global_pos(int,int);
-		int global_pos_x(int);
-		int global_pos_x();
-		int global_pos_y(int);
-		int global_pos_y();
-		/* 坐标转换 */
-		int target_pos_x(sdl_board*,int);
-		int target_pos_y(sdl_board*,int);
-		SDL_Point target_pos(sdl_board*,int,int);
-		/*  窗口大小 */
-		int size(int,int);
-		int size(SDL_Point);
-		SDL_Point size();
-		SDL_Rect* rect();
-		int width();
-		int width(int);
-		int height();
-		int height(int);
-		/* 设置父级窗口对象 */
-		sdl_board* parent(sdl_board*);
-		/* 返回父级窗口对象 */
-		sdl_board* parent();
-		/* 返回给定对象是否为当前窗口的子窗口 */
-		int is_child(sdl_board*);
-		/* 添加子级窗口 */
-		template<class T>T* add(const char*,int,int,int,int,Uint32);
-		template<class T>T* add(T*);
-		/* 调整当前窗口Z序 */
-		int z_top(sdl_board*,sdl_board*,int);
-		/* 消毁当前窗口数据 */
-		int destroy();
-		//int redraw_hit();
-		int redraw_hit(sdl_board*);
-		//int redraw_hit(SDL_Rect*,sdl_board*);
-		/* 重画当前窗口 */
-		int redraw();
-		/* 返回给定坐标的子窗口对象 */
-		sdl_board* hit_board(int,int);
-		//virtual int event(SDL_Event* e){return 0;}
-		//-----------------------------------------------
-		/* 设置窗口透明色 */
-		int color_key(int,Uint32);
-		/* 设置窗口透明度 */
-		int alpha(Uint8);
-		/* 设置窗口混合模式 */
-		int blend(SDL_BlendMode);
-		int hit_rect(SDL_Rect*);
-		//------------------------------------------------
-		//timer_node* add_timer(int);
-		/* 添加窗口计时器 */
-		SDL_TimerID add_timer(int);
-	public:
-		/* 计时器全局回调函数 */
-		static Uint32 timer_callback(Uint32,void*); 
-	public:
-		/* 当前刷新帧数累计 */
-		static int _frame_count;
-		/* 全局探板数组 */
-		//static sdl_board** _hit_board_ptr;
-	protected:
-		sdlsurface *_board;
-		sdlsurface *_hit_board;
-		sdl_board** _hit_board_ptr;
-		sdltext *_text_board;
-		SDL_Rect  _rect;
-		SDL_Rect  *_hit_rect;
-		SDL_Point _pos,_size;
-		char* _text;
-		sdl_board *_parent;
-		sdl_board *_end,*_head;
-		sdl_board *_next,*_last;
-		int _is_show;
-		int _is_destroy;
-		sdlrenderer* _renderer;
-		sdltexture* _texture;
-}*sdl_board_ptr;
-/* 初始全局变量 */
-int sdl_board::_frame_count = 0;
-//sdl_board** sdl_board::_hit_board_ptr=NULL;
-//------------------------------------
-//
-//
-// 						输入类
-//
-//
-//
-//------------------------------------
-typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
-{
-	public:
-		sdl_ime();
-		int init(const char*,int,int,int,int,Uint32);
-		/* 输入法系统事件 */
-		int sysevent(SDL_Event*);
-		/* 返回当前输入法输入状态 */
-		int state();
-		/* 设置输入法的码表 */
-		int input_method(const char*);
-		/* 解析按键 */
-		int input(char);
-		/* 设置输入法状态为英文状态 */
-		int input_en_method();
-		/* 设置输入法状态为中文状态 */
-		int input_cn_method();
-		/* 返回当前文字 */
-		const char* word();
-	protected:
-		/* 内部初始化 */
-		int init();
-		/* 根据码表解析当前编码 */
-		int parse();
-		/* 初始化当前编码 */
-		int init_buffer();
-		/* 显示编码对应的词组 */
-		int show_list();
-	protected:
-		/* 当前输入的UTF8文字 */
-		char* _cur_word;
-		/*当前输入法的输入状态*/
-		int _state;
-		/* 输入法的码表文件路径 */
-		char* _input_method_file_path;
-		fstream _input_method_file;
-		/* 当前编辑状态下的按键字符顺序 */
-		char _word_buf[100];
-		/* 存储当前编码所对应的10个词组 */
-		char _word_group[10][100];
-		/* 当前编辑状态下按键顺序引索 */
-		int _word_buf_index;
-		/* 存储当前编码所对应的10个词组引索 */
-		int _word_group_index;
-		/* 输入法宽度 */
-		int ime_width;
-}*sdl_ime_ptr;
-//------------------------------------
-sdl_ime::sdl_ime()
-:
-GUI<sdl_ime,sdl_board>()
-{
-	init();
-}
-int sdl_ime::init()
-{
-	if(sdl_board::init())return -1;
-	//
-	_cur_word = NULL;
-	_input_method_file_path = NULL;
-	_state = sdlgui_ime_en;
-	memset(_word_buf,0x00,sizeof(char)*100);
-	_word_buf_index = 0;
-	_word_group_index = 0;
-	ime_width = 0;
-	//
-	return 0;
-}
-int sdl_ime::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
-{
-	init();
-	if(sdl_board::init(ptitle,px,py,pw,ph,pflag))return -1;
-	ime_width = pw;
-	return 0;
-}
-int sdl_ime::state()
-{
-	return _state;
-}
-int sdl_ime::input_method(const char* pfile)
-{
-	if(!pfile)return -1;
-	if(_input_method_file_path)
-	{
-		delete _input_method_file_path;
-	}
-	_input_method_file_path = new char[strlen(pfile)+1];
-	memset(_input_method_file_path,0x00,sizeof(char)*strlen(pfile)+1);
-	memcpy(_input_method_file_path,pfile,sizeof(char)*strlen(pfile)+1);
-	return input_cn_method();
-}
-int sdl_ime::input_en_method()
-{
-	_state = sdlgui_ime_en;
-	return 0;
-}
-int sdl_ime::input_cn_method()
-{
-	_state = sdlgui_ime_cn_up;
-	return 0;
-}
-int sdl_ime::input(char ch)
-{
-	//return 0;
-	SDL_UserEvent ue;
-	SDL_Event e;
-	//return 0;
-	if(isalpha(ch) && (_state != sdlgui_ime_en)) _state = sdlgui_ime_cn_edit;
-	switch (_state)
-	{
-		case sdlgui_ime_en:
-			if(_parent)
-			{
-				_word_buf_index++;
-				memset(_word_buf,0x00,_word_buf_index);
-				_word_buf_index = 0;
-				_word_buf[0] = ch;
-				ue.type = SDL_USEREVENT;
-				ue.code = sdlgui_ime_en;
-				ue.data1 = (void*)_word_buf;
-				e.type = SDL_USEREVENT;
-				e.user = ue;
-				//cout<<ue.data1<<endl;
-				_parent->event(&e);
-			}
-		break;
-		case sdlgui_ime_cn_edit:
-			ue.code = sdlgui_ime_cn_up;
-			switch(ch)
-			{
-				default:
-					/* 如果输入的字母则解析编码 */
-					if(isalpha(ch))
-					{
-						_word_buf[_word_buf_index] = ch;
-						_word_buf_index++;
-						parse();
-					}
-					else
-					/* 如果输入的数字则选择编码对应的词语 */
-					if(isdigit(ch))
-					{
-						memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
-						_word_buf_index = 0;
-						_cur_word=_word_group[ch-SDLK_0];
-						if(_parent)
-						{
-							ue.type = SDL_USEREVENT;
-							ue.data1 = (void*)word();
-							e.type = SDL_USEREVENT;
-							e.user = ue;
-							_parent->event(&e);
-						}
-						_state = sdlgui_ime_cn_up;
-						init_buffer();
-					}
-				break;
-				/* 如果输入的是空格则选择编码对应的第一个词语 */
-				case SDLK_SPACE:
-					memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
-					_word_buf_index = 0;
-					_cur_word=_word_group[1];
-					if(_parent)
-					{
-						ue.type = SDL_USEREVENT;
-						ue.data1 = (void*)word();
-						e.type = SDL_USEREVENT;
-						e.user = ue;
-						_parent->event(&e);
-					}
-					_state = sdlgui_ime_cn_up;
-					init_buffer();
-				break;
-			}
-		break;
-		case sdlgui_ime_cn_up:
-			/* 如果指定的输入窗口则发送消息 */
-			if(_parent)
-			{
-				ue.type = SDL_USEREVENT;
-				/* 处理可打印字符 */
-				if(isprint(ch))
-				{
-					memset(_word_buf,0x0,100);
-					/* 如果输入的数字 */
-					if(isdigit(ch))
-					{
-						sprintf(_word_buf,"%c",ch);
-					}
-					else
-					/* 如果输入的标点符号 */
-					if(ispunct(ch))
-					{
-						switch(ch)		
-						{
-							case '.':
-								sprintf(_word_buf,"。");
-							break;
-							case ',':
-								sprintf(_word_buf,"，");
-							break;
-							case ';':
-								sprintf(_word_buf,"；");
-							break;
-							case ':':
-								sprintf(_word_buf,"：");
-							break;
-							case '\'':
-								sprintf(_word_buf,"‘");
-							break;
-							case '"':
-								sprintf(_word_buf,"”");
-							break;
-							case '<':
-								sprintf(_word_buf,"《");
-							break;
-							case '>':
-								sprintf(_word_buf,"》");
-							break;
-							case '[':
-								sprintf(_word_buf,"【");
-							break;
-							case ']':
-								sprintf(_word_buf,"】");
-							break;
-							case '!':
-								sprintf(_word_buf,"！");
-							break;
-							case '`':
-								sprintf(_word_buf,"`");
-							break; 
-							case '~':
-								sprintf(_word_buf,"~");
-							break; 
-						}
-					}
-					ue.code = sdlgui_ime_cn_up;
-					ue.data1 = (void*)_word_buf;
-				}
-				/* 处理不可打印的字符 */
-				else
-				{
-					ue.code = sdlgui_ime_cn_ctrl;
-					ue.data1 = (void*)(int)ch;
-				}
-				e.type = SDL_USEREVENT;
-				e.user = ue;
-				_parent->event(&e);
-			}
-		break;
-	}
-	//return 0;
-	show_list();
-	return 0;
-}
-int sdl_ime::parse()
-{
-	int a,*b;
-	//memset(_word_group,0x0,sizeof(_word_group));
-	memset(_word_group,0x0,1000);
-	memcpy(_word_group[0],_word_buf,100);
-	if(!_word_buf_index)return 0;
-	char *_tc;
-	char _tbuf[1000];
-	int _file_pt = 0;
-	int _is_parse = 1;
-	if(!_input_method_file_path)return -1;
-	_input_method_file.open(_input_method_file_path,ios::in);
-	memset(_tbuf,0x0,1000);
-	while(_is_parse)
-	{
-		if(strstr(_tbuf,_word_buf)!=_tbuf)
-		{
-			_tc = NULL;
-			memset(_tbuf,0x0,1000);
-			_input_method_file.getline(_tbuf,1000);
-			_tc = strtok(_tbuf," ");
-			//--
-			_is_parse = !_input_method_file.eof();
-		}
-		else
-		{
-			_word_group_index = 0;
-			while(_tc!=NULL)
-			{
-				_tc = strtok(NULL," ");
-				if(_tc)
-				{
-					memcpy(_word_group[_word_group_index+1],_tc,100);
-					_word_group_index++;
-					if(_word_group_index >= 1000)break;
-				}
-			}
-			_is_parse = 0;
-		}
-	}
-	_input_method_file.close();
-}
-int sdl_ime::show_list()
-{
-	char _word_list[1000] = {0};
-	int i=0;
-	int j=0;
-	for(i;i<_word_group_index;i++)
-	{
-		sprintf(_word_list+j,"[%d]%s",i,_word_group[i]);
-		j+=strlen(_word_group[i])+3;
-	}
-	//cout<<_word_list<<endl;
-	text(_word_list);
-	return 0;
-}
-const char* sdl_ime::word()
-{
-	if(_cur_word)return _cur_word;
-	return NULL;
-}
-int sdl_ime::init_buffer()
-{
-	//if(_cur_word)delete _cur_word;
-	//_word_list = NULL;
-	//_cur_word = NULL;
-	memset(_word_buf,0x00,sizeof(_word_buf));
-	_word_buf_index = 0;
-	memset(_word_group,0x00,sizeof(_word_group));
-	_word_group_index=0;
-	return 0;
-}
-int sdl_ime::sysevent(SDL_Event* e)
-{
-	//cout<<e<<endl;
-	//return 0;
-	switch (e->type)
-	{
-		case SDL_MOUSEBUTTONUP:
-			//cout<<_state<<endl;
-			if(_state == sdlgui_ime_en)
-			{
-				size(ime_width,0);				
-				_state = sdlgui_ime_cn_up;
-			}
-			else
-			{
-				size(_rect.h,0);
-				_state = sdlgui_ime_en;
-			}
-			/* 这里引起错误，要调试 */
-			init_buffer();
-		break;
-		case SDL_KEYUP:
-			//cout<<(e->key.keysym.sym)<<endl;
-			input(e->key.keysym.sym);
-		break;
-	}
-	//return 0;
-	return sdl_board::sysevent(e);
-}
-//------------------------------------
-//
-//           工具类
-//
-//
-//------------------------------------
-typedef class sdl_widget : public GUI<sdl_widget,sdl_board>
-{
-	public:
-		sdl_widget();
-		sdl_widget(const char*,int,int,int,int,Uint32);
-		~sdl_widget();
-		int init();
-		int init(const char*,int,int,int,int,Uint32);
-		virtual int sysevent(SDL_Event*);
-}*sdl_widget_ptr;
-//-------------------------------------
-//
-//
-//             窗口框架类
-//
-//-------------------------------------
-typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
-{
-	public:
-		friend class sdl_board;
-	public:
-		sdl_frame();
-		sdl_frame(const char*,int,int,int,int,Uint32);
-		~sdl_frame();
-		int init();
-		int init(const char*,int,int,int,int,Uint32);
-		int redraw();
-		virtual int sysevent(SDL_Event*);
-		int run();
-		sdlwindow* frame();
-		//------------------------------------------------
-		int pos(int,int);
-		int size(int,int);
-		int size(int*,int*);
-		int show();
-		int hide();
-		//------------------------------------
-		double fps();
-	protected:
-		/* 事件分流 */
-		int event_shunt(SDL_Event*);
-	public:
-		sdl_ime ime;
-		sdlsurface backgroup;
-	protected:
-		static int call_redraw(void*);
-		static int all_event_process(void*);
-	protected:
-		sdl_board* _active_win;
-		sdlwindow* _window;
-		sdl_board _screen;
-		SDL_Event _main_event;
-		/* SDLGUI框架退出ID */
-		int _is_exit;
-		double _fps;
-		SDL_Point _window_rect;
-		/* 处理消息流的子级线程 */
-		SDL_Thread* _event_thread;
-}*sdl_frame_ptr;
-//-------------------------------------------------------
-//
-//
-//                   剪辑类
-//
-//
-//-------------------------------------------------------
-typedef class sdl_clip : public sdlsurface
-{
-	public:
-		sdl_clip();
-		sdl_clip(sdlsurface*,int,int);
-		//用给定的剪辑宽度和高度进行裁剪。
-		int clip(int,int);
-		int init();
-		int init(sdlsurface*,int,int);
+		int init(SDL_Surface*);
 		int init(Uint32,int,int,int,Uint32,Uint32,Uint32,Uint32);
-		int row();
-		int column();
-		int read(int,int);
-		int read();
-		int write();
-		int write(int,int);
-		virtual sdlsurface* operator()(int,int);
-		virtual sdlsurface* operator[](SDL_Point);
 	protected:
-		inline SDL_Rect clip_rect(int,int);
-	protected:
-		sdlsurface* _clip_surface;
-		//sdlsurface** _sub_surface;
-		SDL_Rect _clip_rect;
-		int _width,_height;
-		SDL_Point _sub_size;
-}*sdl_clip_ptr;
-//--------------------------------------------------
+		SDL_Surface *_surface;
+	public:
+		///-------------------------------------
+		sdlrenderer* create_software_renderer();
+		SDL_Surface* surface();
+		int surface(SDL_Surface*);
+		int create_rgb_surface(Uint32,int,int,int,Uint32,Uint32,Uint32,Uint32);
+		int fill_rect(const SDL_Rect* rect,Uint32 color);
+		int load_bmp(const char* file);
+		int blit_scaled(const SDL_Rect*,sdlsurface*,SDL_Rect*);
+		int blit_surface(const SDL_Rect*,sdlsurface*,SDL_Rect*);
+		int free_surface();
+		int surface_blend_mode(SDL_BlendMode);
+		int surface_color_mod(Uint8,Uint8,Uint8);
+		int set_surface_palette(SDL_Palette*);
+		int save_BMP(const char*);
+		sdlsurface* convert_surface(SDL_PixelFormat* fmt,Uint32 flags);
+		SDL_Rect* clip_rect();
+		int pixel(int,int);
+		int pixel(int,int,Uint32);
+		/* ��һ������ֱ�� */
+		int line(int,int,int,int,Uint32);
+		/* �������һ������ */
+		int rectangle(int,int,int,int,Uint32,int);
+		/* �������һ����Բ */
+		int circle(int,int,int,Uint32,int);
+		/* �������һ����Բ */
+		int ellipse(int,int,int,int,Uint32,int);
+		//
+		int must_lock();
+		int lock_surface();
+		int unlock_surface();
+		int surface_alpha_mod(Uint8);
+		Uint8 surface_alpha_mod();
+		int color_key(int,Uint32);
+		Uint32 color_key();
+		Uint32 map_rgb(Uint8,Uint8,Uint8);
+		Uint32 map_rgba(Uint8,Uint8,Uint8,Uint8);
+		//---------------------------------------
+		//SDL_image.h
+		int img_load(const char*);
+#ifndef __ANDROID_OS__
+		//-----------------------------------------
+		//SDL2_rotozoom.h
+		int rotozoom_surface(double,double,int);	
+		int rotozoom_surface_xy(double,double,double,int);
+		SDL_Point rotozoom_surface_size(int,int,double,double,int*,int*);
+		SDL_Point rotozoom_surface_size_xy(int,int,double,double,double,int*,int*);
+		int zoom_surface(double,double,int);
+		SDL_Point zoom_surface_size(int,int,double,double,int*,int*);
+		int shrink_surface(int,int);
+		int rotate_surface_90degrees(int);
+#endif// __ANDROID_OS__
+}*sdlsurface_ptr;
+//----------------------------------------------------
 //
 //
+//               �ı���Ⱦ��
 //
 //
-//
-//
-//
-//
-//
-//
-//
-//
-//---------------------------------------------------
-//---------------------------------------------
-/* 
-	主要是处理消息分流而设计的类,
-	它的构造函数首先会申请两个事件节点,
-	第一个节点为首节点，第二个节点为尾节点,
-	首节点的向上指向节点永远是指向尾节点的,
-	如果首尾节点相邻，则表示本窗口的,
-	所有事件处理完毕，将合并新的缓冲事件,
- */
-//GUI继承专用类构造函数
-template<class T,class B>
-GUI<T,B>::GUI():B()
-{
-	//This = dynamic_cast<T*>(this);
-	This = (T*)(this);
-	event_fun = NULL;
-	//为每个对象创建事件列表的头节点
-	/* 关系与下面的缓冲关系一样 */
-	_head_event = new sdlgui_event_struct;
-	_head_event->next = _head_event;
-	_head_event->last = _head_event; 
-	/* 
-	//为每个对象创建事件缓冲列表头节点
-	让缓冲节点的第一个节点的上下指向设置为第一个节点
-	尾节点的头节点永远存在且为空白消息,仅
-	供检测列表使用
-	 */
-	_end_event = new sdlgui_event_struct;
-	_end_event->last = _end_event; 
-}
-//----------------------------------------
-//GUI继承专用类对象事件设置函数
-template<class T,class B>
-int GUI<T,B>::event(int(*f)(T*,SDL_Event*))
-{
-	if(f)
-	{
-		event_fun = f; 
-		return 0;
-	}
-	return -1;
-}
-//------------------------------------
-//GUI继承专用类事件调用函数
-template<class T,class B>
-int GUI<T,B>::event(SDL_Event* e)
-{
-	userprocess(This,e);
-	sysprocess(This,e);
-	return 0;
-	//向对象事件列表末端追加一个事件
-	//在末端申请一个事件节点
-	_end_event->last->next = new sdlgui_event_struct(e,NULL);
-	//更新新节点的上下指向
-	_end_event->last = _end_event->last->next;
-	return 0;
-}
-//--------------------------------------
-//GUI继承专用类系统事件设置函数
-template<class T,class B>
-int GUI<T,B>::sysprocess(T* obj,SDL_Event* e)
-{
-	T* _this = ((GUI<T,B>*)obj)->This;
-	if(_this!=NULL)return _this->sysevent(e);
-	return -1;
-}
-//--------------------------------------
-//GUI继承专用类用户事件设置函数
-template<class T,class B>
-int GUI<T,B>::userprocess(T* obj,SDL_Event* e)
-{
-	//return 0;
-	T* _this = ((GUI<T,B>*)obj)->This;
-	if(_this!=NULL && _this->event_fun!=NULL)
-	{
-		return (*(_this->event_fun))(_this,e);
-	}
-	return -1;
-}
-//-----------------------------------------------
-//GUI继承专用类事件处理线程
-template<class T,class B>
-int GUI<T,B>::event_process()
-{
-	sdlgui_event_struct* cur_event = NULL;
-		//取出当前事件节点
-		cur_event = event();
-		if(cur_event)
-		{
-			//调整事件处理函数来处理事件
-			userprocess(This,&cur_event->event);
-			sysprocess(This,&cur_event->event);
-			delete cur_event;
-		}
-		SDL_Delay(1);
-	return 0;
-}
-//-----------------------------------------------
-//GUI继承专用类读取事件列表中的有效节点
-template<class T,class B>
-sdlgui_event_struct_ptr GUI<T,B>::event()
-{
-	sdlgui_event_struct* cur_event = NULL;
-	//return NULL;
-	//如果事件列表头节点的前后指向节点不同则表示缓存的事件还有处理数据
-	/* 
-	如果事件列表头节点的向后指向存在，
-	表示列表还有数据处理
-	 */
-	if(_head_event->next)
-	{
-		//cout<<this<<endl;
-		//1.取出当前事件节点
-		cur_event = _head_event->next;
-		//2.让头节点的下个节点指向已处理事件节点的下个节点。
-		_head_event->next = _head_event->next->next;
-		//_head_event->next->last = _head_event;
-	}
-	//return 0;
-	//如果事件列表头节点的向后指向为空表示缓存的事件已处理完成
-	if(!_head_event->next)
-	{
-		/* 
-			 如果尾节点的上个节点与下个节点指向不同节点，
-			 表示有新加入的事件节点 
-			 则把尾节点移动到头节点当中 
-		 */
-		if(_end_event->last != _end_event->next)
-		{
-			//将缓存事件放到处理列表当中
-			_head_event->next = _end_event->next;
-			//将缓存事件列表清空
-			//_end_event->next = NULL;
-			//_end_event->last= _end_event;
-			//_end_event->next = _end_event->last;
-		}
-	}
-	return cur_event;
-	//return (cur_event == _head_event->last || cur_event == NULL)?NULL:cur_event;
-}
-
-//------------------------------------------
-//
-//
-//
-//
-//---------------------------------------------
-//-------------------------------------
-//底板空白构造函数
-sdl_board::sdl_board()
-:
-GUI<sdl_board,sdlsurface>()
-{
-	init();
-}
-//-------------------------------------------
-//底板带参构造函数
-//---------------------------------------
-sdl_board::sdl_board(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
-:
-GUI<sdl_board,sdlsurface>()
-{
-	init();
-	init(ptitle,px,py,pw,ph,pflags);
-}
-//-----------------------------------------------
-//底板析构函数
-sdl_board::~sdl_board()
-{
-	//return 0;
-	//destroy();
-	if(_board)delete _board;
-	if(_hit_board)delete _hit_board;
-	if(_text)delete _text;
-}
-//底板初始函数
-int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
-{
-	if(sdlsurface::init(0,pw,ph,32,0,0,0,0))return -1;
-	//-------------
-	_rect.x = px;
-	_rect.y = py;
-	_rect.w = pw;
-	_rect.h = ph;
-	//--------------
-	//if(_board)delete _board;
-	_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
-	//----------------
-	//if(_hit_board_ptr)delete _hit_board_ptr;
-	_hit_board_ptr = new sdl_board*[pw*ph];
-	//if(_hit_board)delete _hit_board;
-	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
-	_hit_board->fill_rect(NULL,*(Uint32*)this);
-	_hit_board->color_key(SDL_TRUE,0);
-	_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
-	_hit_rect = NULL;
-	redraw_hit(NULL);
-	//-----------------
-	if(ptitle)
-	{
-		if(_text_board)delete _text_board;
-		#if defined (WIN32)
-		_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
-		#elif defined (LINUX) 
-		_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
-		#elif defined (__ANDROID_OS__)
-		_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
-		#endif
-		_text_board->render_utf8_solid(ptitle,0);
-	}
-	//
-	return 0;
-}
-//------------------------------------------
-//底板初始空函数
-int sdl_board::init()
-{
-	if(sdlsurface::init())return -1;
-	memset((char*)&_pos,0x00,sizeof(SDL_Point));
-	memset((char*)&_size,0x00,sizeof(SDL_Point));
-	memset((char*)&_rect,0x00,sizeof(SDL_Rect));
-	_is_show = 1;
-	_is_destroy = 0;
-	_text = NULL;
-	_parent = NULL;
-	_end = NULL;
-	_head = NULL;
-	_next = NULL;
-	_last = NULL;
-	_board = NULL;
-	_text_board = NULL;
-	return 0;
-}
-//--------------------------------------
-//设置窗口底板标题
-int sdl_board::text(const char* ptext)
-{
-	int len;
-	if(_text_board)
-	{
-		_text_board->text(ptext);
-		return _text_board->render_utf8_solid(ptext,0);
-	}
-	return -1;
-}
-//---------------------------------------
-//取得窗口底板标题
-const char* sdl_board::text()
-{
-	if(_text_board)
-	return _text_board->text();
-	return "";
-}
-//--------------------------------------
-//设置窗口底板位置
-int sdl_board::pos(int x,int y)
-{
-	_rect.x = x;
-	_rect.y = y;
-	return 0;
-}
-int sdl_board::pos(SDL_Point pt)
-{
-	_rect.x = pt.x;
-	_rect.y = pt.y;
-	return 0;
-}
-int sdl_board::pos_x(int x)
-{
-		_rect.x = x;
-		return 0;
-}
-int sdl_board::pos_y(int y)
-{
-		_rect.y = y;
-		return 0;
-}
-//---------------------------------------------
-/* 
-	获取窗口底板全局位置
-	不断与父级当前坐标合并，至到没有父级
- */
-SDL_Point sdl_board::global_pos()
-{
-	SDL_Point pt = {_rect.x,_rect.y};
-	sdl_board* t =parent();
-	while(t)
-	{
-		pt.x += t->_rect.x;
-		pt.y += t->_rect.y;
-		t=t->parent();
-	}
-	return pt;
-}
-//-----------------------------------------------
-//设置窗口底板全局位置
-int sdl_board::global_pos(int x,int y)
-{
-	int tx,ty;
-	tx = x;
-	ty = y;
-	sdl_board* t = parent();
-	while(t)
-	{
-		tx-=t->_rect.x;
-		ty-=t->_rect.y;
-		t = t->parent();
-	}
-	_rect.x = tx;
-	_rect.y = ty;
-	return 0;
-}
-//-----------------------------------------
-//设置窗口底板全局X坐标
-int sdl_board::global_pos_x(int x)
-{
-	int tx;
-	tx = x;
-	sdl_board* t = parent();
-	while(t)
-	{
-		tx-=t->_rect.x;
-		t = t->parent();
-	}
-	_rect.x = tx;
-	return 0;
-}
-//-----------------------------------------
-//设置窗口底板全局Y坐标
-int sdl_board::global_pos_y(int y)
-{
-	int ty;
-	ty = y;
-	sdl_board* t = parent();
-	while(t)
-	{
-		ty-=t->_rect.y;
-		t = t->parent();
-	}
-	_rect.y = ty;
-	return 0;
-}
-//-----------------------------------------
-//获取窗口底板全局X坐标
-int sdl_board::global_pos_x()
-{
-	int tx;
-	tx = _rect.x;
-	sdl_board* t = parent();
-	while(t)
-	{
-		tx+=t->_rect.x;
-		t = t->parent();
-	}
-	return tx;
-}
-//-----------------------------------------
-//获取窗口底板全局Y坐标
-int sdl_board::global_pos_y()
-{
-	int ty;
-	ty = _rect.y;
-	sdl_board* t = parent();
-	while(t)
-	{
-		ty+=t->_rect.y;
-		t = t->parent();
-	}
-	return ty;
-}
-//-------------------------------------------
-//坐标转换
-int sdl_board::target_pos_x(sdl_board* obj,int px)
-{
-	if(!obj)return -1;
-	int x = global_pos_x();
-	int tx = obj->global_pos_x(); 
-	return (x-tx+px);
-}
-int sdl_board::target_pos_y(sdl_board* obj,int py)
-{
-	if(!obj)return -1;
-	int y = global_pos_y();
-	int ty = obj->global_pos_y(); 
-	return (y-ty+py);
-}
-SDL_Point sdl_board::target_pos(sdl_board* obj,int px,int py)
-{
-	SDL_Point pt1 = global_pos();
-	if(!obj)
-	{
-		pt1.x = 0;
-		pt1.y = 0;
-		return pt1;
-	}
-	SDL_Point pt2 = obj->global_pos();
-	pt1.x = pt2.x-pt1.x+px;
-	pt1.y = pt2.y-pt1.y+py;
-	return pt1;
-}
-//--------------------------------------
-//取得窗口底板位置
-SDL_Point sdl_board::pos()
-{
-	SDL_Point pt={_rect.x,_rect.y};
-	return pt;
-}
-int sdl_board::pos_x()
-{
-	return _rect.x;
-}
-int sdl_board::pos_y()
-{
-	return _rect.y;
-}
-//--------------------------------------
-//设置窗口底板大小
-int sdl_board::size(int w,int h)
-{
-	if(w>0)_rect.w = w;
-	if(h>0)_rect.h = h;
-	//初始化窗口表面大小
-	//sdlsurface t(0,w,h,32,0,0,0,0);
-	//blit_surface(NULL,&t,NULL);
-	//sdlsurface::init(0,w,h,32,0,0,0,0);
-	_board->init(0,w,h,32,0,0,0,0);
-	return 0;
-}
-//--------------------------------------
-//设置窗口底板大小
-int sdl_board::size(SDL_Point s)
-{
-	if(s.x>0)_rect.w = s.x;
-	if(s.y>0)_rect.h = s.y;
-	return 0;
-}
-//--------------------------------------
-//得到窗口底板大小
-SDL_Point sdl_board::size()
-{
-	SDL_Point s = {_rect.w,_rect.h};
-	return s;
-}
-//-------------------------------------
-//得到窗口矩形区域
-SDL_Rect* sdl_board::rect()
-{
-	return &_rect;
-}
-//-------------------------------------------
-//设置窗口宽度
-int sdl_board::width(int pw)
-{
-	_rect.w = pw;
-	return 0;
-}
-//------------------------------------------
-//得到窗口宽度
-int sdl_board::width(){return _rect.w;} 
 //--------------------------------------------
-//设置窗口高度
-int sdl_board::height(int ph)
+typedef class sdltext : public sdlsurface
 {
-	_rect.h = ph;
+	public:
+		sdltext();
+		sdltext(const char*,int);
+		int init();
+		int text(const char*);
+		char* text();
+		int font(const char*,int);
+		//--------------------------------------
+		int font_style();	
+		int font_style(int);	
+		int font_outline();
+		int font_outline(int);
+		int font_hinting();
+		int font_hinting(int);
+		int font_kerning();
+		int font_kerning(int);
+		int font_height();
+		int font_ascent();
+		int font_descent();
+		int font_line_skip();
+		long font_faces();
+		int font_face_is_fixed_width();
+		char* font_face_family_name();
+		char* font_face_style_name();
+		int glyph_is_provided(Uint16);
+		int glyph_metrics(Uint16,int*,int*,int*,int*,int*);
+		int size_text(char*,int*,int*);
+		int size_utf8(const char*,int*,int*);
+		int size_unicode(const Uint16*,int*,int*);
+		//
+		int render_text_solid(const char*,Uint32);
+		int render_utf8_solid(const char*,Uint32);
+		int render_unicode_solid(const Uint16*,Uint32);
+		int render_glyph_solid(const Uint16,Uint32);
+		//
+		int render_text_shaded(const char*,Uint32,Uint32);
+		int render_utf8_shaded(const char*,Uint32,Uint32);
+		int render_unicode_shaded(const Uint16*,Uint32,Uint32);
+		int render_glyph_shaded(const Uint16,Uint32,Uint32);
+		//
+		int render_text_blended(const char*,Uint32);
+		int render_utf8_blended(const char*,Uint32);
+		int render_unicode_blended(const Uint16*,Uint32);
+		int render_glyph_blended(const Uint16,Uint32);
+		//--------------------------------------
+	protected:
+		TTF_Font* _font;
+		char* _text;
+	protected:
+		static int is_init;
+}*sdltext_ptr;
+int sdltext::is_init = 0;
+//--------------------------------------------
+//
+///
+//              ����������
+//
+//
+//
+//---------------------------------------------
+
+class sdltexture
+{
+	public:
+		sdltexture();
+		sdltexture(SDL_Texture*);
+		~sdltexture();
+		int texture(SDL_Texture*);
+		SDL_Texture* texture();
+	protected:
+		SDL_Texture* _texture;
+	public:
+		Uint8 texture_alpha_mod();
+		SDL_BlendMode texture_blend_mode();
+		int destroy();
+};
+
+//--------------------------------------------
+//
+///
+//              ��Ⱦ������
+//
+//
+//
+//---------------------------------------------
+class sdlrenderer
+{
+	public:
+		sdlrenderer();
+		sdlrenderer(SDL_Renderer*);
+		~sdlrenderer();
+	protected:
+		SDL_Renderer *_renderer;
+	public:	
+		sdltexture* create_texture_from_surface(sdlsurface*);
+		sdltexture* create_texture(Uint32,int,int,int);
+		int copy(sdltexture*,const SDL_Rect*,const SDL_Rect*);
+		int clear();
+		int present();
+		int fill_rect(const SDL_Rect*);
+		int set_render_draw_color(Uint8,Uint8,Uint8,Uint8);
+		sdltexture* render_target();
+		int render_target(sdltexture*);
+		int draw_line(int,int,int,int);
+		int draw_point(int,int);
+		int destroy();
+};
+//-----------------------------------------
+//
+//
+//             ����������
+//
+//------------------------------------------
+class sdlwindow
+{
+	public:
+		sdlwindow();//���ڹ��캯��
+		sdlwindow(SDL_Window* win);
+		sdlwindow(const char*,int,int,int,int,Uint32);//�������ں���
+		virtual ~sdlwindow();//������������
+	protected:
+		SDL_Window *_window;//�������������
+	public:
+		int window(const char*,int,int,int,int,Uint32);//�������ں���
+		int window(sdlwindow*);//���ݴ���ָ��
+		SDL_Window* window();//���ش���ָ��
+		int destroy();//���ٴ���
+		////
+		sdlrenderer* create_renderer(int,Uint32);//����������Ⱦ���� 
+		///
+		sdlsurface* get_window_surface();//�õ����ڱ���
+		//
+		int update_window_surface();//���´��ڱ���
+		//
+		int pos(int,int);//���´���λ��
+		//
+		int size(int*,int*);//ȡ���ڴ�С
+		int size(int,int);//���´��ڴ�С
+		//
+		int show();//��ʾ����
+		//
+		int hide();//���ش���
+};
+//-------------------------------------------
+//
+//
+//
+//
+//
+//                    ��ʵ��
+//
+//
+//
+//
+//-------------------------------------------
+sdlsurface::sdlsurface()
+{
+	_surface = NULL;
+	init();
+}
+sdlsurface::sdlsurface(SDL_Surface* sur)
+{
+	_surface = NULL;
+	init(sur);
+}
+sdlsurface::sdlsurface(Uint32 flags,int width,int height,int depth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
+{
+	_surface = NULL;
+	init(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
+}
+SDL_Surface* sdlsurface::surface()
+{
+	return _surface;
+}
+sdlsurface::~sdlsurface()
+{
+	if(_surface)
+	{
+		free_surface();
+	}
+}
+int sdlsurface::surface(SDL_Surface* surface)
+{
+	if(surface)
+	{
+		if(_surface)free_surface();
+		_surface = surface;
+		return 0;
+	}
+	return -1;
+}
+int sdlsurface::init()
+{
+	if(_surface)free_surface();
+	//_surface = NULL;
 	return 0;
 }
-//-----------------------------------------
-//得到窗口高度
-int sdl_board::height(){return _rect.h;}
-//------------------------------------------
-//设置父级窗口
-sdl_board* sdl_board::parent(sdl_board* parent)
+int sdlsurface::init(SDL_Surface* sur)
 {
-	_parent = parent;
-	return _parent;
+	if(sur)
+	{
+		if(_surface)free_surface();
+		_surface = sur;		
+		return 0;
+	}
+	return -1;
 }
-//------------------------------------------
-//返回父级窗口
-sdl_board* sdl_board::parent()
+int sdlsurface::init(Uint32 flags,int width,int height,int depth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
 {
-	return _parent;
+	if(_surface)free_surface();
+	create_rgb_surface(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
+	return 0;
+}
+int sdlsurface::create_rgb_surface(Uint32 flags,int width,int height,int depth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
+{
+	if(_surface)free_surface();
+	//_surface = NULL;
+	_surface = SDL_CreateRGBSurface(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
+	if(_surface)return 0;
+	return -1;
+}
+int sdlsurface::fill_rect(const SDL_Rect* rect,Uint32 color)
+{
+	return SDL_FillRect(_surface,rect,color);
+}
+int sdlsurface::load_bmp(const char* file)
+{
+	if(_surface)free_surface();
+	_surface = SDL_LoadBMP(file);
+	if(_surface)return 0;
+	return -1;
+}
+///////////////////////////////////////////
+//λ�鴫�䷽������һ������Ϊλ��Դ�Ĵ��䷶Χ���ڶ�������ΪĿ��λ�飬����������ΪĿ�괫�䷶Χ���ɹ�����0
+int sdlsurface::blit_surface(const SDL_Rect* srcrect,sdlsurface* dst,SDL_Rect* dstrect)
+{
+	if(dst)
+	{
+		return SDL_BlitSurface(_surface,srcrect,dst->surface(),dstrect);
+	}
+	return -1;
 }
 //-------------------------------------------------
-/* 
-	 返回给定对象是否为当前窗口的子窗口 
-	 如果是子级窗口返回0,否则返回-1 
- */
-int sdl_board::is_child(sdl_board* obj)
+//�ͷ����õ�surface
+int sdlsurface::free_surface()
 {
-	sdl_board* t = obj;
-	//如果指定窗口与指定窗口的父级窗口都存在则处理数据
-	while(t && t->parent())
-	{
-		//如果指定窗口的父级窗口与当前窗口相等,返回0
-		if(t->parent() == this)return 1;
-		//向父级窗口跳转
-		t = t->parent();
-	}
-	//如果一直没有返回表示指定窗口不是当前窗口的子级,则返回-1
+	SDL_FreeSurface(_surface);
+	//if(_surface)delete _surface;
+	_surface = NULL;
 	return 0;
 }
-//-------------------------------------
-//添加子内部窗口底板
-template<class T>T* sdl_board::add(const char* title,int px,int py,int pw,int ph,Uint32 pflags)
+//���ñ�����ģʽ
+int sdlsurface::surface_blend_mode(SDL_BlendMode mode)
 {
-	T* t = dynamic_cast<T*>(new T);
-	t->init(title,px,py,pw,ph,pflags);
-	t->_parent = this;
-	z_top(t,NULL,0);
-	return t;
+	return SDL_SetSurfaceBlendMode(_surface,mode);
 }
-//---------------------------------------------------
-//添加外部子窗口底板
-template<class T>T* sdl_board::add(T* obj)
+//-------------------------------------------------
+//���ñ���ɫ��ģʽ
+int sdlsurface::surface_color_mod(Uint8 r,Uint8 g,Uint8 b)
 {
-	if(obj)
+	return SDL_SetSurfaceColorMod(_surface,r,g,b);
+}
+//--------------------------------------------------
+//���ñ���ALPHAģʽ
+int sdlsurface::surface_alpha_mod(Uint8 a)
+{
+	return SDL_SetSurfaceAlphaMod(_surface,a);
+}
+//--------------------------------------------------
+//�õ�����ALPHAģʽ
+Uint8 sdlsurface::surface_alpha_mod()
+{
+	Uint8 a;
+	SDL_GetSurfaceAlphaMod(_surface,&a);
+	return a;
+}
+//--------------------------------------
+//���ñ����ɫ��
+int sdlsurface::set_surface_palette(SDL_Palette* palette)
+{
+	return SDL_SetSurfacePalette(_surface,palette);
+}
+//-------------------------------------------
+//��������BMPλͼ��ʽд������ļ���
+int sdlsurface::save_BMP(const char* file)
+{
+	return SDL_SaveBMP(_surface,file);
+}
+//----------------------------------------------
+//���������Ŵ��䵽Ŀ��λ�顣
+int sdlsurface::blit_scaled(const SDL_Rect* srcrect,sdlsurface* dst,SDL_Rect* dstrect)
+{
+	if(dst)
+	return SDL_BlitScaled(_surface,srcrect,dst->surface(),dstrect);
+	return -1;
+}
+//------------------------------------------------
+//������ת����ָ����ʽ���������µı���ָ��
+sdlsurface* sdlsurface::convert_surface(SDL_PixelFormat* fmt,Uint32 flags = 0)
+{
+	return new sdlsurface(SDL_ConvertSurface(_surface,fmt,flags));
+}
+//----------------------------------------------
+//�õ��������
+SDL_Rect* sdlsurface::clip_rect()
+{
+	SDL_Rect* trect = new SDL_Rect;
+	memset((char*)trect,0x00,sizeof(SDL_Rect));
+	SDL_GetClipRect(_surface,trect);
+	return trect;
+}
+//------------------------------------------------------
+//
+//
+//
+//
+//
+//
+//------------------------------------------------------
+sdltext::sdltext()
+:
+sdlsurface()
+{
+	_font = NULL;
+	init();
+}
+sdltext::sdltext(const char* ptext,int psize)
+:
+sdlsurface()
+{
+	_font = NULL;
+	init();
+	font(ptext,psize);
+}
+int sdltext::init()
+{
+	if(!sdltext::is_init)
 	{
-		obj->_parent = this;
-		//cout<<"obj:"<<obj<<" obj->_parent:"<<obj->_parent<<":"<<this<<endl;
-		z_top(obj,NULL,0);
-		return obj;
+		sdltext:is_init = 1;
+		TTF_Init();
 	}
+	if(_font)TTF_CloseFont(_font);
+	if(sdlsurface::init())return -1;
+	return 0;
+}
+int sdltext::text(const char* ptext)
+{
+	//cout<<ptext<<endl;
+	if(_text)delete _text;
+	int len = strlen(ptext)+1;
+	_text = new char[len];
+	memset(_text,0x00,len);
+	strcpy(_text,ptext);
+	//---------------------------------
+	return 0;
+}
+char* sdltext::text()
+{
+	if(_text) return _text;
 	return NULL;
+}
+int sdltext::font(const char* font_path,int font_size)
+{
+	if(_font)	TTF_CloseFont(_font);
+	_font = TTF_OpenFont(font_path,font_size);
+	if(!_font)return -1;
+	return 0;
+}
+int sdltext::font_style()	
+{
+	if(!_font)return -1;
+	return TTF_GetFontStyle(_font);
+}
+int sdltext::font_style(int pstyle)	
+{
+	if(!_font)return -1;
+	TTF_SetFontStyle(_font,pstyle);
+	return 0;
+}
+int sdltext::font_outline()
+{
+	if(!_font)return -1;
+	return TTF_GetFontOutline(_font);
+}
+int sdltext::font_outline(int poutline)
+{
+	if(!_font)return -1;
+	TTF_SetFontOutline(_font,poutline);
+	return 0;
+}
+int sdltext::font_hinting()
+{
+	if(!_font)return -1;
+	return TTF_GetFontHinting(_font);
+}
+int sdltext::font_hinting(int phinting)
+{
+	if(!_font)return -1;
+	TTF_SetFontHinting(_font,phinting);
+	return 0;
+}
+int sdltext::font_kerning()
+{
+	if(!_font)return -1;
+	return TTF_GetFontKerning(_font);
+}
+int sdltext::font_kerning(int pkerning)
+{
+	if(!_font)return -1;
+	TTF_SetFontKerning(_font,pkerning);
+	return 0; 
+}
+int sdltext::font_height()
+{
+	if(!_font)return -1;
+	return TTF_FontHeight(_font);
+}
+int sdltext::font_ascent()
+{
+	if(!_font)return -1;
+	return TTF_FontAscent(_font);
+}
+int sdltext::font_descent()
+{
+	if(!_font)return -1;
+	return TTF_FontDescent(_font);
+}
+int sdltext::font_line_skip()
+{
+	if(!_font)return -1;
+	return TTF_FontLineSkip(_font);
+}
+long sdltext::font_faces()
+{
+	if(!_font)return -1;
+	return TTF_FontFaces(_font);
+}
+int sdltext::font_face_is_fixed_width()
+{
+	if(!_font)return -1;
+	return TTF_FontFaceIsFixedWidth(_font);
+}
+char* sdltext::font_face_family_name()
+{
+	if(!_font)return NULL;
+	return TTF_FontFaceFamilyName(_font);
+}
+char* sdltext::font_face_style_name()
+{
+	if(!_font)return NULL;
+	return TTF_FontFaceStyleName(_font);
+}
+int sdltext::glyph_is_provided(Uint16 ch)
+{
+	if(!_font)return -1;
+	return TTF_GlyphIsProvided(_font,ch);
+}
+int sdltext::glyph_metrics(Uint16 ch,int* minx,int* maxx,int* miny,int* maxy,int* advance)
+{
+	if(!_font)return -1;
+	return TTF_GlyphMetrics(_font,ch,minx,maxx,miny,maxy,advance);
+}
+int sdltext::size_text(char* ptext,int* pw,int* ph)
+{
+	if(!_font)return -1;
+	return TTF_SizeText(_font,ptext,pw,ph);
+}
+int sdltext::size_utf8(const char* ptext,int* pw,int* ph)
+{
+	if(!_font)return -1;
+	return TTF_SizeUTF8(_font,ptext,pw,ph);
+}
+int sdltext::size_unicode(const Uint16* ptext,int* pw,int* ph)
+{
+	if(!_font)return -1;
+	return TTF_SizeUNICODE(_font,ptext,pw,ph);
+}
+int sdltext::render_text_solid(const char* ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color tc = {0,255,255};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderText_Solid(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_utf8_solid(const char* ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderUTF8_Solid(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_unicode_solid(const Uint16* ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderUNICODE_Solid(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_glyph_solid(const Uint16 ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderGlyph_Solid(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_text_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderText_Shaded(_font,ptext,c,c1);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_utf8_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderUTF8_Shaded(_font,ptext,c,c1);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_unicode_shaded(const Uint16* ptext,Uint32 pcolor,Uint32 pcolor1)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderUNICODE_Shaded(_font,ptext,c,c1);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_glyph_shaded(const Uint16 ptext,Uint32 pcolor,Uint32 pcolor1)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderGlyph_Shaded(_font,ptext,c,c1);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_text_blended(const char* ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderText_Blended(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_utf8_blended(const char* ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderUTF8_Blended(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_unicode_blended(const Uint16* ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderUNICODE_Blended(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+int sdltext::render_glyph_blended(const Uint16 ptext,Uint32 pcolor)
+{
+	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	if(!_font)return -1;
+	free_surface();
+	_surface = TTF_RenderGlyph_Blended(_font,ptext,c);
+	if(!_surface)return -1;
+	return 0;
+}
+//------------------------------------------------------
+//
+//
+//
+//
+//
+//
+//
+//
+//------------------------------------------------
+//�ɱ��洴��һ����Ⱦ��
+sdlrenderer* sdlsurface::create_software_renderer()
+{
+	return new sdlrenderer(SDL_CreateSoftwareRenderer(_surface));
 }
 //-----------------------------------------
-//调整子窗口Z序
-/* 
-		子窗口Z序的最顶层窗口（即列表尾节点）的NEXT应为NULL 
- */
-int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
+//�õ�ָ�����������ֵ
+int sdlsurface::pixel(int x,int y)
 {
-	sdl_board* temp;
-	//如果源窗口a不存在则返回错误
-	if(a==NULL)return -1;
-	//如果目标窗口b不存在则按Z序调整窗口顺序
-	if(b==NULL)
+	if(_surface==NULL)return -1;
+	int bpp = _surface->format->BytesPerPixel;
+	Uint8 *p = (Uint8 *)_surface->pixels + y * _surface->pitch + x * bpp;
+	switch(bpp)
 	{
-		switch(z)
-		{
-			//如果Z序为0则调整为顶序
-			case 0:
-				//如果没有头节点子窗口则直接设置
-				if(_head==NULL)
-				{
-					a->_next = NULL;
-					_head = a;
-					_head->_last = a;
-				}
-				//如果已有子窗口节点
-				else
-				{
-					//如果节点为链表尾则直接返回
-					if(a == _head->_last)return 0;
-					//先把A节点脱离出来。
-					if(a->_last)a->_last->_next = a->_next;	
-					if(a->_next)a->_next->_last = a->_last;	
-					//再把A节点放到链表尾
-					_head->_last->_next = a;
-					//更新A节点链表数据
-					a->_last = _head->_last;
-					a->_next = NULL;
-					//如果调整的节点是头节点，则更新头节点到下一个节点
-					if(a == _head)_head = _head->_next;
-					//更新链表尾数据
-					_head->_last = a;
-				}
-			break;
-			//如果Z序指定数据则移动指针
-			defalut:
-				if(z>0)
-				{
-
-				}
-				else
-				{
-
-				}
-			break;
-		}
+		case 1:return *p;
+		case 2:return *(Uint16*)p;
+		case 3:
+			if(SDL_BYTEORDER == SDL_BIG_ENDIAN)return p[0]<<16|p[1]<<8|p[2];
+			return p[0]|p[1]<<8|p[2]<<16;
+		break;
+		case 4:
+			return *(Uint32*)p;
+		break;
+		default:return 0;
 	}
-	//如果窗口B存在，则移动指定的两个子窗口Z序
+}
+//-----------------------------------------
+//����ָ�����������ֵ
+int sdlsurface::pixel(int x,int y,Uint32 v)
+{
+	if(_surface == NULL)return -1;
+	int bpp = _surface->format->BytesPerPixel;
+	Uint8 *p = (Uint8*)_surface->pixels+y*_surface->pitch+x*bpp;
+	switch(bpp)
+	{
+			case 1:
+				*p = v;
+			break;
+			case 2:
+				*(Uint16*)p=v;
+			break;
+			case 3:
+				if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+				{
+					p[0] = (v>>16)&0xff;
+					p[1] = (v>>8)&0xff;
+					p[2] = v&0xff;
+				}
+				else
+				{
+					p[0]=v&0xff;
+					p[1]=(v>>8)&0xff;
+					p[2]=(v>>16)&0xff;
+				}
+			break;
+			case 4:
+				*(Uint32*)p=v;
+			break;
+	}
+	return 0;
+}
+//----------------------------------------------------------
+//�������һ������
+int sdlsurface::rectangle(int x0,int y0,int x1,int y1,Uint32 color,int pm=0)
+{
+	SDL_Rect rt;
+	if(pm)
+	{
+		rt.x = x0;
+		rt.y = y0;
+		rt.w = x1;
+		rt.h = y1;
+		return fill_rect(&rt,color);
+	}
 	else
 	{
-		if(z>0)
-		{
-
-		}
-		else
-		if(z<0)
-		{
-
-		}
-		else
-		{
-			
-		}
-	}
-	return 0;
-}
-//--------------------------------------------------------
-//消毁窗口
-int sdl_board::destroy()
-{
-	sdl_board* t = _head;
-	_is_destroy = 1;
-	while(t)
-	{
-		t->destroy();
-		t = t->_next;
-	}
-	return 0;
-	//--------------------------------------------
-	//以下无效
-	if(parent())
-	{
-		if(parent()->_head == this)
-		{
-			_next->_last = parent()->_head->_last;
-			parent()->_head = _next;
-		}
-		else
-		if(parent()->_head->_last == this)
-		{
-			parent()->_head->_last = this->_last;	
-		}
-		else
-		{
-
-		}
-	}
-	return 0;
-}
-//-----------------------------------------------
-//重绘窗口探板
-int sdl_board::redraw_hit(sdl_board* child = NULL)
-{
-	SDL_Rect lrt;
-	int x,y;
-	/* 如果子对象存在表示复制到父级探板 */
-	if(child)
-	{
-		memcpy(&lrt,child->rect(),sizeof(SDL_Rect));
-		//lrt.x = 0;
-		//lrt.y = 0;
-		for(y = (lrt.y>0)?lrt.y:0;y<(lrt.h+lrt.y) && y<_rect.h;y++)
-		{
-			for(x=(lrt.x>0)?lrt.x:0;x<(lrt.w+lrt.x) && x<_rect.w;x++)
-			{
-				_hit_board_ptr[x+y*_rect.w] = child->_hit_board_ptr[(x-child->_rect.x)+(y-child->_rect.y)*child->_rect.w];
-			}
-		}
+		/* ������ˮƽ�� */
+		line(x0,y0,x1,y0,color);
+		line(x0,y1,x1,y1,color);
+		/* ��������ֱ�� */
+		line(x0,y0,x0,y1,color);
+		line(x1,y0,x1,y1,color);
 		return 0;
 	}
-	/* 如果没有子级表示更新自身探板 */
-	memcpy(&lrt,&_rect,sizeof(SDL_Rect));
-	lrt.x = 0;
-	lrt.y = 0;
-	for(y = (lrt.y>0)?lrt.y:0;y<(lrt.h+lrt.y) && y<_rect.h;y++)
-	{
-		for(x=(lrt.x>0)?lrt.x:0;x<(lrt.w+lrt.x) && x<_rect.w;x++)
-		{
-			_hit_board_ptr[x+y*_rect.w] = this;
-		}
-	}
 }
-//-----------------------------------
-//返回探板中指定坐标的窗口值
-sdl_board* sdl_board::hit_board(int px,int py)
+/* 
+	 ���ߺ��� 
+	��ȷ���ǻ�ˮƽ�ߣ���ֱ�ߣ���������ֱ�� 
+	����������ѡ���߷�ʽ��ʼ����
+	������
+ */
+int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 {
-	if(_hit_board_ptr)
+	if(_surface == NULL)return -1;
+	//ȡ���������
+	int bpp = _surface->format->BytesPerPixel;
+	//����С����
+	int tx0 = x0;
+	int ty0 = y0;
+	int tx1 = x1;
+	int ty1 = y1;
+	if(tx0>tx1)
 	{
-		return _hit_board_ptr[px+py*_rect.w];
+		tx0 += tx1;
+		tx1 =  tx0-tx1;
+		tx0 -= tx1;
+		//
+		ty0 += ty1;
+		ty1 =  ty0-ty1;
+		ty0 -= ty1;
 	}
-	return NULL;
-}
-//-------------------------
-//重绘底板窗口
-int sdl_board::redraw()
-{
-	//if(_is_show == 0)return 0;
-	sdl_board* temp = _head;
-	sdl_board* del_board = NULL;
-	SDL_Rect trc1,trc2;
-	//------------------
-	//如果不消毁，则处理窗口
-	if(!_is_destroy)
+	/* ȡ�����������׵�ַ */
+	Uint8 *p = (Uint8*)_surface->pixels+ty0*_surface->pitch+tx0*bpp;
+	//
+	float x_off=tx1-tx0;
+	float y_off=ty1-ty0;
+	int x,y;
+	float xy_s;
+	/* ����ߵ��յ㳬���˱���������ȡ��Ч���� */
+	x_off -= (tx1>=_surface->pitch)?x_off-_surface->pitch : 0;
+	x_off = (tx1<=0)?0:x_off;
+	y_off -= (ty1>=_surface->h)?ty1-_surface->h:0;
+	y_off = (ty1<=0)?0:y_off;
+	//
+	//ѡ���ʽ
+	//if(must_lock())lock_surface();
+	switch(bpp)
 	{
-		//如果显示则绘画窗口
-		if(_is_show)
-		{
-			blit_surface(NULL,_board,NULL);
-			/* 处理窗口标签文本 */
-			if(_text_board)
+		/* ��ɫ */
+		case 1:
+			/* �����ˮƽ�� */
+			if(!y_off)
 			{
-				_text_board->blit_surface(NULL,_board,NULL);
+				memset((Uint32*)p,color,x_off*bpp);
 			}
-			/* 重绘新探板 */
-			redraw_hit();
-			//处理子窗口
-			while(temp)
+		break;
+		/* 16ɫ */
+		case 2:
+		break;
+		/*  */
+		case 3:
+		break;
+		/* 32λ */
+		case 4:
+			/* �����ˮƽ�� */
+			if(!y_off)
 			{
-				del_board = temp;
-				if(!temp->redraw())
+				for(x=0;x<x_off;x++)
 				{
-						/* 将子窗口绘制到父窗口上 */
-						trc1.x = temp->rect()->x;	
-						trc1.y = temp->rect()->y;	
-						trc1.w = temp->rect()->w;	
-						trc1.h = temp->rect()->h;	
-						trc2.x = 0;
-						trc2.y = 0;
-						trc2.w = temp->rect()->w;
-						trc2.h = temp->rect()->h;
-						if(trc1.x<0)
-						{
-							trc1.w+=trc1.x;
-							trc1.x = 0;
-							trc2.x = temp->rect()->x*-1;
-						}
-						if(trc1.y<0)
-						{
-							trc1.h+=trc1.y;
-							trc1.y = 0;
-							trc2.y = temp->rect()->y*-1;
-						}
-						temp->_board->blit_surface(&trc2,_board,&trc1);
-						/* 将子窗口探板绘制到父窗口上 */
-						redraw_hit(temp);
+					*(Uint32*)(p+x*bpp) = color;
 				}
-				temp = temp->_next;
 			}
+			else
+			/* �������ֱ�� */
+			if(!x_off)
+			{
+				for(y=0;y<y_off;y++)
+				{
+					*(Uint32*)(p+y*_surface->pitch) = color;
+				}
+			}
+			/* ������б�� */
+			else
+			{
+				for(x = 0;x<x_off;x++)
+				{
+					//if(!x_off)cout<<y_off<<endl;
+					y = x/(x_off/y_off);	
+					*(Uint32*)(p+x*bpp+y*_surface->pitch) = color;
+				}
+			}
+		break;
+	}
+	//if(must_lock())unlock_surface();
+	return 0;
+}
+//------------------------------------------------------------
+//��һ��Բ,pm=0��ʾ�����,pm=1��ʾ���
+int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
+{
+	if(_surface == NULL)return -1;
+	//����뾶С��3���ʾ�޷����ƣ�ֱ���˳�
+	if(pr<3)return -1;
+	//ȡ���������
+	int bpp = _surface->format->BytesPerPixel;
+	int i = 0;
+	//�µ�����
+	float tx,ty,tx1,ty1;
+	float pj;
+	switch(bpp)
+	{
+		/* ��ɫ */
+		case 1:
+		break;
+		/* 16ɫ */
+		case 2:
+		break;
+		/*  */
+		case 3:
+		break;
+		/* 32λ */
+		case 4:
+			for(i=0;i<=pr;i++)
+			{
+				pj = 3.1415926/180*i;
+				ty = i;
+				tx = pr*sin(acos(ty/pr));
+				//tx = sin(pj)*pr;
+				//ty = cos(pj)*pr;
+				if(pm)
+				{
+					//����ڶ������ټ����һ����
+					line(px-tx,py-ty,px+tx,py-ty,color);
+					//������������ټ����������
+					line(px-tx,py+ty,px+tx,py+ty,color);
+				}
+				else
+				{
+					//�����һ������������
+					tx1 = px+tx;
+					ty1 = py-ty;
+					pixel(tx1,ty1,color);
+					//����ڶ������������
+					tx1 = px-tx;
+					ty1 = py-ty;
+					pixel(tx1,ty1,color);
+					//������������������
+					tx1 = px-tx;
+					ty1 = py+ty;
+					pixel(tx1,ty1,color);
+					//������������������
+					tx1 = px+tx;
+					ty1 = py+ty;
+					pixel(tx1,ty1,color);
+				}
+			}
+		break;
+	}
+}
+//---------------------------------------------------------------
+//��һ����Բ��pm=0��ʾ����䣬pm=1��ʾ���
+int sdlsurface::ellipse(int px,int py,int pr0,int pr1,Uint32 color,int pm=0)
+{
+	int x,y;
+	float d1,d2;
+	x = 0;
+	y = pr1;
+	d1 = pr1*pr1 + pr0*pr0*(-pr1+0.5);
+	if(pm)
+	{
+		line(x+px,y+py,-x+px,y+py,color);
+		line(x+px,-y+py,-x+px,-y+py,color);
+	}
+	else
+	{
+		pixel(x+px,y+py,color);
+		pixel(-x+px,-y+py,color);
+		pixel(-x+px,y+py,color);
+		pixel(x+px,-y+py,color);
+	}
+	while(pr1*pr1*(x+1)<pr0*pr0*(y-0.5))
+	{
+		if(d1<=0)
+		{
+			d1+=pr1*pr1*(2*x+3);
+			x++;
 		}
 		else
 		{
-			/* 不显示窗口返回-1 */
-			return -1;
+			d1+=pr1*pr1*(2*x+3)+pr0*pr0*(-2*y+2);
+			x++;
+			y--;
+		}
+		//draw
+		if(pm)
+		{
+			line(x+px,y+py,-x+px,y+py,color);
+			line(x+px,-y+py,-x+px,-y+py,color);
+		}
+		else
+		{
+			pixel(x+px,y+py,color);
+			pixel(-x+px,-y+py,color);
+			pixel(-x+px,y+py,color);
+			pixel(x+px,-y+py,color);
 		}
 	}
-	//如果消毁，则移除窗口节点并返回-1
-	else
-	if(_is_destroy)
+	d2 = pr1*pr1*(x+0.5)*(x+0.5)+pr0*pr0*(y-1)*(y-1)-pr0*pr0*pr1*pr1;
+	while(y>0)
 	{
-		return -1;
+		if(d2<=0)
+		{
+			d2+=pr1*pr1*(2*x+2)+pr0*pr0*(-2*y+3);
+			x++;
+			y--;
+		}
+		else
+		{
+			d2+=pr0*pr0*(-2*y+3);
+			y--;
+		}
+		//draw
+		if(pm)
+		{
+			line(x+px,y+py,-x+px,y+py,color);
+			line(x+px,-y+py,-x+px,-y+py,color);
+		}
+		else
+		{
+			pixel(x+px,y+py,color);
+			pixel(-x+px,-y+py,color);
+			pixel(-x+px,y+py,color);
+			pixel(x+px,-y+py,color);
+		}
 	}
 	return 0;
 }
-//------------------------------------
-//激活底板窗口
-int sdl_board::active()
+//-------------------------------------t--------------
+//����һ��ͼƬ��ҪSDL_img��֧��
+int sdlsurface::img_load(const char* pfile)
 {
-	sdl_board* t = this;
-	while(t->_parent)
-	{
-		t = t->_parent;
-	}
-	((sdl_frame*)t)->_active_win = this;
-	//cout<<t<<":"<<this<<endl;
+	if(pfile == NULL)return -1;
+	if(_surface)SDL_FreeSurface(_surface);
+	_surface = IMG_Load(pfile);
 	return 0;
 }
 //--------------------------------------------
-//设置关键色
-int sdl_board::color_key(int t,Uint32 color)
+//��������״̬
+int sdlsurface::must_lock()
 {
-	return _board->color_key(t,color);
-	//return sdlsurface::color_key(t,color);
+	return SDL_MUSTLOCK(_surface);
 }
-//-----------------------------------------------
-//设置透明度
-int sdl_board::alpha(Uint8 p_alpha)
+//------------------------------------------------------
+//��������
+int sdlsurface::lock_surface()
 {
-	return _board->surface_alpha_mod(p_alpha);
-}
-//-----------------------------------------------
-//设置混合模式
-int sdl_board::blend(SDL_BlendMode p_blend)
-{
-	return _board->surface_blend_mode(p_blend);
-}
-//-----------------------------------------------
-//设置探板范围
-int sdl_board::hit_rect(SDL_Rect *rt)
-{
-	_hit_rect = rt;
-	//Uint32 _key_color = (Uint32)this + 1;
-	//
-	//return _board->surface_blend_mode(p_blend);
-}
-//---------------------------------------------
-//添加一个计时器
-//timer_node* sdl_board::add_timer(int t)
-SDL_TimerID sdl_board::add_timer(int t)
-{
-	//return timer_node::add_timer(this,t);
-	return SDL_AddTimer(t,sdl_board::timer_callback,(void*)this);
-}
-Uint32 sdl_board::timer_callback(Uint32 interval,void* p)
-{
-	sdl_board* t = (sdl_board*)p;
-	SDL_UserEvent userevent;
-	SDL_Event e;
-	//-----------------
-	userevent.type = SDL_USEREVENT;
-	userevent.code = sdlgui_event_timer;
-	userevent.data1 = p;
-	userevent.data2 = (void*)interval;
-	//----------------
-	e.type = SDL_USEREVENT;
-	e.user = userevent;
-	//-----------------
-	SDL_PushEvent(&e);	
-	//t->event(&e);
-	//------------------
-	return interval;
-}
-//---------------------------------------------
-//显示一个底板窗口
-int sdl_board::show()
-{
-	_is_show = 1;
+	SDL_LockSurface(_surface);
 	return 0;
 }
-//---------------------------------------------
-//隐藏一个底板窗口
-int sdl_board::hide()
+//-----------------------------------------------
+//��������
+int sdlsurface::unlock_surface()
 {
-	_is_show = 0;
+	SDL_UnlockSurface(_surface);
 	return 0;
 }
-//---------------------------------------------
-//一个底板窗口的显示状态
-int sdl_board::is_show()
+//-------------------------------------------------
+//���ñ���ALPHAģʽ�Ĺؼ�ɫ
+int sdlsurface::color_key(int flag,Uint32 key)
 {
-	return _is_show;
+	return SDL_SetColorKey(_surface,flag,key);
+}
+//-------------------------------------------------
+//�õ�ALPHAģʽ�Ĺؼ�ɫ
+Uint32 sdlsurface::color_key()
+{
+	Uint32 key;
+	SDL_GetColorKey(_surface,&key);
+	return key;
+}
+//-------------------------------------------------
+//
+Uint32 sdlsurface::map_rgb(Uint8 r,Uint8 g,Uint8 b)
+{
+	return SDL_MapRGB(_surface->format,r,g,b);
+}
+//-------------------------------------------------
+//
+Uint32 sdlsurface::map_rgba(Uint8 r,Uint8 g,Uint8 b,Uint8 a)
+{
+	return SDL_MapRGBA(_surface->format,r,g,b,a);
+}
+#ifndef __ANDROID_OS__
+//-----------------------------------------------------
+//��ת���ű���
+int sdlsurface::rotozoom_surface(double angle,double zoom,int smooth)
+{
+	SDL_Surface* t = rotozoomSurface(_surface,angle,zoom,smooth);
+	if(t)
+	{
+		//_surface->free
+		free_surface();
+		_surface = t;
+		return 0;
+	}
+	return -1;
+}
+//-----------------------------------------------------
+//��ת����(X,Y)����
+int sdlsurface::rotozoom_surface_xy(double angle,double zoomx,double zoomy,int smooth)
+{
+	SDL_Surface* t = rotozoomSurfaceXY(_surface,angle,zoomx,zoomy,smooth);
+	if(t)
+	{
+		free_surface();
+		_surface = t;
+		return 0;
+	}
+	return -1;
+}
+//-----------------------------------------------------
+//��ת���ű����Ĵ�С
+SDL_Point sdlsurface::rotozoom_surface_size(int width,int height,double angle,double zoom,int *dstwidth = NULL,int *dstheight = NULL)
+{
+	SDL_Point pt = {0,0};	
+	rotozoomSurfaceSize(width,height,angle,zoom,&pt.x,&pt.y);	
+	return pt;
+}
+//-----------------------------------------------------
+//��ת����(X,Y)�����Ĵ�С
+SDL_Point sdlsurface::rotozoom_surface_size_xy(int width,int height,double angle,double zoomx,double zoomy,int *dstwidth = NULL,int *dstheight = NULL)
+{
+	SDL_Point pt = {0,0};	
+	rotozoomSurfaceSizeXY(width,height,angle,zoomx,zoomy,&pt.x,&pt.y);	
+	return pt;
+}
+//-----------------------------------------------------
+//���ű����Ĵ�С
+int sdlsurface::zoom_surface(double zoomx,double zoomy,int smooth)
+{
+	SDL_Surface* t = zoomSurface(_surface,zoomx,zoomy,smooth);
+	if(t)
+	{
+		free_surface();
+		_surface = t;
+		return 0;
+	}
+	return -1;
+}
+//-----------------------------------------------------
+//����(X,Y)�����Ĵ�С
+SDL_Point sdlsurface::zoom_surface_size(int width,int height,double zoomx,double zoomy,int* dstwidth = NULL,int* dstheight = NULL)
+{
+	SDL_Point pt = {0,0};
+	zoomSurfaceSize(width,height,zoomx,zoomy,&pt.x,&pt.y);
+	return pt;	
+}
+//-----------------------------------------------------
+//��������
+int sdlsurface::shrink_surface(int factorx,int factory)
+{
+	SDL_Surface* t = shrinkSurface(_surface,factorx,factory);
+	if(t)
+	{
+		free_surface();
+		_surface = t;
+		return 0;
+	}
+	return  -1;
+}
+//-------------------------------------------------------
+//90����ת����
+int sdlsurface::rotate_surface_90degrees(int numClockwiseTurns)
+{
+	SDL_Surface* t = rotateSurface90Degrees(_surface,numClockwiseTurns);
+	if(t)
+	{
+		free_surface();
+		_surface = t;
+		return 0;
+	}
+	return -1;
+}
+#endif //__ANDROID_OS__
+///////////////////////////////////////////////////////////////////////////
+//
+//
+// 								������
+//
+//
+/////////////////////////////////////////////////////////////////////////
+sdltexture::sdltexture()
+{
+	_texture = NULL;
+}
+sdltexture::sdltexture(SDL_Texture* tex)
+{
+	if(tex)
+	{
+		if(_texture)destroy();
+		_texture = tex;
+	}
+}
+sdltexture::~sdltexture()
+{
+	if(_texture)
+	{
+		destroy();
+	}
+}
+int sdltexture::texture(SDL_Texture* tex)
+{
+	if(_texture)destroy();
+	_texture = tex;
+}
+SDL_Texture* sdltexture::texture()
+{
+	return _texture;
+}
+Uint8 sdltexture::texture_alpha_mod()
+{
+	Uint8 talpha;
+	SDL_GetTextureAlphaMod(_texture,&talpha);
+	return talpha;
+}
+SDL_BlendMode sdltexture::texture_blend_mode()
+{
+	SDL_BlendMode tmode;
+	SDL_GetTextureBlendMode(_texture,&tmode);
+	return tmode;
+}
+//--------------------------------------------
+//����һ������
+int sdltexture::destroy()
+{
+	SDL_DestroyTexture(_texture);
+	_texture = NULL;
+	return 0;
+}
+/////////////////////////////////////////////////////////////////////////
+//
+// 					��Ⱦ��
+//
+//
+//////////////////////////////////////////////////////////////////////////
+sdlrenderer::sdlrenderer()
+{
+	_renderer = NULL;
+}
+sdlrenderer::sdlrenderer(SDL_Renderer* ren)
+{
+	if(ren)
+	{
+		if(_renderer)destroy();
+		_renderer = ren;
+	}
+}
+sdlrenderer::~sdlrenderer()
+{
+	if(_renderer)
+	{
+		destroy();
+	}
+}
+sdltexture* sdlrenderer::create_texture_from_surface(sdlsurface* surface)
+{
+	if(surface)
+	{
+		return new sdltexture(SDL_CreateTextureFromSurface(_renderer,surface->surface()));
+	}
+	return NULL;
+	SDL_Texture* tex;
+	tex = SDL_CreateTextureFromSurface(_renderer,surface->surface());
+	sdltexture* t_tex = new sdltexture(tex);
+	return t_tex;
+}
+sdltexture* sdlrenderer::create_texture(Uint32 format,int access,int w,int h)
+{
+	return new sdltexture(SDL_CreateTexture(_renderer,format,access,w,h));
+}
+int sdlrenderer::clear()
+{
+	return SDL_RenderClear(_renderer);
+}
+int sdlrenderer::copy(sdltexture* tex,const SDL_Rect* srcrect = NULL,const SDL_Rect*dstrect = NULL)
+{
+	if(tex) return SDL_RenderCopy(_renderer,tex->texture(),srcrect,dstrect); return -1;
+} 
+int sdlrenderer::present()
+{
+	SDL_RenderPresent(_renderer); 
+	return 0; 
+}
+int sdlrenderer::fill_rect(const SDL_Rect* rect)
+{
+	return SDL_RenderFillRect(_renderer,rect);
+} 
+int sdlrenderer::set_render_draw_color(Uint8 r,Uint8 g,Uint8 b,Uint8 a)
+{
+	return SDL_SetRenderDrawColor(_renderer,r,g,b,a);
+}
+//------------------------------------------
+//�õ���Ⱦ����Ŀ������
+sdltexture* sdlrenderer::render_target()
+{
+	return new sdltexture(SDL_GetRenderTarget(_renderer));
+}
+int sdlrenderer::render_target(sdltexture* t)
+{
+	if(!t)return -1;
+	return SDL_SetRenderTarget(_renderer,t->texture());
 }
 //-------------------------------------------
-//
-//
-//
-//
-//
-//
-//--------------------------------------
-//窗口框架空白构造函数
-sdl_frame::sdl_frame()
-:
-GUI<sdl_frame,sdl_board>()
+//����Ⱦ���ϻ���
+int sdlrenderer::draw_line(int x1,int y1,int x2,int y2)
 {
-	init();
+	return SDL_RenderDrawLine(_renderer,x1,y1,x2,y2);
 }
-//--------------------------------------
-//窗口框架带参构造函数
-sdl_frame::sdl_frame(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
-:
-GUI<sdl_frame,sdl_board>()
+//----------------------------------------------
+//����Ⱦ���ϻ���
+int sdlrenderer::draw_point(int x,int y)
 {
-	init();
-	init(ptitle,px,py,pw,ph,pflags);	
+	return SDL_RenderDrawPoint(_renderer,x,y);
 }
-//--------------------------------------
-//框架析构函数
-sdl_frame::~sdl_frame()
+int sdlrenderer::destroy()
 {
-	if(_window)
-	{
-		delete _window;
-	}
-}
-//-------------------------
-//
-int sdl_frame::init()
-{
-	if(sdl_board::init())return -1;
-	_window = NULL;
+	SDL_DestroyRenderer(_renderer);
 	_renderer = NULL;
-	_event_thread = NULL;
-	_active_win = this;
-	_is_exit = 0;
-}
-//-------------------------
-//窗口框架初始函数
-int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
-{
-	//init();
-	if(sdl_board::init("",px,py,pw,ph,1))return -1;
-	/* 设置窗口位置 */
-	_rect.x = 0;
-	_rect.y = 0;
-	//-------------------
-	_screen.init(ptitle,px,py,pw,ph,pflags);
-	//创建窗口
-	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
-	_window->size(&_rect.w,&_rect.h);
-	//sdl_board::init("",px,py,_rect.w,_rect.h,1);
-	size(_rect.w,_rect.h);
-	/* 创建渲染器 */
-	if(_window)
-	{
-		//_renderer = _window->create_renderer(-1,0);
-		//_texture = _renderer->create_texture(SDL_PIXELTYPE(SDL_PIXELFORMAT_RGBA8888),SDL_TEXTUREACCESS_STATIC,pw,ph);
-	}
-	_screen._surface = _window->get_window_surface()->surface();
-	//创建输入法
-	ime.init("",0,ph-30,pw,30,1);
-	ime.fill_rect(NULL,0x0000ff);
-	/* 取窗口大小 */
-	_window->size(&_window_rect.x,&_window_rect.y);
-	/* 开启消息流子级线程 */
-	_event_thread = SDL_CreateThread(all_event_process,"event_process",(void*)this);
 	return 0;
 }
-//-----------------------------------
-//返回窗口框架的窗口对象。
-sdlwindow* sdl_frame::frame()
+//////////////////////////////////////////////////////////////////////
+//
+// 								������
+//
+//
+/////////////////////////////////////////////////////////////
+sdlwindow::sdlwindow()
+{
+	_window = NULL;
+}
+sdlwindow::sdlwindow(SDL_Window* win)
+{
+	if(win)
+	{
+		if(_window)destroy();
+		_window = win;
+	}
+}
+sdlwindow::~sdlwindow()
+{
+	if(_window)destroy();
+}
+sdlwindow::sdlwindow(const char* title,int px,int py,int pw,int ph,Uint32 flags)
+{
+	window(title,px,py,pw,ph,flags);
+}
+int sdlwindow::window(const char* title,int px,int py,int pw,int ph,Uint32 flags)
+{
+	if(_window)destroy();
+	_window = SDL_CreateWindow(title,px,py,pw,ph,flags);
+	if(_window==NULL)return -1;
+	return 0;
+}
+int sdlwindow::window(sdlwindow* pwindow)
+{
+	if(pwindow==NULL)return -1;
+	if(_window)destroy();
+	_window = pwindow->_window;
+	if(_window==NULL)return -1;
+	return 0;
+}
+SDL_Window* sdlwindow::window()
 {
 	return _window;
 }
-//-----------------
-//重载底板类的重画函数
-//用于把_board对象显示到窗口框架
-int sdl_frame::redraw()
+int sdlwindow::destroy()
 {
-	sdl_board::_frame_count = 0;
-	sdl_board::redraw();
-	if(ime.is_show())
-	{
-		ime.redraw();
-		ime._board->blit_surface(NULL,_board,ime.rect());
-		//cout<<ime.rect()->w<<endl;
-		ime.redraw_hit();
-		redraw_hit(&ime);
-		//ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
-	}
-	_board->blit_surface(NULL,&_screen,NULL);
-	//_window->update_window_surface();
+	SDL_DestroyWindow(_window);
+	_window = NULL;
 	return 0;
 }
-//-------------------------------------
-//返回当前FPS
-double sdl_frame::fps()
+sdlrenderer* sdlwindow::create_renderer(int index,Uint32 flags)
 {
-	return _fps;
+	SDL_Renderer* ren = SDL_CreateRenderer(_window,index,flags);
+	return new sdlrenderer(ren);
 }
-//-------------------------
-//用于消息事件分流
-int sdl_frame::event_shunt(SDL_Event* e)
+//-----------------------------------
+//�õ����ڱ���
+sdlsurface* sdlwindow::get_window_surface()
 {
-	static sdl_board* t;
-	static int x,y;
-	SDL_Event te;
-	SDL_UserEvent ue;
-	switch(e->type)
-	{
-		case SDL_MOUSEBUTTONDOWN:
-			SDL_GetMouseState(&x,&y);
-			//t = hit_board(x,y);
-		break;
-		case SDL_MOUSEMOTION:
-			SDL_GetMouseState(&x,&y);
-			//t = hit_board(x,y);
-		break;
-		case SDL_MOUSEWHEEL:
-			SDL_GetMouseState(&x,&y);
-			//t = hit_board(x,y);
-		break;
-		case SDL_FINGERDOWN:
-			x = e->tfinger.x * _window_rect.x;
-			y = e->tfinger.y * _window_rect.y;
-			//t = hit_board(x,y);
-		break;
-		case SDL_FINGERMOTION:
-			x = e->tfinger.x * _window_rect.x;
-			y = e->tfinger.y * _window_rect.y;
-		break;
-	}
-	t = hit_board(x,y);
-	t = (t==0)?(sdl_board*)this : t;
-	switch(e->type)
-	{
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_FINGERDOWN:
-			if(t!=_active_win)
-			{
-			/* 先给失去焦点的窗口发送失去焦点消息 */
-			ue.type = SDL_USEREVENT;
-			ue.code = sdlgui_window_focus;
-			ue.data1 = (void*)0;
-			ue.data2 = (void*)t;
-			te.type = SDL_USEREVENT;
-			te.user = ue;
-			if(_active_win)_active_win->event(&te);
-			/* 然后给得到焦点的窗口发送得到焦点消息 */
-			ue.data1= (void*)1;
-			ue.data2 = (void*)_active_win;
-			te.type = SDL_USEREVENT;
-			te.user = ue;
-			t->event(&te);
-			/* 再更新焦点状态 */
-			t->active();
-			}
-			/* 最后发送当前消息 */
-			t->event(e);
-			//if(t != this)t->event(e);
-		break;
-		case SDL_MOUSEBUTTONUP:
-		case SDL_FINGERUP:
-		case SDL_FINGERMOTION:
-		case SDL_MOUSEMOTION:
-		case SDL_MOUSEWHEEL:
-			//if(t != this)t->event(e);
-			t->event(e);
-		break;
-		case SDL_KEYUP:
-			//
-			//if(_active_win != this)
-			{
-				if(ime.is_show())
-				{
-					ime.parent(_active_win);
-					ime.event(e);
-				}
-				else
-				{
-					_active_win->event(e);
-				}
-			}
-		break;
-		case SDL_TEXTINPUT:
-			//ime.input(*e->text.text);
-		case SDL_KEYDOWN:
-			//if(_active_win != this)_active_win->event(e);
-			_active_win->event(e);
-		break;
-	}
-	return 0;
+	return new sdlsurface(SDL_GetWindowSurface(_window));
 }
-//重载窗口的系统事件处理函数。
-int sdl_frame::sysevent(SDL_Event* e)
+//------------------------------------
+//���´��ڱ���
+int sdlwindow::update_window_surface()
 {
-	switch(e->type)
-	{
-		case SDL_WINDOWEVENT:
-			switch(e->window.event)
-			{
-				case SDL_WINDOWEVENT_RESTORED:
-					_screen._surface = _window->get_window_surface()->surface();
-					//cout<<"Window Event"<<endl;
-				break;
-			}
-		break;
-		case SDL_QUIT:
-		break;
-	}
-	return sdl_board::sysevent(e);
-}
-//-------------------------------------------
-//窗口框架运行函数
-int sdl_frame::run()
-{
-	clock_t _frame_timer;
-	double sleep = 0;
-	sdltexture* tex=NULL;
-	while(!_is_exit)
-	{
-		_frame_timer = clock();
-		while(SDL_PollEvent(&_main_event))
-		{
-			switch(_main_event.type)
-			{
-				case SDL_QUIT:
-					event(&_main_event);
-					/* 设置退出状态为真 */
-					_is_exit = 1;
-				break;
-				case SDL_WINDOWEVENT:
-					event(&_main_event);	
-				break;
-				case SDL_USEREVENT:
-					/* 计时器消息分流 */
-					if(_main_event.user.code == sdlgui_event_timer)
-					{
-							((sdl_board*)_main_event.user.data1)->event(&_main_event);
-					}
-				break;
-				default:
-					/* 其它消息分流 */
-					event_shunt(&_main_event);
-				break;
-			}
-		}
-		redraw();
-		//if(_texture)_texture->destroy();
-		//_texture = _renderer->create_texture_from_surface(&_screen);
-		//_renderer->render_target(_texture);
-		//_renderer->copy(_texture,NULL,NULL);
-		//_renderer->present();
-		_window->update_window_surface();
-		_fps = 1000 / ((clock() - _frame_timer + 0.001));
-		sleep = 1000/60-1000/_fps;
-		sleep = (sleep>0)?sleep:0;
-		SDL_Delay((sleep<(1000/60))?sleep:(1000/60));
-	}
-	return 0;
-}
-//------------------------------------------------
-//窗口框架调用重画函数的全局函数
-int sdl_frame::call_redraw(void* obj)
-{
-	sdl_frame* _this = (sdl_frame*)obj;
-	while(SDL_PollEvent(&(_this->_main_event)))
-	{
-		clock_t _frame_timer;
-		switch(_this->_main_event.type)
-		{
-			case SDL_QUIT:
-				exit(0);
-			break;
-			case 0:
-			break;
-			default:
-				_this->event(&(_this->_main_event));
-			break;
-		}
-		SDL_Delay(1);
-	}
-	return 0;  
-}
-//------------------------------------------------
-//窗口消息流事件处理函数
-int sdl_frame::all_event_process(void* obj)
-{
-	sdl_board* This = (sdl_board*)obj;
-	sdl_board* temp = This;
-	/* 退出出前一直处理消息流 */
-	return 0;
-	while(1)
-	{
-		/* 每次都从主窗口消息开始处理 */
-		temp = This;
-		while(temp)
-		{
-			/* 处理每个节点的消息流 */
-			//temp->event_process();
-			/* 
-				 以下操作为消息节点的跳转 
-					1.如果没有下个节点则跳转到上级 
-					2.如果有子级则跳转到子级
-			 */
-			if(temp->_head)
-			{
-				temp = temp->_head;
-			}
-			else
-			if(temp->_next)
-			{
-				temp = temp->_next;
-			}
-			else
-			{
-				temp = temp->_parent;
-			}
-		}
-	}
+	return SDL_UpdateWindowSurface(_window);
 }
 //------------------------------------------
-//更新窗口位置
-int sdl_frame::pos(int x,int y)
+//���´���λ��
+int sdlwindow::pos(int x,int y)
 {
-	if(!_window)return -1;
-	return _window->pos(x,y);
+	SDL_SetWindowPosition(_window,x,y);
+	return 0;
 }
 //----------------------------------------------
-//更新窗口大小
-int sdl_frame::size(int w,int h)
+//���´��ڴ�С
+int sdlwindow::size(int w,int h)
 {
-	if(!_window)return -1;
-	return _window->size(w,h);
-}
-int sdl_frame::size(int* w,int* h)
-{
-	if(!_window)return -1;
-	return _window->size(w,h);
-}
-//----------------------------------------------
-//显示窗口
-int sdl_frame::show()
-{
-	if(!_window)return -1;
-	return _window->show();
-}
-//----------------------------------------------
-//显示窗口
-int sdl_frame::hide()
-{
-	if(!_window)return -1;
-	return _window->hide();
-}
-//---------------------------------------------------------------
-//
-//
-//
-//
-//---------------------------------------------------------------
-//窗口工具构造函数
-sdl_widget::sdl_widget()
-:
-GUI<sdl_widget,sdl_board>()
-{
-	init();
-}
-sdl_widget::sdl_widget(const char* title,int px,int py,int pw,int ph,Uint32 pflags)
-:
-GUI<sdl_widget,sdl_board>()
-{
-	init(title,px,py,pw,ph,pflags);
-}
-//---------------------------------------------------------
-//窗口工具析构函数
-sdl_widget::~sdl_widget()
-{
-	//cout<<this<<endl;
-}
-int sdl_widget::init()
-{
-	if(sdl_board::init())return -1;
-}
-int sdl_widget::init(const char* title,int px,int py,int pw,int ph,Uint32 pflags)
-{
-	if(sdl_board::init(title,px,py,pw,ph,pflags))return -1;
+	SDL_SetWindowSize(_window,w,h);
 	return 0;
 }
-int sdl_widget::sysevent(SDL_Event* e)
+int sdlwindow::size(int *w,int *h)
 {
-	return sdl_board::sysevent(e);
-}
-//------------------------------------------------------------------
-//
-//
-//
-//---------------------------------------------------------------------
-sdl_clip::sdl_clip()
-:
-sdlsurface()
-{
-	init();
-}
-sdl_clip::sdl_clip(sdlsurface* clip,int w,int h)
-:
-sdlsurface()
-{
-	init(clip,w,h);	
-}
-int sdl_clip::init()
-{
-	_clip_surface = NULL;
-	if(sdlsurface::init())return -1;
+	SDL_GetWindowSize(_window,w,h);	
 	return 0;
 }
-int sdl_clip::init(sdlsurface* pclip,int w,int h)
-{
-	init();
-	if(pclip == NULL)return -1;
-	//更新操作对象
-	_clip_surface = pclip;
-	_surface = pclip->surface();	
-	//初始化剪辑
-	return clip(w,h);
-}
-int sdl_clip::init(Uint32 pflags,int pw,int ph,int pdepth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
-{
-	return	sdlsurface::init(pflags,pw,ph,pdepth,Rmask,Gmask,Bmask,Amask); 
-}
-//用于初始化表面剪辑
-//w和h分别表示每个剪辑的宽度和高度
-//这个函数会自动计算把表面分成了几个剪辑
-int sdl_clip::clip(int w,int h)
-{
-	//return 0;
-	int x,y;
-	SDL_Rect tclip;
-	//先得取当前表面的宽度和高度
-	int src_w = sdlsurface::clip_rect()->w;
-	int src_h = sdlsurface::clip_rect()->h;
-	//更新每个剪辑的高度和宽度
-	_clip_rect.w = w;
-	_clip_rect.h = h;
-	//计算这个表面可以剪辑的行与列
-	_clip_rect.x = int(src_w/_clip_rect.w+0.9);
-	_clip_rect.y = int(src_h/_clip_rect.h+0.9);
-	//更新剪辑数组
-	if(_clip_surface)delete[] _clip_surface;
-	_clip_surface = new sdlsurface[row()*column()];
-	//更新每个剪辑表面
-	for(y=0;y<row();y++)
-	{
-		for(x=0;x<column();x++)
-		{
-			//初始子剪辑
-			_clip_surface[x+y*column()].init(0,_clip_rect.w,_clip_rect.h,32,0,0,0,0);
-			//更新子剪辑表面
-			read(x,y);
-		}
-	}
-	return 0;
-}
-/* 读取所有剪辑 */
-int sdl_clip::read()
-{
-	int x,y;
-	for(y=0;y<column();y++)
-	{
-		for(x=0;x<row();x++)
-		{
-			read(x,y);
-		}
-	}
-	return 0;
-}
-int sdl_clip::read(int x,int y)
-{
-	//取得指定的剪辑引索
-	int tx = (x>column())?column():x;
-	int ty = (y>row())?row():y;
-	//取得指定剪辑的坐标
-	SDL_Rect rt = clip_rect(tx,ty);
-	//更新指定剪辑表面
-	blit_surface(&rt,operator()(x,y),NULL);
-	return 0;
-}
-int sdl_clip::row()
-{
-	return _clip_rect.y;
-	return _width;
-}
-int sdl_clip::column()
-{
-	return _clip_rect.x;
-	return _height;
-}
-int sdl_clip::write()
-{
-	int i,j;
-	for(i=0;i<row();i++)
-	{
-		for(j=0;j<column();j++)
-		{
-			write(j,i);
-		}
-	}
-	return 0;
-}
-int sdl_clip::write(int x,int y)
-{
-	sdlsurface* t = operator()(x,y);
-	SDL_Rect rt = clip_rect(x,y);
-	if(t)t->blit_surface(NULL,this,&rt);
-	return  0;
-}
-//取得指定引索的剪辑对象
-sdlsurface* sdl_clip::operator()(int x,int y)
-{
-	if((x+y*column()) >= row()*column())return NULL;
-	if(_clip_surface)return &_clip_surface[y*column()+x];
-	return NULL;
-}
-sdlsurface* sdl_clip::operator[](SDL_Point pt)
-{
-	return operator()(pt.x,pt.y);
-}
-//取得指定引索的剪辑范围
-SDL_Rect sdl_clip::clip_rect(int x,int y)
-{
-	SDL_Rect rt;
-	rt.x = ((x>=column())?column()-1:x)*_clip_rect.w;
-	rt.y = ((y>=column())?row()-1:y)*_clip_rect.h;
-	rt.w = _clip_rect.w;
-	rt.h = _clip_rect.h;
-	return rt;
-}
-//-----------------------------------------------------------------------------
-//
-//
-//
-//
-//
-//                           基础工具集
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//---------------------------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------------------------
-//
-//
-//  								Button 类
-//
-//---------------------------------------------------------------------------------------------------------
-typedef class sdl_button : public GUI<sdl_button,sdl_widget>
-{
-	public:
-		sdl_button();
-		sdl_button(const char*,int,int,int,int,Uint32);
-		int init();
-		int init(const char*,int,int,int,int,Uint32);
-		int sysevent(SDL_Event*);
-		int clip(sdlsurface*);
-		int clip(const char*);
-	protected:
-		sdlsurface _button_frame;
-		sdl_clip _button_clip;
-}*sdl_button_ptr;
-//---------------------------------------------------
-//
-//
-//
 //----------------------------------------------------
-//
-sdl_button::sdl_button()
-:
-GUI<sdl_button,sdl_widget>()
+//��ʾ����
+int sdlwindow::show()
 {
-	init();
-}
-sdl_button::sdl_button(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
-:
-GUI<sdl_button,sdl_widget>()
-{
-	init(ptitle,px,py,pw,ph,pflag);
-}
-int sdl_button::init()
-{
-	if(sdl_widget::init())return -1;
+	SDL_ShowWindow(_window);
 	return 0;
 }
-int sdl_button::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+//----------------------------------------------------------
+//���ش���
+int sdlwindow::hide()
 {
-	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
-	_button_clip.init(0,pw*4,ph,32,0,0,0,0);
-	_button_clip.clip(pw,ph);
-	//-------------------------------------------
-	_button_clip(0,0)->fill_rect(NULL,0x00ff00);
-	_button_clip(1,0)->fill_rect(NULL,0xff0000);
-	_button_clip(2,0)->fill_rect(NULL,0x0000ff);
-	_button_clip(3,0)->fill_rect(NULL,0xffff00);
-	_button_clip.write();
-	_button_clip(0,0)->blit_surface(NULL,this,NULL);
+	SDL_HideWindow(_window);
 	return 0;
 }
-int sdl_button::clip(sdlsurface* sur)
-{
-	if(!sur)return -1;
-	//sur->blit_surface(_button_clip.clip_rect(),&_button_clip,NULL);
-	sur->blit_surface(sur->clip_rect(),&_button_clip,NULL);
-	_button_clip.read();
-	_button_clip(0,0)->blit_surface(NULL,this,NULL);
-	return 0;
-}
-int sdl_button::clip(const char* path)
-{
-	if(!path)return 0;
-	_button_clip.img_load(path);
-	_button_clip.read();
-	_button_clip(0,0)->blit_surface(NULL,this,NULL);
-	return 0;
-}
-int sdl_button::sysevent(SDL_Event* e)
-{
-	static int is_down = 0;
-	SDL_Event _event;
-	SDL_UserEvent _ue;
-	_ue.type = SDL_USEREVENT;
-	_ue.data1= this;
-	switch(e->type)
-	{
-		case SDL_MOUSEBUTTONUP:
-			if(is_down)
-			{
-				_ue.type = SDL_USEREVENT;
-				_ue.code= sdlgui_button_click;
-				_ue.data1 = this;
-				_event.type = SDL_USEREVENT;
-				_event.user = _ue;
-				parent()->event(&_event);
-			}
-			_button_clip(0,0)->blit_surface(NULL,this,NULL);
-			is_down = 0;
-		break;
-		case SDL_MOUSEBUTTONDOWN:
-			is_down = 1;
-			_button_clip(1,0)->blit_surface(NULL,this,NULL);
-			//---------
-		break;
-		case SDL_KEYUP:
-			_event.type = SDL_MOUSEBUTTONUP;
-			event(&_event);
-		break;
-		case SDL_KEYDOWN:
-			_event.type = SDL_MOUSEBUTTONDOWN;
-			event(&_event);
-		break;
-	}
-	return sdl_widget::sysevent(e);
-}
-#endif//__SDLWINDOW_HANDLE__
+#endif //__sdlbase_head__

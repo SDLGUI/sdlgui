@@ -853,7 +853,7 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 	y_off = (ty1<=0)?0:y_off;
 	//
 	//选择格式
-	if(must_lock())lock_surface();
+	//if(must_lock())lock_surface();
 	switch(bpp)
 	{
 		/* 单色 */
@@ -901,7 +901,7 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			}
 		break;
 	}
-	if(must_lock())unlock_surface();
+	//if(must_lock())unlock_surface();
 	return 0;
 }
 //------------------------------------------------------------
