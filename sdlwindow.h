@@ -1658,7 +1658,6 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
 	_window->size(&_rect.w,&_rect.h);
 	//sdl_board::init("",px,py,_rect.w,_rect.h,1);
-	_screen.init(ptitle,px,py,_rect.w,_rect.h,pflags);
 	size(_rect.w,_rect.h);
 	/* 创建渲染器 */
 	if(_window)
@@ -1666,6 +1665,7 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		//_renderer = _window->create_renderer(-1,0);
 		//_texture = _renderer->create_texture(SDL_PIXELTYPE(SDL_PIXELFORMAT_RGBA8888),SDL_TEXTUREACCESS_STATIC,pw,ph);
 	}
+	_screen.init(ptitle,px,py,_rect.w,_rect.h,pflags);
 	_screen._surface = _window->get_window_surface()->surface();
 	//创建输入法
 	ime.init("",0,ph-30,pw,30,1);
