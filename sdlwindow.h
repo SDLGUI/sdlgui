@@ -1748,22 +1748,22 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_FINGERDOWN:
 			if(t!=_active_win)
 			{
-			/* 先给失去焦点的窗口发送失去焦点消息 */
-			ue.type = SDL_USEREVENT;
-			ue.code = sdlgui_window_focus;
-			ue.data1 = (void*)0;
-			ue.data2 = (void*)t;
-			te.type = SDL_USEREVENT;
-			te.user = ue;
-			if(_active_win)_active_win->event(&te);
-			/* 然后给得到焦点的窗口发送得到焦点消息 */
-			ue.data1= (void*)1;
-			ue.data2 = (void*)_active_win;
-			te.type = SDL_USEREVENT;
-			te.user = ue;
-			t->event(&te);
-			/* 再更新焦点状态 */
-			t->active();
+				/* 先给失去焦点的窗口发送失去焦点消息 */
+				ue.type = SDL_USEREVENT;
+				ue.code = sdlgui_window_focus;
+				ue.data1 = (void*)0;
+				ue.data2 = (void*)t;
+				te.type = SDL_USEREVENT;
+				te.user = ue;
+				if(_active_win)_active_win->event(&te);
+				/* 然后给得到焦点的窗口发送得到焦点消息 */
+				ue.data1= (void*)1;
+				ue.data2 = (void*)_active_win;
+				te.type = SDL_USEREVENT;
+				te.user = ue;
+				t->event(&te);
+				/* 再更新焦点状态 */
+				t->active();
 			}
 			/* 最后发送当前消息 */
 			t->event(e);
@@ -1847,6 +1847,10 @@ int sdl_frame::run()
 					if(_main_event.user.code == sdlgui_event_timer)
 					{
 							((sdl_board*)_main_event.user.data1)->event(&_main_event);
+					}
+					else
+					{
+						event(&_main_event);
 					}
 				break;
 				default:

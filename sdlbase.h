@@ -842,8 +842,8 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 	/* 取出像素数据首地址 */
 	Uint8 *p = (Uint8*)_surface->pixels+ty0*_surface->pitch+tx0*bpp;
 	//
-	int x_off=tx1-tx0;
-	int y_off=ty1-ty0;
+	float x_off=tx1-tx0;
+	float y_off=ty1-ty0;
 	int x,y;
 	float xy_s;
 	/* 如果线的终点超过了表面宽度则截取有效长度 */
@@ -894,6 +894,7 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			{
 				for(x = 0;x<x_off;x++)
 				{
+					//if(!x_off)cout<<y_off<<endl;
 					y = x/(x_off/y_off);	
 					*(Uint32*)(p+x*bpp+y*_surface->pitch) = color;
 				}
