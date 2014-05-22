@@ -274,7 +274,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		sdl_board** _hit_board_ptr;
 		sdltext *_text_board;
 		SDL_Rect  _rect;
-		SDL_Rect  *_hit_rect;
+		SDL_Rect  _hit_rect;
 		SDL_Point _pos,_size;
 		char* _text;
 		sdl_board *_parent;
@@ -954,14 +954,13 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//if(_board)delete _board;
 	_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
 	//----------------
-	//if(_hit_board_ptr)delete _hit_board_ptr;
-	_hit_board_ptr = new sdl_board*[pw*ph];
-	//if(_hit_board)delete _hit_board;
+	_hit_rect.w = 0;
+	_hit_rect.h = 0;
 	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
 	_hit_board->fill_rect(NULL,*(Uint32*)this);
 	_hit_board->color_key(SDL_TRUE,0);
 	_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
-	_hit_rect = NULL;
+	/* 初始自身探板对象 */
 	redraw_hit(NULL);
 	//-----------------
 	if(ptitle)
@@ -997,6 +996,7 @@ int sdl_board::init()
 	_last = NULL;
 	_board = NULL;
 	_text_board = NULL;
+	_hit_board_ptr = NULL;
 	return 0;
 }
 //--------------------------------------
@@ -1187,16 +1187,14 @@ int sdl_board::size(int w,int h)
 {
 	if(w>0)_rect.w = w;
 	if(h>0)_rect.h = h;
-		_board->init(0,w,h,32,0,0,0,0);
-	return 0;
+	sdlsurface::init(0,w,h,32,0,0,0,0);
+	return _board->init(0,w,h,32,0,0,0,0);
 }
 //--------------------------------------
 //设置窗口底板大小
 int sdl_board::size(SDL_Point s)
 {
-	if(s.x>0)_rect.w = s.x;
-	if(s.y>0)_rect.h = s.y;
-	return 0;
+	return size(s.x,s.y);
 }
 //--------------------------------------
 //得到窗口底板大小
@@ -1415,6 +1413,15 @@ int sdl_board::redraw_hit(sdl_board* child = NULL)
 		}
 		return 0;
 	}
+	/* 如果探板大小与窗口大小不一致表示要创建探板 */
+	if((_hit_rect.w-_rect.w) || (_hit_rect.h-_rect.h))
+	{
+		if(_hit_board_ptr)delete _hit_board_ptr;
+		_hit_rect.w = _rect.w;
+		_hit_rect.h = _rect.h;
+		_hit_board_ptr = new sdl_board*[_hit_rect.w*_hit_rect.h];
+
+	}
 	/* 如果没有子级表示更新自身探板 */
 	memcpy(&lrt,&_rect,sizeof(SDL_Rect));
 	lrt.x = 0;
@@ -1544,10 +1551,7 @@ int sdl_board::blend(SDL_BlendMode p_blend)
 //设置探板范围
 int sdl_board::hit_rect(SDL_Rect *rt)
 {
-	_hit_rect = rt;
-	//Uint32 _key_color = (Uint32)this + 1;
-	//
-	//return _board->surface_blend_mode(p_blend);
+	return 0;
 }
 //---------------------------------------------
 //添加一个计时器
