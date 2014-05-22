@@ -1665,13 +1665,14 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		_window->size(&_window_rect.x,&_window_rect.y);
 		_screen.init(ptitle,px,py,_window_rect.x,_window_rect.y,pflags);
 		size(_window_rect.x,_window_rect.y);
-		_rect.h = _window_rect.y;
-		_rect.w = _window_rect.y;
+		//_rect.h = _window_rect.y;
+		//_rect.w = _window_rect.y;
 	}
 	_screen._surface = _window->get_window_surface()->surface();
-	//创建输入法
+	//创建输入法,默认隐藏
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
+	ime.hide();
 	/* 开启消息流子级线程 */
 	//_event_thread = SDL_CreateThread(all_event_process,"event_process",(void*)this);
 	return 0;
