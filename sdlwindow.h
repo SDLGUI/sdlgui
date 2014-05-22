@@ -1187,6 +1187,7 @@ int sdl_board::size(int w,int h)
 {
 	if(w>0)_rect.w = w;
 	if(h>0)_rect.h = h;
+		_board->init(0,w,h,32,0,0,0,0);
 	return 0;
 }
 //--------------------------------------
@@ -1656,6 +1657,9 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		/* 取窗口大小 */
 		_window->size(&_window_rect.x,&_window_rect.y);
 		_screen.init(ptitle,px,py,_window_rect.x,_window_rect.y,pflags);
+		size(_window_rect.x,_window_rect.y);
+		_rect.h = _window_rect.y;
+		_rect.w = _window_rect.y;
 	}
 	_screen._surface = _window->get_window_surface()->surface();
 	//创建输入法
@@ -1795,9 +1799,20 @@ int sdl_frame::sysevent(SDL_Event* e)
 {
 	switch(e->type)
 	{
+		case SDL_WINDOWEVENT:
+			switch(e->window.event)
+			{
+				/* 屏幕重显窗口时，分配新的窗口表面 */
+				case SDL_WINDOWEVENT_RESTORED:
+					_screen._surface = _window->get_window_surface()->surface();
+				break;
+				default:
+					cout<<"Window Event"<<endl;
+				break;
+			}
+		break;
 		case SDL_QUIT:
 			_is_exit = 1;
-			//exit(0);
 		break;
 	}
 	return sdl_board::sysevent(e);
