@@ -1811,6 +1811,8 @@ int sdl_frame::sysevent(SDL_Event* e)
 			switch(e->window.event)
 			{
 				/* 屏幕重显窗口时，分配新的窗口表面 */
+				/* 窗口大小调整时，分配新的窗口表面 */
+				case SDL_WINDOWEVENT_RESIZED:
 				case SDL_WINDOWEVENT_RESTORED:
 					_screen._surface = _window->get_window_surface()->surface();
 				break;
@@ -1946,7 +1948,10 @@ int sdl_frame::pos(int x,int y)
 int sdl_frame::size(int w,int h)
 {
 	if(!_window)return -1;
-	return _window->size(w,h);
+	if(_window->size(w,h))return -1;
+	if(sdl_board::size(w,h))return -1;
+	_screen._surface = _window->get_window_surface()->surface();
+	return 0;
 }
 int sdl_frame::size(int* w,int* h)
 {
