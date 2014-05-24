@@ -93,6 +93,8 @@ typedef class sdlsurface
 		int circle(int,int,int,Uint32,int);
 		/* 画或填充一个椭圆 */
 		int ellipse(int,int,int,int,Uint32,int);
+		/* 旋转表面 */
+		int rotate(float);
 		//
 		int must_lock();
 		int lock_surface();
@@ -1043,6 +1045,88 @@ int sdlsurface::ellipse(int px,int py,int pr0,int pr1,Uint32 color,int pm=0)
 			pixel(x+px,-y+py,color);
 		}
 	}
+	return 0;
+}
+//---------------------------------------------
+//旋转表面
+int sdlsurface::rotate(float j)
+{
+	float x,y;
+	float a,b,c;
+	float r;
+	float op_x,op_y;
+	float change_pixel_angle;
+	float p0x,p0y;
+	float p1x,p1y;
+	float p2x,p2y;
+	float row,column;
+	float row_off,column_off;
+	/* 取出图像高宽*/
+	row = clip_rect()->h;
+	column = clip_rect()->w;
+	//
+	sdlsurface tsur(0,column,row,32,0,0,0,0);
+	//memcpy((char*)&tsur,(char*)this,sizeof(sdlsurface));
+	tsur.fill_rect(NULL,0x000000);
+	/* 算出中心坐标 */
+	op_x = column/2;
+	op_y = row/2;
+	/* 算出p0坐标 */
+	p0x = op_x;
+	p0y = row;
+	for(row_off=0;row_off<row;row_off++)
+	{
+		for(column_off = 0;column_off<column;column_off++)
+		{
+			/* 更新p1坐标 */
+			p1x = column_off;
+			p1y = row_off;
+			//cout<<p1x<<":"<<p1y<<endl;
+			/* 算出三角形边长 */
+			a = sqrt((p1x-op_x)*(p1x-op_x)+(p1y-op_y)*(p1y-op_y));
+			c = sqrt((p1x-p0x)*(p1x-p0x)+(p1y-p0y)*(p1y-p0y));
+			b = op_y;
+			/* 算出要转换到这个点的角度 */
+			change_pixel_angle = acos((a*a+b*b-c*c)/(2*a*b))*180/3.1415926;
+			//cout<<"col:"<<column_off<<"-row:"<<row_off<<":"<<change_pixel_angle<<endl;
+			/* 算出旋转后的角度 */
+			if(p1x>p0x)
+			{
+				change_pixel_angle -= j;
+			}
+			else
+			{
+				change_pixel_angle += j;
+			}
+			//change_pixel_angle = (change_pixel_angle>359)?0:change_pixel_angle;
+			/* 算出旋转后c的长度 */
+			c = sqrt(a*a+b*b-cos(change_pixel_angle/180*3.1415926)*2*a*b);
+			/* 算出BC夹角 */
+			change_pixel_angle = acos((b*b+c*c-a*a)/(2*b*c));//*180/3.1415926;
+			/* 算出旋转后这个点的坐标 */
+			if(p1x>p0x)
+			{
+				x = p0x + sin(change_pixel_angle)*c;
+			}
+			else
+			{
+				x = p0x - sin(change_pixel_angle)*c;
+			}
+			y = p0y - cos(change_pixel_angle)*c;
+			/* 开始复制像素 */
+			if(x<0 || x>column || y<0 || y>row)
+			{
+				//cout<<x<<":"<<y<<endl;
+			}
+			else
+			{
+				tsur.pixel(column_off,row_off,pixel(x,y));
+				//cout<<"x:"<<x<<"--y:"<<y<<"--"<<sdlsurface::pixel(x,y)<<endl;
+			}
+		}
+	}
+	/* 更新到表面 */
+	tsur.blit_scaled(NULL,this,NULL);
 	return 0;
 }
 //-------------------------------------t--------------
