@@ -1745,22 +1745,12 @@ int sdl_frame::event_shunt(SDL_Event* e)
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
-			SDL_GetMouseState(&x,&y);
-			//t = hit_board(x,y);
-		break;
 		case SDL_MOUSEMOTION:
-			SDL_GetMouseState(&x,&y);
-			//t = hit_board(x,y);
-		break;
 		case SDL_MOUSEWHEEL:
 			SDL_GetMouseState(&x,&y);
-			//t = hit_board(x,y);
 		break;
+		case SDL_FINGERUP:
 		case SDL_FINGERDOWN:
-			x = e->tfinger.x * _window_rect.x;
-			y = e->tfinger.y * _window_rect.y;
-			//t = hit_board(x,y);
-		break;
 		case SDL_FINGERMOTION:
 			x = e->tfinger.x * _window_rect.x;
 			y = e->tfinger.y * _window_rect.y;
@@ -2223,6 +2213,9 @@ typedef class sdl_button : public GUI<sdl_button,sdl_widget>
 		int clip(sdlsurface*);
 		int clip(const char*);
 	protected:
+		/* 内部初始化表面 */
+		int draw();
+	protected:
 		sdlsurface _button_frame;
 		sdl_clip _button_clip;
 }*sdl_button_ptr;
@@ -2274,11 +2267,12 @@ int sdl_button::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	_button_clip.init(0,pw*4,ph,32,0,0,0,0);
 	_button_clip.clip(pw,ph);
 	//-------------------------------------------
-	_button_clip(0,0)->fill_rect(NULL,0xff0000);
-	_button_clip(1,0)->fill_rect(NULL,0x00ff00);
-	_button_clip(2,0)->fill_rect(NULL,0x0000ff);
-	_button_clip(3,0)->fill_rect(NULL,0xffff00);
-	_button_clip.write();
+	//_button_clip(0,0)->fill_rect(NULL,0xff0000);
+	//_button_clip(1,0)->fill_rect(NULL,0x00ff00);
+	//_button_clip(2,0)->fill_rect(NULL,0x0000ff);
+	//_button_clip(3,0)->fill_rect(NULL,0xffff00);
+	//_button_clip.write();
+	draw();
 	_button_clip(0,0)->blit_surface(NULL,this,NULL);
 	return 0;
 }
@@ -2316,6 +2310,39 @@ int sdl_button::update_page()
 	return _button_clip.write();
 
 }
+int sdl_button::draw()
+{
+	sdlsurface* tsur;
+	int x,y;
+	Uint32 color;
+	y = _rect.w;
+	y = ((y>_rect.h)?_rect.h:y)/2.0+0.5;
+	/* 画离开页面 */
+	tsur = _button_clip(0,0);
+	for(x=0;x<y;x++)
+	{
+		color = 0xfff000 | ((2*x-1)*8);
+		tsur->rectangle(x,x,_rect.w-x,_rect.h-x-1,color);
+	}
+	/* 画释放页面 */
+	tsur = _button_clip(1,0);
+	for(x=0;x<y;x++)
+	{
+		color = 0xffff00 | ((2*x-1)*8);
+		tsur->rectangle(x,x,_rect.w-x,_rect.h-x-1,color);
+	}
+	/* 画点击页面 */
+	tsur = _button_clip(2,0);
+	for(x=0;x<y;x++)
+	{
+		color = 0xff0f00 | ((2*x-1)*8);
+		tsur->rectangle(x,x,_rect.w-x,_rect.h-x-1,color);
+	}
+	/* 更新按钮表面 */
+	_button_clip.write();
+	//
+	return 0;
+}
 int sdl_button::sysevent(SDL_Event* e)
 {
 	static int is_down = 0;
@@ -2329,7 +2356,7 @@ int sdl_button::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_window_focus:
-					if((int)e->user.data2)
+					if((int)e->user.data1)
 					{
 						_button_clip(1,0)->blit_surface(NULL,this,NULL);
 					}
