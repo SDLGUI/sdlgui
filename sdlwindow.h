@@ -1539,6 +1539,23 @@ int sdl_board::redraw()
 	else
 	if(_is_destroy)
 	{
+		while(temp)		
+		{
+			//如果当前节点有子窗口，则跳到子窗口
+			if(temp->_head)
+			{
+				temp = temp->_head;
+			}
+			else
+			if(temp->_next)
+			{
+				temp = temp->_next;
+			}
+			else
+			{
+				temp = temp->_parent;
+			}
+		}
 		return -1;
 	}
 	return 0;
