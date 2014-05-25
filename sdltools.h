@@ -237,6 +237,7 @@ int sdl_scroll::init()
 }
 int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
+	int x,y;
 	if(sdl_widget::init(ptitle,px,py,pw,ph,pflags))return -1;
 	_scroll_point = 0;
 	_scroll_board = NULL;
@@ -250,7 +251,22 @@ int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	_scroll_is_change = 0;
 	//
 	bar.init(1,_scroll_bar_rect.w,_scroll_bar_rect.h,32,0,0,0,0);
-	bar.fill_rect(NULL,0xff0000);
+	bar.fill_rect(NULL,0xffff00);
+	if(_scroll_bar_rect.h>15)
+	{
+		y = (_scroll_bar_rect.h-10)/2;
+		x = (_scroll_bar_rect.w*0.2);
+		//
+		bar.line(x,y,_scroll_bar_rect.w-x,y,0xffffff);
+		bar.line(x,y+1,_scroll_bar_rect.w-x,y+1,0xffffff);
+		//
+		bar.line(x,y+4,_scroll_bar_rect.w-x,y+4,0xffffff);
+		bar.line(x,y+5,_scroll_bar_rect.w-x,y+5,0xffffff);
+		//
+		bar.line(x,y+8,_scroll_bar_rect.w-x,y+8,0xffffff);
+		bar.line(x,y+9,_scroll_bar_rect.w-x,y+9,0xffffff);
+		//
+	}
 	//
 	bg.init(1,pw,ph,32,0,0,0,0);
 	bg.fill_rect(NULL,0x0000ff);
@@ -383,17 +399,6 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		   switch(e->user.code)
 			 {
 				  case sdlgui_event_timer:
-						//如果步长系数不为0，并且滑动点不为1则滑动窗口
-						//这条表达式可以删除
-						//_scroll_step_sx -= 0.002;
-						//这条表达式可以删除
-						//if(_scroll_step_sx<0)_scroll_step_sx = 0;
-						//这条表达式可以删除
-						//_scroll_point += _scroll_speed*_scroll_step_sx;
-						//这条表达式可以删除
-						//更新滚动滑块
-						//这条表达式可以删除
-						//point(_scroll_point);
 						//
 						if((_scroll_step_sx<=0.0 )|| (_scroll_point <= 0.0)|| (_scroll_point>=1.0))
 						{
