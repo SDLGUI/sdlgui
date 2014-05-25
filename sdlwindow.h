@@ -6,7 +6,7 @@
 //						文档名：						sdlwindow.h
 //
 //						文档创建日期：			2014年2月22日
-//						文档更新日期：			2014年5月02日
+//						文档更新日期：			2014年5月25日
 //						文档创建者：				徐荣
 //						文档更新者：				徐荣
 //						文档创建者联系方式：Email:twtfcu3@126.com
@@ -197,6 +197,11 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int is_show();
 		/* 设置当前窗口标题 */
 		int text(const char*);
+		/* 
+			 设置当前窗口标题,
+			 参数(标题文本，标题字体，字体大小，文本颜色，渲染范围)
+		 */
+		int text(const char*,const char*,int,Uint32,SDL_Rect*);
 		/* 返回当前窗口标题 */
 		const char* text();
 		/* 本地坐标 */
@@ -277,6 +282,10 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		SDL_Rect  _hit_rect;
 		SDL_Point _pos,_size;
 		char* _text;
+		/* 文本颜色 */
+		Uint32 _text_color;
+		/* 文本渲染范围 */
+		SDL_Rect _text_rect;
 		sdl_board *_parent;
 		sdl_board *_end,*_head;
 		sdl_board *_next,*_last;
@@ -965,6 +974,8 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//-----------------
 	if(ptitle)
 	{
+		_text_rect.x = 0;
+		_text_rect.y = 0;
 		if(_text_board)delete _text_board;
 		#if defined (WIN32)
 		_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
@@ -973,7 +984,7 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		#elif defined (__ANDROID_OS__)
 		_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
 		#endif
-		_text_board->render_utf8_solid(ptitle,0);
+		_text_board->render_utf8_solid(ptitle,_text_color);
 	}
 	//
 	return 0;
@@ -989,6 +1000,7 @@ int sdl_board::init()
 	_is_show = 1;
 	_is_destroy = 0;
 	_text = NULL;
+	_text_color = 0;
 	_parent = NULL;
 	_end = NULL;
 	_head = NULL;
@@ -1003,11 +1015,24 @@ int sdl_board::init()
 //设置窗口底板标题
 int sdl_board::text(const char* ptext)
 {
-	int len;
 	if(_text_board)
 	{
 		_text_board->text(ptext);
 		return _text_board->render_utf8_solid(ptext,0);
+	}
+	return -1;
+}
+//-----------------------------------------------
+// 设置当前窗口标题,
+// 参数(标题文本，标题字体，字体大小，文本颜色，渲染范围)
+int sdl_board::text(const char* ptext,const char* pfont,int psize=16,Uint32 pcolor=0x000000,SDL_Rect* prect=NULL)
+{
+	if(!_text_board)_text_board = new sdltext(pfont,psize);
+	if(_text_board)
+	{
+		_text_board->text(ptext,pfont,psize);
+		if(prect)memcpy((char*)&_text_rect,prect,sizeof(SDL_Rect));
+		return _text_board->render_utf8_solid(ptext,pcolor);
 	}
 	return -1;
 }
@@ -1466,7 +1491,7 @@ int sdl_board::redraw()
 			/* 处理窗口标签文本 */
 			if(_text_board)
 			{
-				_text_board->blit_surface(NULL,_board,NULL);
+				_text_board->blit_surface(NULL,_board,&_text_rect);
 			}
 			/* 重绘新探板 */
 			redraw_hit();
@@ -2187,6 +2212,14 @@ typedef class sdl_button : public GUI<sdl_button,sdl_widget>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
+		/* 失去焦点页面 */
+		sdlsurface* killfocus_page();
+		/* 释放鼠标页面 */
+		sdlsurface* release_page();
+		/* 按下鼠标页面 */
+		sdlsurface* press_page();
+		/* 更新页面 */
+		int update_page();
 		int clip(sdlsurface*);
 		int clip(const char*);
 	protected:
@@ -2218,12 +2251,31 @@ int sdl_button::init()
 }
 int sdl_button::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
-	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
+	string text_str(SDL_GetPlatform());
+	if(sdl_widget::init("",px,py,pw,ph,pflag))return -1;
+	if(!text_str.compare("Windows"))
+	{
+		text(ptitle,"c:/windows/fonts/simkai.ttf",16,0);
+	}
+	else
+	if(!text_str.compare("Linux"))
+	{
+		text(ptitle,"/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
+	}
+	else
+	if(!text_str.compare("Android"))
+	{
+		text(ptitle,"/system/fonts/DroidSanSansFallback.ttf",16);
+	}
+	/* 设置按钮文本渲染范围 */
+	_text_rect.x = (_rect.w-_text_board->clip_rect()->w)/2;
+	_text_rect.y = (_rect.h-_text_board->clip_rect()->h)/2;
+	//
 	_button_clip.init(0,pw*4,ph,32,0,0,0,0);
 	_button_clip.clip(pw,ph);
 	//-------------------------------------------
-	_button_clip(0,0)->fill_rect(NULL,0x00ff00);
-	_button_clip(1,0)->fill_rect(NULL,0xff0000);
+	_button_clip(0,0)->fill_rect(NULL,0xff0000);
+	_button_clip(1,0)->fill_rect(NULL,0x00ff00);
 	_button_clip(2,0)->fill_rect(NULL,0x0000ff);
 	_button_clip(3,0)->fill_rect(NULL,0xffff00);
 	_button_clip.write();
@@ -2247,6 +2299,23 @@ int sdl_button::clip(const char* path)
 	_button_clip(0,0)->blit_surface(NULL,this,NULL);
 	return 0;
 }
+sdlsurface* sdl_button::killfocus_page()
+{
+	return _button_clip(0,0);
+}
+sdlsurface* sdl_button::release_page()
+{
+	return _button_clip(1,0);
+}
+sdlsurface* sdl_button::press_page()
+{
+	return _button_clip(2,0);
+}
+int sdl_button::update_page()
+{
+	return _button_clip.write();
+
+}
 int sdl_button::sysevent(SDL_Event* e)
 {
 	static int is_down = 0;
@@ -2256,6 +2325,17 @@ int sdl_button::sysevent(SDL_Event* e)
 	_ue.data1= this;
 	switch(e->type)
 	{
+		case SDL_USEREVENT:
+			switch(e->user.code)
+			{
+				case sdlgui_window_focus:
+					if((int)e->user.data2)
+					{
+						_button_clip(1,0)->blit_surface(NULL,this,NULL);
+					}
+				break;
+			}
+		break;
 		case SDL_MOUSEBUTTONUP:
 			if(is_down)
 			{
@@ -2266,12 +2346,12 @@ int sdl_button::sysevent(SDL_Event* e)
 				_event.user = _ue;
 				parent()->event(&_event);
 			}
-			_button_clip(0,0)->blit_surface(NULL,this,NULL);
+			_button_clip(1,0)->blit_surface(NULL,this,NULL);
 			is_down = 0;
 		break;
 		case SDL_MOUSEBUTTONDOWN:
 			is_down = 1;
-			_button_clip(1,0)->blit_surface(NULL,this,NULL);
+			_button_clip(2,0)->blit_surface(NULL,this,NULL);
 			//---------
 		break;
 		case SDL_KEYUP:

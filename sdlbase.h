@@ -135,6 +135,11 @@ typedef class sdltext : public sdlsurface
 		sdltext(const char*,int);
 		int init();
 		int text(const char*);
+		/* 
+		 设置当前文本,
+		 参数(文本，字体，字体大小)
+		*/
+		int text(const char*,const char*,int);
 		char* text();
 		int font(const char*,int);
 		//--------------------------------------
@@ -477,13 +482,18 @@ int sdltext::init()
 }
 int sdltext::text(const char* ptext)
 {
-	//cout<<ptext<<endl;
 	if(_text)delete _text;
 	int len = strlen(ptext)+1;
 	_text = new char[len];
 	memset(_text,0x00,len);
 	strcpy(_text,ptext);
 	//---------------------------------
+	return 0;
+}
+int sdltext::text(const char* ptext,const char* pfont,int psize)
+{
+	if(text(ptext))return -1;
+	if(font(pfont,psize))return -1;
 	return 0;
 }
 char* sdltext::text()
