@@ -473,7 +473,7 @@ int sdltext::init()
 {
 	if(!sdltext::is_init)
 	{
-		sdltext:is_init = 1;
+		sdltext::is_init = 1;
 		TTF_Init();
 	}
 	if(_font)TTF_CloseFont(_font);
@@ -619,8 +619,8 @@ int sdltext::size_unicode(const Uint16* ptext,int* pw,int* ph)
 }
 int sdltext::render_text_solid(const char* ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
-	SDL_Color tc = {0,255,255};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
+	//SDL_Color tc = {0,255,255};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderText_Solid(_font,ptext,c);
@@ -629,7 +629,7 @@ int sdltext::render_text_solid(const char* ptext,Uint32 pcolor)
 }
 int sdltext::render_utf8_solid(const char* ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderUTF8_Solid(_font,ptext,c);
@@ -638,7 +638,7 @@ int sdltext::render_utf8_solid(const char* ptext,Uint32 pcolor)
 }
 int sdltext::render_unicode_solid(const Uint16* ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderUNICODE_Solid(_font,ptext,c);
@@ -647,7 +647,7 @@ int sdltext::render_unicode_solid(const Uint16* ptext,Uint32 pcolor)
 }
 int sdltext::render_glyph_solid(const Uint16 ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00))>>8,(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderGlyph_Solid(_font,ptext,c);
@@ -656,8 +656,8 @@ int sdltext::render_glyph_solid(const Uint16 ptext,Uint32 pcolor)
 }
 int sdltext::render_text_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
-	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
+	SDL_Color c1 = {(Uint8)((pcolor1 & 0xff0000)>>16),(Uint8)((pcolor1 & 0x00ff00)>>8),(Uint8)(pcolor1 & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderText_Shaded(_font,ptext,c,c1);
@@ -666,8 +666,8 @@ int sdltext::render_text_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
 }
 int sdltext::render_utf8_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
-	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
+	SDL_Color c1 = {(Uint8)((pcolor1 & 0xff0000)>>16),(Uint8)((pcolor1 & 0x00ff00)>>8),(Uint8)(pcolor1 & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderUTF8_Shaded(_font,ptext,c,c1);
@@ -676,8 +676,8 @@ int sdltext::render_utf8_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
 }
 int sdltext::render_unicode_shaded(const Uint16* ptext,Uint32 pcolor,Uint32 pcolor1)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
-	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
+	SDL_Color c1 = {(Uint8)((pcolor1 & 0xff0000)>>16),(Uint8)((pcolor1 & 0x00ff00)>>8),(Uint8)(pcolor1 & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderUNICODE_Shaded(_font,ptext,c,c1);
@@ -686,8 +686,8 @@ int sdltext::render_unicode_shaded(const Uint16* ptext,Uint32 pcolor,Uint32 pcol
 }
 int sdltext::render_glyph_shaded(const Uint16 ptext,Uint32 pcolor,Uint32 pcolor1)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
-	SDL_Color c1 = {(pcolor1 & 0xff0000)>>16,(pcolor1 & 0x00ff00)>>8,pcolor1 & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
+	SDL_Color c1 = {(Uint8)((pcolor1 & 0xff0000)>>16),(Uint8)((pcolor1 & 0x00ff00)>>8),(Uint8)(pcolor1 & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderGlyph_Shaded(_font,ptext,c,c1);
@@ -696,7 +696,7 @@ int sdltext::render_glyph_shaded(const Uint16 ptext,Uint32 pcolor,Uint32 pcolor1
 }
 int sdltext::render_text_blended(const char* ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderText_Blended(_font,ptext,c);
@@ -705,7 +705,7 @@ int sdltext::render_text_blended(const char* ptext,Uint32 pcolor)
 }
 int sdltext::render_utf8_blended(const char* ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderUTF8_Blended(_font,ptext,c);
@@ -714,7 +714,7 @@ int sdltext::render_utf8_blended(const char* ptext,Uint32 pcolor)
 }
 int sdltext::render_unicode_blended(const Uint16* ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderUNICODE_Blended(_font,ptext,c);
@@ -723,7 +723,7 @@ int sdltext::render_unicode_blended(const Uint16* ptext,Uint32 pcolor)
 }
 int sdltext::render_glyph_blended(const Uint16 ptext,Uint32 pcolor)
 {
-	SDL_Color c = {(pcolor & 0xff0000)>>16,(pcolor & 0x00ff00)>>8,pcolor & 0x0000ff};
+	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderGlyph_Blended(_font,ptext,c);
@@ -857,7 +857,7 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 	float x_off=tx1-tx0;
 	float y_off=ty1-ty0;
 	int x,y;
-	float xy_s;
+	//float xy_s;
 	/* 如果线的终点超过了表面宽度则截取有效长度 */
 	x_off -= (tx1>=_surface->pitch)?x_off-_surface->pitch : 0;
 	x_off = (tx1<=0)?0:x_off;
@@ -928,7 +928,7 @@ int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
 	int i = 0;
 	//新点坐标
 	float tx,ty,tx1,ty1;
-	float pj;
+	float pj=0;
 	switch(bpp)
 	{
 		/* 单色 */
@@ -978,6 +978,7 @@ int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
 			}
 		break;
 	}
+	return 0;
 }
 //---------------------------------------------------------------
 //画一个椭圆，pm=0表示不填充，pm=1表示填充
@@ -1063,12 +1064,12 @@ int sdlsurface::rotate(float j)
 {
 	float x,y;
 	float a,b,c;
-	float r;
+	//float r;
 	float op_x,op_y;
 	float change_pixel_angle;
 	float p0x,p0y;
 	float p1x,p1y;
-	float p2x,p2y;
+	//float p2x,p2y;
 	float row,column;
 	float row_off,column_off;
 	/* 取出图像高宽*/
@@ -1316,6 +1317,7 @@ int sdltexture::texture(SDL_Texture* tex)
 {
 	if(_texture)destroy();
 	_texture = tex;
+	return 0;
 }
 SDL_Texture* sdltexture::texture()
 {

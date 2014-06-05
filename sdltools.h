@@ -78,7 +78,8 @@ GUI<sdl_edit,sdl_widget>()
 }
 int sdl_edit::init()
 {
-
+	if(sdl_widget::init())return -1;
+	return 0;
 }
 int sdl_edit::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
@@ -322,7 +323,7 @@ int sdl_scroll::bottom()
 }
 int sdl_scroll::show(int pcmd=0)
 {
-
+	return 0;
 }
 int sdl_scroll::update()
 {
@@ -353,9 +354,9 @@ int sdl_scroll::scroll_event(sdl_board* obj)
 }
 int sdl_scroll::sysevent(SDL_Event* e)
 {
-	SDL_UserEvent ue;
-	SDL_Event te;
-	int p;
+	//SDL_UserEvent ue;
+	//SDL_Event te;
+	//int p;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
@@ -799,6 +800,7 @@ int sdl_view_plane::sysevent(SDL_Event* e)
 			}
 		break;
 	}
+	return 0;
 }
 typedef class sdl_view : public GUI<sdl_view,sdl_widget>
 {
@@ -918,6 +920,7 @@ int sdl_view::sysevent(SDL_Event*e)
 			}
 		break;
 	}
+	return 0;
 }
 /* 
 	pflag使用位标签1与2组合,

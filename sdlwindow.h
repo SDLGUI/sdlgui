@@ -158,7 +158,7 @@ class GUI : public B
 		GUI();
 		virtual int event(SDL_Event*);//GUI专用类事件统一调用函数
 		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
-		virtual int sysevent(SDL_Event*e){};//GUI专用类系统事件处理函数的虚类
+		virtual int sysevent(SDL_Event*e){return 0;};//GUI专用类系统事件处理函数的虚类
 		sdlgui_event_struct_ptr event();//GUI专用类读取事件函数
 	//protected:
 		sdlgui_event_struct_ptr _head_event,_end_event;
@@ -249,7 +249,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int redraw_hit(sdl_board*);
 		//int redraw_hit(SDL_Rect*,sdl_board*);
 		/* 初始化时用于绘图窗口的虚函数 */
-		virtual int draw(){}
+		virtual int draw(){return 0;}
 		/* 重画当前窗口 */
 		int redraw();
 		/* 返回给定坐标的子窗口对象 */
@@ -566,14 +566,14 @@ int sdl_ime::input(char ch)
 }
 int sdl_ime::parse()
 {
-	int a,*b;
+	//int a,*b;
 	//memset(_word_group,0x0,sizeof(_word_group));
 	memset(_word_group,0x0,1000);
 	memcpy(_word_group[0],_word_buf,100);
 	if(!_word_buf_index)return 0;
 	char *_tc;
 	char _tbuf[1000];
-	int _file_pt = 0;
+	//int _file_pt = 0;
 	int _is_parse = 1;
 	if(!_input_method_file_path)return -1;
 	_input_method_file.open(_input_method_file_path,ios::in);
@@ -606,13 +606,14 @@ int sdl_ime::parse()
 		}
 	}
 	_input_method_file.close();
+	return 0;
 }
 int sdl_ime::show_list()
 {
 	char _word_list[1000] = {0};
 	int i=0;
 	int j=0;
-	for(i;i<_word_group_index;i++)
+	for(i=0;i<_word_group_index;i++)
 	{
 		sprintf(_word_list+j,"[%d]%s",i,_word_group[i]);
 		j+=strlen(_word_group[i])+3;
@@ -1326,7 +1327,7 @@ template<class T>T* sdl_board::add(T* obj)
  */
 int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 {
-	sdl_board* temp;
+	//sdl_board* temp;
 	//如果源窗口a不存在则返回错误
 	if(a==NULL)return -1;
 	//如果目标窗口b不存在则按Z序调整窗口顺序
@@ -1468,6 +1469,7 @@ int sdl_board::redraw_hit(sdl_board* child = NULL)
 			_hit_board_ptr[x+y*_rect.w] = this;
 		}
 	}
+	return 0;
 }
 //-----------------------------------
 //返回探板中指定坐标的窗口值
@@ -1635,7 +1637,7 @@ SDL_TimerID sdl_board::add_timer(int t)
 }
 Uint32 sdl_board::timer_callback(Uint32 interval,void* p)
 {
-	sdl_board* t = (sdl_board*)p;
+	//sdl_board* t = (sdl_board*)p;
 	SDL_UserEvent userevent;
 	SDL_Event e;
 	//-----------------
@@ -1715,6 +1717,7 @@ int sdl_frame::init()
 	_event_thread = NULL;
 	_active_win = this;
 	_is_exit = 0;
+	return 0;
 }
 //-------------------------
 //窗口框架初始函数
@@ -1906,7 +1909,7 @@ int sdl_frame::run()
 {
 	clock_t _frame_timer;
 	double sleep = 0;
-	sdltexture* tex=NULL;
+	//sdltexture* tex=NULL;
 	while(!_is_exit)
 	{
 		_frame_timer = clock();
@@ -1956,7 +1959,7 @@ int sdl_frame::call_redraw(void* obj)
 	sdl_frame* _this = (sdl_frame*)obj;
 	while(SDL_PollEvent(&(_this->_main_event)))
 	{
-		clock_t _frame_timer;
+		//clock_t _frame_timer;
 		switch(_this->_main_event.type)
 		{
 			case SDL_QUIT:
@@ -2073,6 +2076,7 @@ sdl_widget::~sdl_widget()
 int sdl_widget::init()
 {
 	if(sdl_board::init())return -1;
+	return 0;
 }
 int sdl_widget::init(const char* title,int px,int py,int pw,int ph,Uint32 pflags)
 {
@@ -2127,7 +2131,7 @@ int sdl_clip::clip(int w,int h)
 {
 	//return 0;
 	int x,y;
-	SDL_Rect tclip;
+	//SDL_Rect tclip;
 	//先得取当前表面的宽度和高度
 	int src_w = sdlsurface::clip_rect()->w;
 	int src_h = sdlsurface::clip_rect()->h;
