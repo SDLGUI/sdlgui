@@ -267,6 +267,8 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		//timer_node* add_timer(int);
 		/* 添加窗口计时器 */
 		SDL_TimerID add_timer(int);
+		/* 捕捉鼠标 */
+		int capture(int);
 	public:
 		/* 计时器全局回调函数 */
 		static Uint32 timer_callback(Uint32,void*); 
@@ -715,6 +717,8 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		sdl_ime ime;
 		sdlsurface backgroup;
 	protected:
+		static sdl_board* _capture_win;
+	protected:
 		static int call_redraw(void*);
 		static int all_event_process(void*);
 	protected:
@@ -729,6 +733,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		/* 处理消息流的子级线程 */
 		SDL_Thread* _event_thread;
 }*sdl_frame_ptr;
+sdl_board* sdl_frame::_capture_win = NULL;
 //-------------------------------------------------------
 //
 //
@@ -1574,6 +1579,26 @@ int sdl_board::active()
 	((sdl_frame*)t)->_active_win = this;
 	//cout<<t<<":"<<this<<endl;
 	return 0;
+}
+//------------------------------------------------
+//捕捉鼠标
+int sdl_board::capture(int p =1)
+{
+	if(p && !sdl_frame::_capture_win)
+	{
+		sdl_frame::_capture_win = this;
+		return 0;
+	}
+	else
+	if(!p)
+	{
+		if(!sdl_frame::_capture_win || sdl_frame::_capture_win == this)
+		{
+			sdl_frame::_capture_win = NULL;
+			return 0;
+		}
+	}
+	return -1;
 }
 //--------------------------------------------
 //设置关键色
