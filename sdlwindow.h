@@ -1806,27 +1806,34 @@ int sdl_frame::event_shunt(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
-			if(t!=_active_win)
+			if(sdl_frame::_capture_win)
 			{
-			/* 先给失去焦点的窗口发送失去焦点消息 */
-			ue.type = SDL_USEREVENT;
-			ue.code = sdlgui_window_focus;
-			ue.data1 = (void*)0;
-			ue.data2 = (void*)t;
-			te.type = SDL_USEREVENT;
-			te.user = ue;
-			if(_active_win)_active_win->event(&te);
-			/* 然后给得到焦点的窗口发送得到焦点消息 */
-			ue.data1= (void*)1;
-			ue.data2 = (void*)_active_win;
-			te.type = SDL_USEREVENT;
-			te.user = ue;
-			t->event(&te);
-			/* 再更新焦点状态 */
-			t->active();
+				sdl_frame::_capture_win->event(e);
 			}
-			/* 最后发送当前消息 */
-			t->event(e);
+			else
+			{
+				if(t!=_active_win)
+				{
+					/* 先给失去焦点的窗口发送失去焦点消息 */
+					ue.type = SDL_USEREVENT;
+					ue.code = sdlgui_window_focus;
+					ue.data1 = (void*)0;
+					ue.data2 = (void*)t;
+					te.type = SDL_USEREVENT;
+					te.user = ue;
+					if(_active_win)_active_win->event(&te);
+					/* 然后给得到焦点的窗口发送得到焦点消息 */
+					ue.data1= (void*)1;
+					ue.data2 = (void*)_active_win;
+					te.type = SDL_USEREVENT;
+					te.user = ue;
+					t->event(&te);
+					/* 再更新焦点状态 */
+					t->active();
+				}
+				/* 最后发送当前消息 */
+				t->event(e);
+			}
 			//if(t != this)t->event(e);
 		break;
 		case SDL_MOUSEBUTTONUP:
@@ -1835,7 +1842,14 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
 			//if(t != this)t->event(e);
-			t->event(e);
+			if(sdl_frame::_capture_win)
+			{
+				sdl_frame::_capture_win->event(e);
+			}
+			else
+			{
+				t->event(e);
+			}
 		break;
 		case SDL_KEYUP:
 			//
@@ -2419,10 +2433,12 @@ int sdl_button::sysevent(SDL_Event* e)
 			}
 			_button_clip(1,0)->blit_surface(NULL,this,NULL);
 			is_down = 0;
+			capture(0);
 		break;
 		case SDL_MOUSEBUTTONDOWN:
 			is_down = 1;
 			_button_clip(2,0)->blit_surface(NULL,this,NULL);
+			capture();
 			//---------
 		break;
 		case SDL_KEYUP:
