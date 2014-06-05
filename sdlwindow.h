@@ -248,6 +248,8 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		//int redraw_hit();
 		int redraw_hit(sdl_board*);
 		//int redraw_hit(SDL_Rect*,sdl_board*);
+		/* 初始化时用于绘图窗口的虚函数 */
+		virtual int draw(){}
 		/* 重画当前窗口 */
 		int redraw();
 		/* 返回给定坐标的子窗口对象 */
