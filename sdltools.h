@@ -777,17 +777,12 @@ int sdl_view_plane::sysevent(SDL_Event* e)
 	float pt;
 	switch(e->type)
 	{
-		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEMOTION:
-		case SDL_FINGERUP:
-		case SDL_FINGERDOWN:
-		case SDL_FINGERMOTION:
-			if(parent())parent()->event(e);
-		break;
 		case SDL_USEREVENT:
 			switch(e->user.code)
 			{
+				default:
+					if(parent())parent()->event(e);
+				break;
 				case sdlgui_scroll_point:
 					pt = (((float*)(e->user.data2))[1]);
 					if(e->user.data1 == _vertical)
@@ -801,6 +796,9 @@ int sdl_view_plane::sysevent(SDL_Event* e)
 					}
 				break;
 			}
+		break;
+		default:
+			if(parent())parent()->event(e);
 		break;
 	}
 	return 0;
