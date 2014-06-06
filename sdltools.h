@@ -361,6 +361,7 @@ int sdl_scroll::sysevent(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
+			capture();
 			if(!_scroll_is_change)
 			{
 				_scroll_start_time = clock();
@@ -370,11 +371,13 @@ int sdl_scroll::sysevent(SDL_Event* e)
 		case SDL_MOUSEBUTTONUP:
 			_scroll_is_change = 0;
 			scroll(int(_scroll_step*20));
+			capture(0);
 		break;
 		case SDL_FINGERUP:
 			_scroll_is_change = 0;
 			//开始滚动事件
 			scroll(int(_scroll_step*200));
+			capture(0);
 		break;
 		case SDL_MOUSEMOTION:
 			if(_scroll_is_change)
