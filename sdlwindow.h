@@ -1026,7 +1026,7 @@ int sdl_board::text(const char* ptext)
 	if(_text_board)
 	{
 		_text_board->text(ptext);
-		return _text_board->render_utf8_solid(ptext,0);
+		return _text_board->render_utf8_solid(ptext,_text_color);
 	}
 	return -1;
 }
