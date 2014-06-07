@@ -295,8 +295,8 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		sdl_board *_next,*_last;
 		int _is_show;
 		int _is_destroy;
-		sdlrenderer* _renderer;
-		sdltexture* _texture;
+		//sdlrenderer* _renderer;
+		//sdltexture* _texture;
 }*sdl_board_ptr;
 /* 初始全局变量 */
 int sdl_board::_frame_count = 0;
@@ -747,6 +747,7 @@ typedef class sdl_clip : public sdlsurface
 	public:
 		sdl_clip();
 		sdl_clip(sdlsurface*,int,int);
+		~sdl_clip();
 		//用给定的剪辑宽度和高度进行裁剪。
 		int clip(int,int);
 		int init();
@@ -952,11 +953,14 @@ GUI<sdl_board,sdlsurface>()
 //底板析构函数
 sdl_board::~sdl_board()
 {
-	//return 0;
-	//destroy();
+	/* 释放缓冲表面 */
 	if(_board)delete _board;
 	if(_hit_board)delete _hit_board;
+	if(_hit_board_ptr)delete _hit_board_ptr;
+	/*释放文本*/
 	if(_text)delete _text;
+	/* 释放文本表面 */
+	if(_text_board)delete _text_board;
 }
 //底板初始函数
 int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
@@ -1534,14 +1538,32 @@ int sdl_board::redraw()
 						temp->_board->blit_surface(&trc2,_board,&trc1);
 						/* 将子窗口探板绘制到父窗口上 */
 						redraw_hit(temp);
+						//temp = temp->_next;
+				}
+				else
+				{
+					if(temp->_next)
+					{
+
+					}
+					else
+					{
+						if(temp->_last)
+						{
+							temp->_last->_next = NULL;
+							temp->_parent->_head->_last = temp->_last;
+							delete temp;
+							//cout<<this<<endl;
+						}
+					}
 				}
 				temp = temp->_next;
 			}
 		}
 		else
 		{
-			/* 不显示窗口返回-1 */
-			return -1;
+			/* 不显示窗口返回0 */
+			return 0;
 		}
 	}
 	//如果消毁，则移除窗口节点并返回-1
@@ -1551,6 +1573,7 @@ int sdl_board::redraw()
 		while(temp)		
 		{
 			//如果当前节点有子窗口，则跳到子窗口
+			temp->destroy();
 			if(temp->_head)
 			{
 				temp = temp->_head;
@@ -1713,7 +1736,7 @@ int sdl_frame::init()
 {
 	if(sdl_board::init())return -1;
 	_window = NULL;
-	_renderer = NULL;
+	//_renderer = NULL;
 	_event_thread = NULL;
 	_active_win = this;
 	_is_exit = 0;
@@ -2104,6 +2127,10 @@ sdlsurface()
 {
 	init(clip,w,h);	
 }
+sdl_clip::~sdl_clip()
+{
+	delete _clip_surface;	
+}
 int sdl_clip::init()
 {
 	_clip_surface = NULL;
@@ -2261,6 +2288,7 @@ typedef class sdl_button : public GUI<sdl_button,sdl_widget>
 	public:
 		sdl_button();
 		sdl_button(const char*,int,int,int,int,Uint32);
+		virtual ~sdl_button();
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
@@ -2298,6 +2326,10 @@ sdl_button::sdl_button(const char* ptitle,int px,int py,int pw,int ph,Uint32 pfl
 GUI<sdl_button,sdl_widget>()
 {
 	init(ptitle,px,py,pw,ph,pflag);
+}
+sdl_button::~sdl_button()
+{
+
 }
 int sdl_button::init()
 {
