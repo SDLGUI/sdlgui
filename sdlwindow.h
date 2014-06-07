@@ -953,6 +953,7 @@ GUI<sdl_board,sdlsurface>()
 //底板析构函数
 sdl_board::~sdl_board()
 {
+	//cout<<"sdl_board::~sdl_board()"<<endl;
 	/* 释放缓冲表面 */
 	if(_board)delete _board;
 	if(_hit_board)delete _hit_board;
@@ -1331,7 +1332,7 @@ template<class T>T* sdl_board::add(T* obj)
  */
 int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 {
-	//sdl_board* temp;
+	sdl_board* temp;
 	//如果源窗口a不存在则返回错误
 	if(a==NULL)return -1;
 	//如果目标窗口b不存在则按Z序调整窗口顺序
@@ -1383,6 +1384,51 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 	//如果窗口B存在，则移动指定的两个子窗口Z序
 	else
 	{
+		//窗口B与窗口A相同表示脱离指定子窗口节点
+		if(a==b)
+		{
+			/* 
+				如果子窗口没有下个窗口
+				表示子窗口为末尾节点，
+				则分析当前子窗口是否为第一个子窗口
+				如果当前子窗口为第一个子窗口
+				则将父级窗口子节点初始化为NULL
+				否则如果当前子窗口不是第一个子窗口
+				则更新子窗口列表末尾指向
+				如果当前子窗口有下个窗口
+				则分析当前子窗口是否为第一个子窗口
+				如果当前子窗口是第一个子窗口
+				则更新你父级窗口子节点的指向
+				否则如果当前子窗口不是第一个子窗口
+				则直接脱离当前子窗口
+			 */
+			if(!a->_next)	
+			{
+				if(a->_parent && (a->_parent->_head == a))
+				{
+					a->_parent->_head = NULL;
+				}
+				else
+				if(a->_parent)
+				{
+					a->_parent->_head->_last = a->_last;
+					a->_last->_next = NULL;
+				}
+			}
+			else
+			{
+				if(a->_parent && a->_last->_next)
+				{
+					a->_parent->_head = a->_next;
+					a->_next->_last = a->_last;
+				}
+				else
+				{
+					a->_next->_last = a->_last;
+					a->_last->_next= a->_next;
+				}
+			}
+		}
 		if(z>0)
 		{
 
@@ -1538,26 +1584,17 @@ int sdl_board::redraw()
 						temp->_board->blit_surface(&trc2,_board,&trc1);
 						/* 将子窗口探板绘制到父窗口上 */
 						redraw_hit(temp);
-						//temp = temp->_next;
+						temp = temp->_next;
 				}
 				else
 				{
-					if(temp->_next)
+					del_board = temp;
+					temp = temp->_next;
+					if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 					{
-
-					}
-					else
-					{
-						if(temp->_last)
-						{
-							temp->_last->_next = NULL;
-							temp->_parent->_head->_last = temp->_last;
-							delete temp;
-							//cout<<this<<endl;
-						}
+						delete del_board;
 					}
 				}
-				temp = temp->_next;
 			}
 		}
 		else
@@ -1566,26 +1603,23 @@ int sdl_board::redraw()
 			return 0;
 		}
 	}
-	//如果消毁，则移除窗口节点并返回-1
+	//如果消毁，则移除子级窗口节点并返回-1
 	else
 	if(_is_destroy)
 	{
 		while(temp)		
 		{
+			del_board = temp;
 			//如果当前节点有子窗口，则跳到子窗口
 			temp->destroy();
-			if(temp->_head)
-			{
-				temp = temp->_head;
-			}
-			else
-			if(temp->_next)
+			//如果重绘函数返回-1，表示已删除子节点
+			if(temp->redraw())
 			{
 				temp = temp->_next;
-			}
-			else
-			{
-				temp = temp->_parent;
+				if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
+				{
+					delete del_board;
+				}
 			}
 		}
 		return -1;
