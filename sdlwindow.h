@@ -244,7 +244,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		/* 调整当前窗口Z序 */
 		int z_top(sdl_board*,sdl_board*,int);
 		/* 消毁当前窗口数据 */
-		int destroy();
+		int destroy(int);
 		//int redraw_hit();
 		int redraw_hit(sdl_board*);
 		//int redraw_hit(SDL_Rect*,sdl_board*);
@@ -1447,34 +1447,14 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 }
 //--------------------------------------------------------
 //消毁窗口
-int sdl_board::destroy()
+int sdl_board::destroy(int p=1)
 {
 	sdl_board* t = _head;
-	_is_destroy = 1;
+	_is_destroy = p;
 	while(t)
 	{
-		t->destroy();
+		t->destroy(1);
 		t = t->_next;
-	}
-	return 0;
-	//--------------------------------------------
-	//以下无效
-	if(parent())
-	{
-		if(parent()->_head == this)
-		{
-			_next->_last = parent()->_head->_last;
-			parent()->_head = _next;
-		}
-		else
-		if(parent()->_head->_last == this)
-		{
-			parent()->_head->_last = this->_last;	
-		}
-		else
-		{
-
-		}
 	}
 	return 0;
 }
