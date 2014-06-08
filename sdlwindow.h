@@ -953,7 +953,7 @@ GUI<sdl_board,sdlsurface>()
 //底板析构函数
 sdl_board::~sdl_board()
 {
-	//cout<<"sdl_board::~sdl_board()"<<endl;
+	//cout<<"sdl_board::~sdl_board()"<<text()<<endl;
 	/* 释放缓冲表面 */
 	if(_board)delete _board;
 	if(_hit_board)delete _hit_board;
@@ -1352,6 +1352,7 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 				//如果已有子窗口节点
 				else
 				{
+					//cout<<a<<endl;
 					//如果节点为链表尾则直接返回
 					if(a == _head->_last)return 0;
 					//先把A节点脱离出来。
@@ -1384,51 +1385,6 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 	//如果窗口B存在，则移动指定的两个子窗口Z序
 	else
 	{
-		//窗口B与窗口A相同表示脱离指定子窗口节点
-		if(a==b)
-		{
-			/* 
-				如果子窗口没有下个窗口
-				表示子窗口为末尾节点，
-				则分析当前子窗口是否为第一个子窗口
-				如果当前子窗口为第一个子窗口
-				则将父级窗口子节点初始化为NULL
-				否则如果当前子窗口不是第一个子窗口
-				则更新子窗口列表末尾指向
-				如果当前子窗口有下个窗口
-				则分析当前子窗口是否为第一个子窗口
-				如果当前子窗口是第一个子窗口
-				则更新你父级窗口子节点的指向
-				否则如果当前子窗口不是第一个子窗口
-				则直接脱离当前子窗口
-			 */
-			if(!a->_next)	
-			{
-				if(a->_parent && (a->_parent->_head == a))
-				{
-					a->_parent->_head = NULL;
-				}
-				else
-				if(a->_parent)
-				{
-					a->_parent->_head->_last = a->_last;
-					a->_last->_next = NULL;
-				}
-			}
-			else
-			{
-				if(a->_parent && a->_last->_next)
-				{
-					a->_parent->_head = a->_next;
-					a->_next->_last = a->_last;
-				}
-				else
-				{
-					a->_next->_last = a->_last;
-					a->_last->_next= a->_next;
-				}
-			}
-		}
 		if(z>0)
 		{
 
@@ -1440,7 +1396,49 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 		}
 		else
 		{
-			
+			//窗口B与窗口A相同表示脱离指定子窗口节点
+			if(a==b)
+			{
+			/* 
+				如果子窗口没有下个窗口
+				   表示子窗口为末尾节点，
+				   则分析当前子窗口是否为第一个子窗口
+				    如果当前子窗口为第一个子窗口
+				      则将父级窗口子节点初始化为NULL
+				    否则如果当前子窗口不是第一个子窗口
+				     则更新子窗口列表末尾指向
+				如果当前子窗口有下个窗口
+				  则分析当前子窗口是否为第一个子窗口
+				    如果当前子窗口是第一个子窗口
+				      则更新你父级窗口子节点的指向
+				    否则如果当前子窗口不是第一个子窗口
+				      则直接脱离当前子窗口
+			 */
+				//cout<<a->text()<<endl;
+				if(a==_head)
+				{
+					_head = _head->_next;
+					if(_head)
+					{
+						_head->_last = _head->_last->_next;
+					}
+				}
+				else
+				if(a==_head->_last)
+				{
+					_head->_last = _head->_last->_last;
+					_head->_last->_next = NULL;
+				}
+				else
+				{
+					a->_next->_last = a->_last;
+					a->_last->_next= a->_next;
+				}
+			}
+			else
+			{
+
+			}
 		}
 	}
 	return 0;
