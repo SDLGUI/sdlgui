@@ -1056,7 +1056,7 @@ int sdl_listbox_plane::sysevent(SDL_Event* e)
 			{
 				case sdlgui_window_focus:
 					/* 如果失去焦点，分析是否被子级窗口获取焦点 */
-					if(!(int)(e->user.data1))
+					if(!(*(int*)(e->user.data1)))
 					{
 						if(!is_child((sdl_board*)(e->user.data2)))
 						{
@@ -1193,7 +1193,7 @@ int sdl_listbox::sysevent(SDL_Event* e)
 					 当下拉列表焦点改变时 
 					 分析是否被列表滑动面板获取了 
 					*/
-					if(!(int)(e->user.data1))
+					if(!((int*)(e->user.data1)))
 					{
 						/* 先取获取焦点的对象 */
 						tobj = (sdl_board*)(e->user.data2);

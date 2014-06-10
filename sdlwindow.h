@@ -2462,7 +2462,7 @@ int sdl_button::sysevent(SDL_Event* e)
 			switch(e->user.code)
 			{
 				case sdlgui_window_focus:
-					if((int)e->user.data1)
+					if(*(int*)e->user.data1)
 					{
 						_button_clip(1,0)->blit_surface(NULL,this,NULL);
 					}
