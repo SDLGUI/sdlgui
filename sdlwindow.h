@@ -1569,9 +1569,9 @@ int sdl_board::redraw()
 				{
 					del_board = temp;
 					temp = temp->_next;
-					if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
+					//if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 					{
-						delete del_board;
+						//delete del_board;
 					}
 				}
 			}
@@ -1590,14 +1590,14 @@ int sdl_board::redraw()
 		{
 			del_board = temp;
 			//如果当前节点有子窗口，则跳到子窗口
-			temp->destroy();
+			//temp->destroy();
 			//如果重绘函数返回-1，表示已删除子节点
-			if(temp->redraw())
+			//if(temp->redraw())
 			{
 				temp = temp->_next;
-				if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
+				//if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 				{
-					delete del_board;
+					//delete del_board;
 				}
 			}
 		}
