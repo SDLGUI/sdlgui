@@ -552,7 +552,8 @@ int sdl_ime::input(char ch)
 				else
 				{
 					ue.code = sdlgui_ime_cn_ctrl;
-					ue.data1 = (void*)(int)ch;
+					//ue.data1 = (void*)(int)ch;
+					ue.data1 = (void*)ch;
 				}
 				e.type = SDL_USEREVENT;
 				e.user = ue;
