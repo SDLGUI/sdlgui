@@ -967,6 +967,7 @@ sdl_board::~sdl_board()
 //底板初始函数
 int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
+	string cur_platform;
 	if(sdlsurface::init(0,pw,ph,32,0,0,0,0))return -1;
 	//-------------
 	_rect.x = px;
@@ -974,7 +975,7 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_rect.w = pw;
 	_rect.h = ph;
 	//--------------
-	//if(_board)delete _board;
+	if(_board)delete _board;
 	_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
 	//----------------
 	_hit_rect.w = 0;
@@ -991,13 +992,21 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		_text_rect.x = 0;
 		_text_rect.y = 0;
 		if(_text_board)delete _text_board;
-		#if defined (WIN32)
-		_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
-		#elif defined (LINUX) 
-		_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
-		#elif defined (__ANDROID_OS__)
-		_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
-		#endif
+		cur_platform = SDL_GetPlatform();
+		if(!cur_platform.compare("Windows"))
+		{
+			_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
+		}
+		else
+		if(!cur_platform.compare("Linux"))
+		{
+			_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
+		}
+		else
+		if(!cur_platform.compare("Linux"))
+		{
+			_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
+		}
 		_text_board->render_utf8_solid(ptitle,_text_color);
 	}
 	//
@@ -1347,8 +1356,8 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 				if(_head==NULL)
 				{
 					a->_next = NULL;
+					a->_last = a;
 					_head = a;
-					_head->_last = a;
 				}
 				//如果已有子窗口节点
 				else
@@ -1563,17 +1572,17 @@ int sdl_board::redraw()
 						temp->_board->blit_surface(&trc2,_board,&trc1);
 						/* 将子窗口探板绘制到父窗口上 */
 						redraw_hit(temp);
-						temp = temp->_next;
 				}
 				else
 				{
 					del_board = temp;
 					temp = temp->_next;
-					//if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
+					if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 					{
-						//delete del_board;
+						delete del_board;
 					}
 				}
+				temp = temp->_next;
 			}
 		}
 		else
@@ -1590,14 +1599,14 @@ int sdl_board::redraw()
 		{
 			del_board = temp;
 			//如果当前节点有子窗口，则跳到子窗口
-			//temp->destroy();
+			temp->destroy();
 			//如果重绘函数返回-1，表示已删除子节点
-			//if(temp->redraw())
+			if(temp->redraw())
 			{
 				temp = temp->_next;
-				//if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
+				if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 				{
-					//delete del_board;
+					delete del_board;
 				}
 			}
 		}
@@ -2352,21 +2361,7 @@ int sdl_button::init()
 int sdl_button::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
 	string text_str(SDL_GetPlatform());
-	if(sdl_widget::init("",px,py,pw,ph,pflag))return -1;
-	if(!text_str.compare("Windows"))
-	{
-		text(ptitle,"c:/windows/fonts/simkai.ttf",16,0);
-	}
-	else
-	if(!text_str.compare("Linux"))
-	{
-		text(ptitle,"/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
-	}
-	else
-	if(!text_str.compare("Android"))
-	{
-		text(ptitle,"/system/fonts/DroidSanSansFallback.ttf",16);
-	}
+	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
 	/* 设置按钮文本渲染范围 */
 	_text_rect.x = (_rect.w-_text_board->clip_rect()->w)/2;
 	_text_rect.y = (_rect.h-_text_board->clip_rect()->h)/2;
@@ -2465,7 +2460,7 @@ int sdl_button::sysevent(SDL_Event* e)
 				case sdlgui_window_focus:
 					if(*(int*)e->user.data1)
 					{
-						_button_clip(1,0)->blit_surface(NULL,this,NULL);
+						//_button_clip(1,0)->blit_surface(NULL,this,NULL);
 					}
 				break;
 			}
