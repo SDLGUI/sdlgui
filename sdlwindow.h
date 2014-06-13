@@ -959,9 +959,9 @@ sdl_board::~sdl_board()
 	/* 释放缓冲表面 */
 	if(_board)delete _board;
 	if(_hit_board)delete _hit_board;
-	if(_hit_board_ptr)delete _hit_board_ptr;
+	if(_hit_board_ptr)delete[] _hit_board_ptr;
 	/*释放文本*/
-	if(_text)delete _text;
+	if(_text)delete[] _text;
 	/* 释放文本表面 */
 	if(_text_board)delete _text_board;
 }
@@ -2170,7 +2170,7 @@ sdlsurface()
 }
 sdl_clip::~sdl_clip()
 {
-	delete _clip_surface;	
+	delete[] _clip_surface;	
 }
 int sdl_clip::init()
 {
