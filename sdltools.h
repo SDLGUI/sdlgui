@@ -818,6 +818,8 @@ typedef class sdl_view : public GUI<sdl_view,sdl_widget>
 		int sysevent(SDL_Event*);
 		/* 设置视图滚动参数 */
 		int scroll(Uint32,SDL_Rect*);
+		/* 设置视图滚动条位置 */
+		int scroll(float,float);
 	protected:
 		/* 视图面板的系统函数 */
 	public:
@@ -984,6 +986,18 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 		_horizontal->destroy();
 	}
 	view.scroll_bar((_vertical)?_vertical:NULL,(_horizontal)?_horizontal:NULL);
+	return 0;
+}
+int sdl_view::scroll(float v,float h)
+{
+	if(_vertical && (v<=1 || v>=0))
+	{
+			_vertical->point(v);
+	}
+	if(_horizontal&& (h<=1 || h>=0))
+	{
+			_horizontal->point(h);
+	}
 	return 0;
 }
 //--------------------------------------------------------------
