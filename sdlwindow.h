@@ -185,10 +185,11 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		~sdl_board();
 	  int init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags);
 		int init();
-		
+		int sysevent(SDL_Event*e){return 0;}
 	public:
 		/* 激活当前窗口 */
 		int active();
+		int activities();
 		/* 显示当前窗口 */
 		int show();
 		/* 隐藏当前窗口 */
@@ -682,7 +683,7 @@ typedef class sdl_widget : public GUI<sdl_widget,sdl_board>
 		~sdl_widget();
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
-		virtual int sysevent(SDL_Event*);
+		int sysevent(SDL_Event*);
 }*sdl_widget_ptr;
 //-------------------------------------
 //
@@ -1585,6 +1586,7 @@ int sdl_board::redraw()
 					if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 					{
 						//cout<<this<<endl;
+						if(del_board->activities() && del_board->parent())del_board->parent()->active();
 						delete del_board;
 					}
 				}
@@ -1612,6 +1614,7 @@ int sdl_board::redraw()
 				temp = temp->_next;
 				if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 				{
+					if(del_board->activities() && del_board->parent())del_board->parent()->active();
 					delete del_board;
 				}
 			}
@@ -1632,6 +1635,15 @@ int sdl_board::active()
 	((sdl_frame*)t)->_active_win = this;
 	//cout<<t<<":"<<this<<endl;
 	return 0;
+}
+int sdl_board::activities()
+{
+	sdl_board* t = this;
+	while(t->_parent)
+	{
+		t = t->_parent;
+	}
+	return (((sdl_frame*)t)->_active_win == this);
 }
 //------------------------------------------------
 //捕捉鼠标
@@ -1876,6 +1888,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 					te.type = SDL_USEREVENT;
 					te.user = ue;
 					if(_active_win)_active_win->event(&te);
+					cout<<t<<endl;
 					/* 然后给得到焦点的窗口发送得到焦点消息 */
 					ue.data1= (void*)1;
 					ue.data2 = (void*)_active_win;
