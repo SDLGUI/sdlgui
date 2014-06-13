@@ -1528,7 +1528,7 @@ int sdl_board::redraw()
 	sdl_board* del_board = NULL;
 	SDL_Rect trc1,trc2;
 	//------------------
-	//如果不消毁，则处理窗口
+	//如果当前窗口不消毁，则处理窗口
 	if(!_is_destroy)
 	{
 		//如果显示则绘画窗口
@@ -1546,6 +1546,10 @@ int sdl_board::redraw()
 			while(temp)
 			{
 				del_board = temp;
+				/*
+					 如果子窗口返回0，表示渲染成功 
+					 如果子窗口返回-1，表示子窗口的所有子级窗口删除成功	 
+				 */
 				if(!temp->redraw())
 				{
 						/* 将子窗口绘制到父窗口上 */
@@ -1572,6 +1576,7 @@ int sdl_board::redraw()
 						temp->_board->blit_surface(&trc2,_board,&trc1);
 						/* 将子窗口探板绘制到父窗口上 */
 						redraw_hit(temp);
+						temp = temp->_next;
 				}
 				else
 				{
@@ -1579,10 +1584,11 @@ int sdl_board::redraw()
 					temp = temp->_next;
 					if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 					{
+						//cout<<this<<endl;
 						delete del_board;
 					}
 				}
-				temp = temp->_next;
+				//temp = temp->_next;
 			}
 		}
 		else
