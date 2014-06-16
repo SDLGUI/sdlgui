@@ -66,6 +66,7 @@ typedef class sdlsurface
 		int init(Uint32,int,int,int,Uint32,Uint32,Uint32,Uint32);
 	protected:
 		SDL_Surface *_surface;
+		SDL_Rect _surface_rect;
 	public:
 		///-------------------------------------
 		sdlrenderer* create_software_renderer();
@@ -133,6 +134,7 @@ typedef class sdltext : public sdlsurface
 	public:
 		sdltext();
 		sdltext(const char*,int);
+		~sdltext();
 		int init();
 		int text(const char*);
 		/* 
@@ -142,6 +144,7 @@ typedef class sdltext : public sdlsurface
 		int text(const char*,const char*,int);
 		char* text();
 		int font(const char*,int);
+		int close_font();
 		//--------------------------------------
 		int font_style();	
 		int font_style(int);	
@@ -329,7 +332,6 @@ int sdlsurface::surface(SDL_Surface* surface)
 int sdlsurface::init()
 {
 	if(_surface)free_surface();
-	//_surface = NULL;
 	return 0;
 }
 int sdlsurface::init(SDL_Surface* sur)
@@ -382,8 +384,8 @@ int sdlsurface::blit_surface(const SDL_Rect* srcrect,sdlsurface* dst,SDL_Rect* d
 //释放无用的surface
 int sdlsurface::free_surface()
 {
+	/* 这个函数没有返回值 */
 	SDL_FreeSurface(_surface);
-	//if(_surface)delete _surface;
 	_surface = NULL;
 	return 0;
 }
@@ -442,10 +444,9 @@ sdlsurface* sdlsurface::convert_surface(SDL_PixelFormat* fmt,Uint32 flags = 0)
 //得到表面剪辑
 SDL_Rect* sdlsurface::clip_rect()
 {
-	SDL_Rect* trect = new SDL_Rect;
-	memset((char*)trect,0x00,sizeof(SDL_Rect));
-	SDL_GetClipRect(_surface,trect);
-	return trect;
+	memset((char*)&_surface_rect,0x00,sizeof(SDL_Rect));
+	SDL_GetClipRect(_surface,&_surface_rect);
+	return &_surface_rect;
 }
 //------------------------------------------------------
 //
@@ -462,13 +463,21 @@ sdlsurface()
 	_font = NULL;
 	init();
 }
-sdltext::sdltext(const char* ptext,int psize)
+/* 
+	使用指定的字体和字号来构造一个文本表面对象 
+ */
+sdltext::sdltext(const char* pfont,int psize)
 :
 sdlsurface()
 {
 	_font = NULL;
 	init();
-	font(ptext,psize);
+	font(pfont,psize);
+}
+sdltext::~sdltext()
+{
+	delete[] _text;
+	font(NULL,0);
 }
 int sdltext::init()
 {
@@ -483,7 +492,7 @@ int sdltext::init()
 }
 int sdltext::text(const char* ptext)
 {
-	if(_text)delete _text;
+	if(_text)delete[] _text;
 	int len = strlen(ptext)+1;
 	_text = new char[len];
 	memset(_text,0x00,len);
@@ -502,9 +511,14 @@ char* sdltext::text()
 	if(_text) return _text;
 	return NULL;
 }
-int sdltext::font(const char* font_path,int font_size)
+int sdltext::font(const char* font_path,int font_size=16)
 {
-	if(_font)	TTF_CloseFont(_font);
+	if(_font)
+	{
+		TTF_CloseFont(_font);
+		_font = NULL;
+	}
+	if(!font_path)return -1;
 	_font = TTF_OpenFont(font_path,font_size);
 	if(!_font)return -1;
 	return 0;
@@ -1146,9 +1160,14 @@ int sdlsurface::rotate(float j)
 int sdlsurface::img_load(const char* pfile)
 {
 	if(pfile == NULL)return -1;
-	if(_surface)SDL_FreeSurface(_surface);
+	if(_surface)
+	{
+		SDL_FreeSurface(_surface);
+		_surface = NULL;
+	}
 	_surface = IMG_Load(pfile);
-	return 0;
+	if(_surface)return 0;
+	return -1;
 }
 //--------------------------------------------
 //表面锁定状态
