@@ -361,7 +361,7 @@ int sdl_scroll::sysevent(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
-			capture();
+			capture(1);
 			if(!_scroll_is_change)
 			{
 				_scroll_start_time = clock();
@@ -953,7 +953,7 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 		}
 		else
 		{
-			_vertical->scroll(&view,0,-_rect.w);
+			_vertical->scroll(&view,0,-view.width());
 		}
 	}
 	else
@@ -977,7 +977,7 @@ int sdl_view::scroll(Uint32 pflag,SDL_Rect* rt=NULL)
 		}
 		else
 		{
-			_horizontal->scroll(&view,0,-_rect.h);
+			_horizontal->scroll(&view,0,-view.height());
 		}
 	}
 	else

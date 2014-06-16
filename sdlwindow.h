@@ -270,6 +270,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		SDL_TimerID add_timer(int);
 		/* 捕捉鼠标 */
 		int capture(int);
+		int capture();
 	public:
 		/* 计时器全局回调函数 */
 		static Uint32 timer_callback(Uint32,void*); 
@@ -1647,7 +1648,7 @@ int sdl_board::activities()
 }
 //------------------------------------------------
 //捕捉鼠标
-int sdl_board::capture(int p =1)
+int sdl_board::capture(int p)
 {
 	if(p && !sdl_frame::_capture_win)
 	{
@@ -1664,6 +1665,10 @@ int sdl_board::capture(int p =1)
 		}
 	}
 	return -1;
+}
+int sdl_board::capture()
+{
+	return (this == sdl_frame::_capture_win);
 }
 //--------------------------------------------
 //设置关键色
@@ -2501,7 +2506,7 @@ int sdl_button::sysevent(SDL_Event* e)
 		case SDL_MOUSEBUTTONDOWN:
 			is_down = 1;
 			_button_clip(2,0)->blit_surface(NULL,this,NULL);
-			capture();
+			capture(1);
 			//---------
 		break;
 		case SDL_KEYUP:

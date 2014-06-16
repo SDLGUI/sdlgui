@@ -364,6 +364,7 @@ int sdlsurface::load_bmp(const char* file)
 {
 	if(_surface)free_surface();
 	_surface = SDL_LoadBMP(file);
+	//_surface = SDL_CreateRGBSurfaceFrom(t->pixels,t->w,t->h,t->format->BitsPerPixel,t->pitch,t->format->Rmask,t->format->Gmask,t->format->Bmask,t->format->Amask);
 	if(_surface)return 0;
 	return -1;
 }
