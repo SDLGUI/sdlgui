@@ -982,10 +982,11 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//----------------
 	_hit_rect.w = 0;
 	_hit_rect.h = 0;
-	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
-	_hit_board->fill_rect(NULL,*(Uint32*)this);
-	_hit_board->color_key(SDL_TRUE,0);
-	_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
+	//if(_hit_board)delete _hit_board;
+	//_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
+	//_hit_board->fill_rect(NULL,*(Uint32*)this);
+	//_hit_board->color_key(SDL_TRUE,0);
+	//_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
 	/* 初始自身探板对象 */
 	redraw_hit(NULL);
 	//-----------------
@@ -1033,6 +1034,7 @@ int sdl_board::init()
 	_last = NULL;
 	_board = NULL;
 	_text_board = NULL;
+	_hit_board = NULL;
 	_hit_board_ptr = NULL;
 	return 0;
 }
@@ -1052,7 +1054,12 @@ int sdl_board::text(const char* ptext)
 // 参数(标题文本，标题字体，字体大小，文本颜色，渲染范围)
 int sdl_board::text(const char* ptext,const char* pfont,int psize=16,Uint32 pcolor=0x000000,SDL_Rect* prect=NULL)
 {
-	if(!_text_board)_text_board = new sdltext(pfont,psize);
+	if(_text_board)
+	{
+		delete _text_board;
+		_text_board = NULL;
+	}
+	_text_board = new sdltext(pfont,psize);
 	if(_text_board)
 	{
 		_text_board->text(ptext,pfont,psize);
@@ -1240,7 +1247,9 @@ int sdl_board::size(int w,int h)
 	/* 申请一个临时表面 */
 	sdlsurface *t = new sdlsurface(0,w,h,32,0,0,0,0);
 	blit_surface(NULL,t,NULL);
-	sdlsurface::init(t->surface());
+	sdlsurface::init(0,w,h,32,0,0,0,0);
+	t->blit_surface(NULL,this,NULL);
+	delete t;
 	return _board->init(0,w,h,32,0,0,0,0);
 }
 //--------------------------------------
@@ -1492,11 +1501,10 @@ int sdl_board::redraw_hit(sdl_board* child = NULL)
 	/* 如果探板大小与窗口大小不一致表示要创建探板 */
 	if((_hit_rect.w-_rect.w) || (_hit_rect.h-_rect.h))
 	{
-		if(_hit_board_ptr)delete _hit_board_ptr;
+		if(_hit_board_ptr)delete[] _hit_board_ptr;
 		_hit_rect.w = _rect.w;
 		_hit_rect.h = _rect.h;
 		_hit_board_ptr = new sdl_board*[_hit_rect.w*_hit_rect.h];
-
 	}
 	/* 如果没有子级表示更新自身探板 */
 	memcpy(&lrt,&_rect,sizeof(SDL_Rect));
@@ -2078,7 +2086,9 @@ int sdl_frame::all_event_process(void* obj)
 			{
 				temp = temp->_parent;
 			}
+			SDL_Delay(1);
 		}
+		SDL_Delay(1);
 	}
 }
 //------------------------------------------
@@ -2185,11 +2195,13 @@ int sdl_clip::init()
 }
 int sdl_clip::init(sdlsurface* pclip,int w,int h)
 {
+	SDL_Rect* rt;
 	init();
 	if(pclip == NULL)return -1;
 	//更新操作对象
-	_clip_surface = pclip;
-	_surface = pclip->surface();	
+	rt = pclip->clip_rect();
+	sdlsurface::init(0,rt->w,rt->h,32,0,0,0,0);
+	pclip->blit_surface(NULL,this,NULL);
 	//初始化剪辑
 	return clip(w,h);
 }
