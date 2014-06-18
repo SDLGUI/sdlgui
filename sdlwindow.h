@@ -719,7 +719,6 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		int event_shunt(SDL_Event*);
 	public:
 		sdl_ime ime;
-		sdlsurface backgroup;
 	protected:
 		static sdl_board* _capture_win;
 	protected:
@@ -728,7 +727,8 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 	protected:
 		sdl_board* _active_win;
 		sdlwindow* _window;
-		sdl_board _screen;
+		//sdl_board _screen;
+		sdlsurface _screen;
 		SDL_Event _main_event;
 		double _fps;
 		SDL_Point _window_rect;
@@ -969,6 +969,7 @@ sdl_board::~sdl_board()
 //底板初始函数
 int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
+	//cout<<"init board start"<<endl;
 	string cur_platform;
 	if(sdlsurface::init(0,pw,ph,32,0,0,0,0))return -1;
 	//-------------
@@ -982,11 +983,11 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//----------------
 	_hit_rect.w = 0;
 	_hit_rect.h = 0;
-	//if(_hit_board)delete _hit_board;
-	//_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
-	//_hit_board->fill_rect(NULL,*(Uint32*)this);
-	//_hit_board->color_key(SDL_TRUE,0);
-	//_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
+	if(_hit_board)delete _hit_board;
+	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
+	_hit_board->fill_rect(NULL,*(Uint32*)this);
+	_hit_board->color_key(SDL_TRUE,0);
+	_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
 	/* 初始自身探板对象 */
 	redraw_hit(NULL);
 	//-----------------
@@ -1006,13 +1007,14 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 			_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
 		}
 		else
-		if(!cur_platform.compare("Linux"))
+		if(!cur_platform.compare("Android"))
 		{
 			_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
 		}
-		_text_board->render_utf8_solid(ptitle,_text_color);
+		if(_text_board)_text_board->render_utf8_solid(ptitle,_text_color);
 	}
 	//
+	//cout<<"init board stop"<<endl;
 	return 0;
 }
 //------------------------------------------
@@ -1329,8 +1331,10 @@ template<class T>T* sdl_board::add(const char* title,int px,int py,int pw,int ph
 {
 	T* t = dynamic_cast<T*>(new T);
 	t->init(title,px,py,pw,ph,pflags);
+	//cout<<"add board start"<<endl;
 	t->_parent = this;
 	z_top(t,NULL,0);
+	//cout<<"add board end"<<endl;
 	return t;
 }
 //---------------------------------------------------
@@ -1445,20 +1449,27 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
 					}
 				}
 				else
-				if(a==_head->_last)
+				if(_head && a==_head->_last)
 				{
 					_head->_last = _head->_last->_last;
 					_head->_last->_next = NULL;
 				}
 				else
+				if(a->_next)
 				{
 					a->_next->_last = a->_last;
 					a->_last->_next= a->_next;
 				}
+				else
+				{
+					/*零时返回-1 */
+					return -1;
+				}
 			}
 			else
 			{
-
+					/*零时返回-1 */
+				return -1;
 			}
 		}
 	}
@@ -1523,11 +1534,31 @@ int sdl_board::redraw_hit(sdl_board* child = NULL)
 //返回探板中指定坐标的窗口值
 sdl_board* sdl_board::hit_board(int px,int py)
 {
-	if(_hit_board_ptr)
+	//if(_hit_board_ptr)return _hit_board_ptr[px+py*_rect.w];
+	int x = px-_rect.x;
+	int y = py-_rect.y;
+	sdl_board* t;
+	if(_head)
 	{
-		return _hit_board_ptr[px+py*_rect.w];
+		t = _head->_last;	
+		while(t!=_head)
+		{
+			if(
+					x>=t->_rect.x
+				  &&
+					x<=t->_rect.x+_rect.w
+					&&
+					y>=t->_rect.y
+					&&
+					y<=t->_rect.y+_rect.h
+					)
+			{
+				return t->hit_board(x,y);
+			}
+			t = t->_last;
+		}
 	}
-	return NULL;
+	return this;
 }
 //-------------------------
 //重绘底板窗口
@@ -1551,7 +1582,7 @@ int sdl_board::redraw()
 				_text_board->blit_surface(NULL,_board,&_text_rect);
 			}
 			/* 重绘新探板 */
-			redraw_hit();
+			//redraw_hit();
 			//处理子窗口
 			while(temp)
 			{
@@ -1585,19 +1616,20 @@ int sdl_board::redraw()
 						}
 						temp->_board->blit_surface(&trc2,_board,&trc1);
 						/* 将子窗口探板绘制到父窗口上 */
-						redraw_hit(temp);
+						//redraw_hit(temp);
 						temp = temp->_next;
 				}
 				else
 				{
 					del_board = temp;
 					temp = temp->_next;
+					//cout<<"delete "<<del_board<<endl;
 					if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
 					{
-						//cout<<this<<endl;
 						if(del_board->activities() && del_board->parent())del_board->parent()->active();
 						delete del_board;
 					}
+					//cout<<"OK"<<endl;
 				}
 				//temp = temp->_next;
 			}
@@ -1811,12 +1843,12 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	{
 		/* 取窗口大小 */
 		_window->size(&_window_rect.x,&_window_rect.y);
-		_screen.init(ptitle,px,py,_window_rect.x,_window_rect.y,pflags);
+		//_screen.init(ptitle,px,py,_window_rect.x,_window_rect.y,pflags);
 		size(_window_rect.x,_window_rect.y);
 		//_rect.h = _window_rect.y;
 		//_rect.w = _window_rect.y;
 	}
-	_screen._surface = _window->get_window_surface()->surface();
+	_screen.surface(_window->get_window_surface()->surface());
 	//创建输入法,默认隐藏
 	ime.init("",0,ph-30,pw,30,1);
 	ime.fill_rect(NULL,0x0000ff);
@@ -1967,7 +1999,7 @@ int sdl_frame::sysevent(SDL_Event* e)
 				/* 窗口大小调整时，分配新的窗口表面 */
 				case SDL_WINDOWEVENT_RESIZED:
 				case SDL_WINDOWEVENT_RESTORED:
-					_screen._surface = _window->get_window_surface()->surface();
+					_screen.surface(_window->get_window_surface()->surface());
 				break;
 				default:
 					cout<<"Window Event"<<endl;
@@ -2105,7 +2137,7 @@ int sdl_frame::size(int w,int h)
 	if(!_window)return -1;
 	if(_window->size(w,h))return -1;
 	if(sdl_board::size(w,h))return -1;
-	_screen._surface = _window->get_window_surface()->surface();
+	_screen.surface(_window->get_window_surface()->surface());
 	return 0;
 }
 int sdl_frame::size(int* w,int* h)
