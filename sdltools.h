@@ -35,8 +35,6 @@
 #ifndef __SDLGUI_TOOLS_HANDLE__
 #define __SDLGUI_TOOLS_HANDLE__
 #include "sdlbase.h"
-#include "gui.h"
-#include "sdlboard.h"
 #include "sdl_event_manager.h"
 #include "sdlwindow.h"
 #include <iostream>
