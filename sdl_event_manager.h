@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+using namespace std;
 
 class sdl_board;
 class sdl_event_struct;
@@ -17,9 +18,12 @@ class sdl_event_struct;
 		要求所有事件函数返回整型值，
 		调用对象与参数为事件参数
  */
-typedef int(sdl_event_struct::*sdl_event_handle)(sdl_board&,void*);
+struct sdl_event_handle
+{
+	int handle;
+	sdl_board* object;
+};
 
-using namespace std;
 /* 
 	对象事件委托结构体 
  */
@@ -188,12 +192,12 @@ class sdl_event_manager
 			加入对象事件委托入口函数
 			参数为对象地址，事件字串，委托入口函数地址
 		 */
-		def_dll static int push(sdl_board*,string,sdl_board*,sdl_event_handle);
+		def_dll static int push(sdl_board*,string,sdl_board*,int);
 		/* 
 			移除对象事件委托入口函数
 			参数为对象地址，事件字串，委托入口函数地址
 		 */
-		def_dll static int pull(sdl_board*,string,sdl_board*,sdl_event_handle);
+		def_dll static int pull(sdl_board*,string,sdl_board*,int);
 		/* 
 			对象事件调用 
 		 */
@@ -261,13 +265,16 @@ def_dll int sdl_event_manager::pull(sdl_board* obj,string event_string)
 	/* 使用对象事件列表自身注册功能 */
 	return event->event_unregister(event_string);
 }
-def_dll int sdl_event_manager::push(sdl_board* connect_object,string event_string,sdl_board* event_object,sdl_event_handle event_hendle)
+def_dll int sdl_event_manager::push(sdl_board* connect_object,string event_string,sdl_board* event_object,int event_handle)
 {
 	stringstream event_object_string;
 	map<sdl_board*,sdl_event_object*>::iterator event_iter;
 	map<string,sdl_event_struct*>::iterator event_struct_iter;
 	sdl_event_object* event; 
 	sdl_event_struct* event_struct; 
+	sdl_event_handle _handle;
+	_handle.object = event_object;
+	_handle.handle = event_handle;
 	/* 先找到对象列表中的对象事件列表的引索 */
 	event_iter = sdl_event_manager::_event_list.find(connect_object);
 	if(event_iter == sdl_event_manager::_event_list.end())
@@ -286,12 +293,12 @@ def_dll int sdl_event_manager::push(sdl_board* connect_object,string event_strin
 		return -1;
 	}
 	/* 使用对象事件列表自身注册功能 */
-	event_object_string<<event_object<<"_"<<event_hendle;
+	event_object_string<<event_object<<"_"<<_handle.handle;
 	event_struct = (sdl_event_struct*)event_struct_iter->second;
 
-	return event_struct->event_register(event_object_string.str(),event_hendle);
+	return event_struct->event_register(event_object_string.str(),_handle);
 }
-def_dll int sdl_event_manager::pull(sdl_board* connect_object,string event_string,sdl_board* event_object,sdl_event_handle event_hendle)
+def_dll int sdl_event_manager::pull(sdl_board* connect_object,string event_string,sdl_board* event_object,int event_hendle)
 {
 	stringstream event_object_string;
 	map<sdl_board*,sdl_event_object*>::iterator event_iter;
@@ -378,12 +385,18 @@ def_dll int sdl_event_manager::run(void* p)
 			{
 				/* 使用对象事件列表累计 */
 				event_struct = (sdl_event_struct*)event_struct_iter->second;
-				for(event_struct_handle_iter = event_struct->_event.begin();event_struct_handle_iter!=event_struct->_event.end();event_struct_handle_iter++)
+				if(event_struct->count())
 				{
-					/* 调用托管的事件函数 */
-					event_struct_handle = (sdl_event_handle)event_struct_handle_iter->second;
-					//if(event_struct_handle)(*event_struct_handle)(NULL);
-					if(event_struct_handle)cout<<"Event is:"<<event_struct_handle<<endl;
+					for(event_struct_handle_iter = event_struct->_event.begin();event_struct_handle_iter!=event_struct->_event.end();event_struct_handle_iter++)
+					{
+						/* 调用托管的事件函数 */
+						event_struct_handle = (sdl_event_handle)event_struct_handle_iter->second;
+						if(event_struct_handle.object)
+						{
+							event_struct_handle.object->handle(event_struct_handle.handle);
+						}
+					}
+					event_struct->pull();
 				}
 			}
 		}

@@ -31,8 +31,8 @@
 //
 //
 //------------------------------------------------------------------------------------------------------------------
-#ifndef __SDLGUI_HANDLE__
-#define __SDLGUI_HANDLE__
+#ifndef __SDLGUI_MAIN_HANDLE__
+#define __SDLGUI_MAIN_HANDLE__
 //----------------------------------------------
 //
 // 					自定义消息常量定义
@@ -65,7 +65,10 @@ const int sdlgui_ime_up= ime_event_macro(001);
 //
 //--------------------------------------------------------
 #include "sdlbase.h"
+#include "gui.h"
+#include "sdlboard.h"
+#include "sdl_event_manager.h"
 #include "sdlwindow.h"
 #include "sdltools.h"
-#endif// __SDLGUI_HANDLE__
+#endif// __SDLGUI_MAIN_HANDLE__
 
