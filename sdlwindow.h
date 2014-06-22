@@ -132,7 +132,7 @@ class GUI : public B
 		virtual int event(SDL_Event*);//GUI专用类事件统一调用函数
 		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
 		virtual int sysevent(SDL_Event*e){return 0;};//GUI专用类系统事件处理函数的虚类
-		virtual int handle(int handle){return 0;}
+		int handle(int handle){return 0;}
 	protected:
 		static int sysprocess(T*,SDL_Event*);
 		static int userprocess(T*,SDL_Event*);
@@ -240,6 +240,14 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		/* 捕捉鼠标 */
 		int capture(int);
 		int capture();
+	public:
+		/* 重载委托事件函数处理 */
+		int handle(int);
+		/* 连接委托函数 */
+		int connect_event(string,sdl_board*,int);
+		int event_signal(string);
+		/* 鼠标点击事件 */
+		int on_click(sdl_board*,void*);
 	public:
 		/* 计时器全局回调函数 */
 		static Uint32 timer_callback(Uint32,void*); 
@@ -1329,6 +1337,10 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	}
 	//
 	//cout<<"init board stop"<<endl;
+	/* 注册委托函数 */
+	sdl_event_manager::push(this);
+	sdl_event_manager::push(this,"on_click");
+	connect_event("on_click",this,sdlgui_button_click);
 	return 0;
 }
 //------------------------------------------
@@ -2095,6 +2107,38 @@ int sdl_board::is_show()
 {
 	return _is_show;
 }
+//---------------------------------------------
+//底板窗口委托事件处理
+int sdl_board::handle(int id)
+{
+	switch(id)
+	{
+		case sdlgui_button_click:
+			on_click(this,NULL);
+		break;
+		default:
+		break;
+	}
+	return 0;
+}
+//----------------------------------------------
+//底板窗口连接委托事件函数
+int sdl_board::connect_event(string event_string,sdl_board* event_object,int event_handle)
+{
+	return sdl_event_manager::push(this,event_string,event_object,event_handle);
+}
+//----------------------------------------------
+//给底板窗口发送信号
+int sdl_board::event_signal(string event_string)
+{
+	return sdl_event_manager::call_event(this,event_string);
+}
+//---------------------------------------------
+//底板窗口鼠标点击事件委托函数
+int sdl_board::on_click(sdl_board* obj,void* data)
+{
+	cout<<"click board is:"<<this<<endl;
+}
 //-------------------------------------------
 //
 //
@@ -2233,6 +2277,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			if(sdl_frame::_capture_win)
 			{
 				sdl_frame::_capture_win->event(e);
+				sdl_frame::_capture_win->event_signal("on_click");
 			}
 			else
 			{
@@ -2258,6 +2303,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 				}
 				/* 最后发送当前消息 */
 				t->event(e);
+				t->event_signal("on_click");
 			}
 			//if(t != this)t->event(e);
 		break;
