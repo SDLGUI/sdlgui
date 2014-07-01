@@ -197,8 +197,9 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		virtual int draw(){return 0;}
 		/* 重画当前窗口 */
 		int redraw();
-		/* 返回给定坐标的子窗口对象 */
+		/* 给底板加入计时器*/
 		//-----------------------------------------------
+		SDL_TimerID add_timer(Uint32);
 	public:
 		/* 重载委托事件函数处理 */
 		int handle(int,SDL_Event*);
@@ -218,6 +219,10 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		virtual int on_motion(sdl_board*,void*);
 		/* 鼠标中键滚动事件 */
 		virtual int on_wheel(sdl_board*,void*);
+		/* 计时事件 */
+		virtual int on_timer(sdl_board*,void*);
+	protected:
+		static Uint32 timer_proc(Uint32,void*);
 	protected:
 		sdlsurface *_board;
 		SDL_Rect  _rect;
@@ -1316,6 +1321,22 @@ int sdl_board::is_show()
 {
 	return _is_show;
 }
+//----------------------------------------
+//给底板加入计时器
+SDL_TimerID sdl_board::add_timer(Uint32 timer)
+{
+	return SDL_AddTimer(timer,sdl_board::timer_proc,this);
+}
+//-------------------------------------------------
+//窗口计时器公共函数
+Uint32 sdl_board::timer_proc(Uint32 interval,void* p)
+{
+	if(p)
+	{
+		((sdl_board*)p)->event_signal("on_timer",(void*)&interval);
+	}
+	return 0;
+}
 //---------------------------------------------
 //底板窗口委托事件处理
 int sdl_board::handle(int id,SDL_Event* e)
@@ -1336,6 +1357,9 @@ int sdl_board::handle(int id,SDL_Event* e)
 		break;
 		case sdlgui_mouse_release:
 			on_release(This,(void*)e);
+		break;
+		case sdlgui_event_timer:
+			on_timer(This,(void*)e);
 		break;
 		default:
 			cout<<"other events"<<endl;
@@ -1394,6 +1418,13 @@ int sdl_board::on_motion(sdl_board* obj,void* data)
 int sdl_board::on_wheel(sdl_board* obj,void* data)
 {
 	//cout<<"mouse wheel is"<<this<<endl;
+	return 0;
+}
+//------------------------------------------------
+//窗口计时事件
+int sdl_board::on_timer(sdl_board* obj,void* data)
+{
+	cout<<"timer is"<<(Uint32)data<<endl;
 	return 0;
 }
 //------------------------------------------------
