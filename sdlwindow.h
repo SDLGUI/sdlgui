@@ -6,7 +6,7 @@
 //						文档名：						sdlwindow.h
 //
 //						文档创建日期：			2014年2月22日
-//						文档更新日期：			2014年5月25日
+//						文档更新日期：			2014年6月25日
 //						文档创建者：				徐荣
 //						文档更新者：				徐荣
 //						文档创建者联系方式：Email:twtfcu3@126.com
@@ -39,15 +39,19 @@
 #else
 	#define def_dll
 #endif
-#include "sdlbase.h"
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_thread.h>
 #include <iostream>
 #include <fstream>
 #include <ctime>
 #include <string.h>
 #include <map>
+#include <queue>
+#include <list>
 #include <string>
 #include <sstream>
+#include "sdlbase.h"
+#include "sdlthread.h"
 //-----------------------------------------------
 using namespace std;
 //--------------------------------------------------
@@ -75,6 +79,8 @@ const int sdlgui_event_timer = timer_event_macro(001);
 const int sdlgui_button_up= button_event_macro(001);
 const int sdlgui_button_down = button_event_macro(002);
 const int sdlgui_button_click = button_event_macro(003);
+const int sdlgui_button_motion= button_event_macro(004);
+const int sdlgui_button_wheel= button_event_macro(005);
 //
 //IME类消息集合1002
 #define ime_event_macro(y) __event_macro__(1002,y) 
@@ -106,6 +112,13 @@ const int sdlgui_scroll_hide= scroll_event_macro(003);
 #define window_event_macro(y) __event_macro__(1005,y) 
 /* 消息焦点改变时发送的消息 */
 const int sdlgui_window_focus= window_event_macro(001);
+/* 鼠标事件集合1006 */
+#define mouse_event_macro(y) __event_macro__(1006,y) 
+const int sdlgui_mouse_click= mouse_event_macro(001);
+const int sdlgui_mouse_db_click= mouse_event_macro(002);
+const int sdlgui_mouse_release= mouse_event_macro(003);
+const int sdlgui_mouse_motion= mouse_event_macro(004);
+const int sdlgui_mouse_wheel= mouse_event_macro(005);
 
 //-------------------------------------
 //
@@ -132,7 +145,8 @@ class GUI : public B
 		virtual int event(SDL_Event*);//GUI专用类事件统一调用函数
 		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
 		virtual int sysevent(SDL_Event*e){return 0;};//GUI专用类系统事件处理函数的虚类
-		int handle(int handle){return 0;}
+		virtual int handle(int handle,SDL_Event*e){return 0;}
+		//int handle(int handle,SDL_Event*e){return 0;}
 	protected:
 		static int sysprocess(T*,SDL_Event*);
 		static int userprocess(T*,SDL_Event*);
@@ -147,6 +161,7 @@ class GUI : public B
 typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 {
 	public:
+		friend class sdl_event_manager;
 		friend class sdl_frame;
 	public:
 		sdl_board();
@@ -156,9 +171,6 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int init();
 		int sysevent(SDL_Event*e){return 0;}
 	public:
-		/* 激活当前窗口 */
-		int active();
-		int activities();
 		/* 显示当前窗口 */
 		int show();
 		/* 隐藏当前窗口 */
@@ -166,119 +178,61 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		/* 返回当前窗口的显示状态 */
 		int is_show();
 		/* 设置当前窗口标题 */
-		int text(const char*);
-		/* 
-			 设置当前窗口标题,
-			 参数(标题文本，标题字体，字体大小，文本颜色，渲染范围)
-		 */
-		int text(const char*,const char*,int,Uint32,SDL_Rect*);
-		/* 返回当前窗口标题 */
-		const char* text();
-		/* 本地坐标 */
 		int pos(int,int);
-		int pos_x(int);
-		int pos_x();
-		int pos_y(int);
-		int pos_y();
-		int pos(SDL_Point);
-		SDL_Point pos();
-		/* 全局坐标 */
-		SDL_Point global_pos();
-		int global_pos(int,int);
-		int global_pos_x(int);
-		int global_pos_x();
-		int global_pos_y(int);
-		int global_pos_y();
-		/* 坐标转换 */
-		int target_pos_x(sdl_board*,int);
-		int target_pos_y(sdl_board*,int);
-		SDL_Point target_pos(sdl_board*,int,int);
-		/*  窗口大小 */
-		int size(int,int);
-		int size(SDL_Point);
-		SDL_Point size();
-		SDL_Rect* rect();
-		int width();
-		int width(int);
-		int height();
-		int height(int);
 		/* 设置父级窗口对象 */
 		sdl_board* parent(sdl_board*);
 		/* 返回父级窗口对象 */
 		sdl_board* parent();
 		/* 返回给定对象是否为当前窗口的子窗口 */
 		int is_child(sdl_board*);
+		sdl_board* child(int,int);
 		/* 添加子级窗口 */
 		template<class T>T* add(const char*,int,int,int,int,Uint32);
 		template<class T>T* add(T*);
+		/* 销毁子级窗口 */
+		virtual int destroy(int);
 		/* 调整当前窗口Z序 */
 		int z_top(sdl_board*,sdl_board*,int);
-		/* 消毁当前窗口数据 */
-		int destroy(int);
-		//int redraw_hit();
-		int redraw_hit(sdl_board*);
-		//int redraw_hit(SDL_Rect*,sdl_board*);
 		/* 初始化时用于绘图窗口的虚函数 */
 		virtual int draw(){return 0;}
 		/* 重画当前窗口 */
 		int redraw();
 		/* 返回给定坐标的子窗口对象 */
-		sdl_board* hit_board(int,int);
-		//virtual int event(SDL_Event* e){return 0;}
 		//-----------------------------------------------
-		/* 设置窗口透明色 */
-		int color_key(int,Uint32);
-		/* 设置窗口透明度 */
-		int alpha(Uint8);
-		/* 设置窗口混合模式 */
-		int blend(SDL_BlendMode);
-		int hit_rect(SDL_Rect*);
-		//------------------------------------------------
-		//timer_node* add_timer(int);
-		/* 添加窗口计时器 */
-		SDL_TimerID add_timer(int);
-		/* 捕捉鼠标 */
-		int capture(int);
-		int capture();
 	public:
 		/* 重载委托事件函数处理 */
-		int handle(int);
+		int handle(int,SDL_Event*);
+		/* 注册事件 */
+		virtual int register_event(string);
 		/* 连接委托函数 */
-		int connect_event(string,sdl_board*,int);
-		int event_signal(string);
+		virtual int connect_event(string,sdl_board*,int);
+		/* 发送事件信号 */
+		int event_signal(string,SDL_Event*);
 		/* 鼠标点击事件 */
-		int on_click(sdl_board*,void*);
-	public:
-		/* 计时器全局回调函数 */
-		static Uint32 timer_callback(Uint32,void*); 
-	public:
-		/* 当前刷新帧数累计 */
-		static int _frame_count;
-		/* 全局探板数组 */
-		//static sdl_board** _hit_board_ptr;
+		virtual int on_click(sdl_board*,void*);
+		/* 鼠标双击事件 */
+		virtual int on_db_click(sdl_board*,void*);
+		/* 鼠标释放事件 */
+		virtual int on_release(sdl_board*,void*);
+		/* 鼠标移动事件 */
+		virtual int on_motion(sdl_board*,void*);
+		/* 鼠标中键滚动事件 */
+		virtual int on_wheel(sdl_board*,void*);
 	protected:
 		sdlsurface *_board;
-		sdlsurface *_hit_board;
-		sdl_board** _hit_board_ptr;
-		sdltext *_text_board;
 		SDL_Rect  _rect;
-		SDL_Rect  _hit_rect;
+		SDL_Rect  _global_rect;
 		SDL_Point _pos,_size;
-		char* _text;
-		/* 文本颜色 */
-		Uint32 _text_color;
-		/* 文本渲染范围 */
-		SDL_Rect _text_rect;
 		sdl_board *_parent;
-		sdl_board *_end,*_head;
-		sdl_board *_next,*_last;
+		//sdl_board *_end,*_head;
+		//sdl_board *_next,*_last;
+		sdltext  *_text_board;
+		Uint32		_text_color;
+		SDL_Rect  _text_rect;
 		int _is_show;
 		int _is_destroy;
-		//sdlrenderer* _renderer;
-		//sdltexture* _texture;
+		map<sdl_board*,int> _board_list;
 }*sdl_board_ptr;
-/* 初始全局变量 */
-int sdl_board::_frame_count = 0;
 //sdl_board** sdl_board::_hit_board_ptr=NULL;
 //-------------------------------------
 //
@@ -291,11 +245,14 @@ int sdl_board::_frame_count = 0;
 		定义事件句柄类型 
 		要求所有事件函数返回整型值，
 		调用对象与参数为事件参数
+		结构中有两个数据
+		sdl_board* object 用于保存对象地址
+		int handle 用于保存每个对象指定事件在handle函数中的处理ID
  */
 struct sdl_event_handle
 {
-	int handle;
 	sdl_board* object;
+	int handle;
 };
 //-------------------------------------
 //
@@ -306,6 +263,11 @@ struct sdl_event_handle
 //-------------------------------------
 /* 
 	对象事件委托结构体 
+	结构中有两个数据
+	map<string,sdl_event_handle> _event;
+	用于存储对象被委托的事件,string为引索关键词格式为"对象地址_事件处理ID"
+	queue<SDL_Event*> _event_queue;
+	用于存储被委托对象所产生的事件
  */
 class sdl_event_struct
 {
@@ -315,8 +277,9 @@ class sdl_event_struct
 		def_dll sdl_event_struct()
 		{
 			_event.clear();
-			_event_call_count = 0;
 		}
+		/* 对象事件析构函数 */
+		def_dll virtual ~sdl_event_struct();
 		/* 
 			对象事件注册功能，
 			注册时要一个事件函数名的字串与函数名入口地址
@@ -330,7 +293,7 @@ class sdl_event_struct
 		/* 
 				事件调用累计增量 
 		 */
-		def_dll int push();
+		def_dll int push(SDL_Event*);
 		/* 
 				事件调用后减量 
 		 */
@@ -342,9 +305,20 @@ class sdl_event_struct
 	protected:
 		//事件函数入口列表
 		def_dll	map<string,sdl_event_handle> _event;
-		//事件调用计数存储器
-		int _event_call_count;
+		//事件参数列表
+		def_dll queue<SDL_Event*> _event_queue;
 };
+def_dll sdl_event_struct::~sdl_event_struct()
+{
+	map<string,sdl_event_handle>::iterator node;
+	for(node = _event.begin();node!=_event.end();node++)
+	{
+		//delete 
+			//(sdl_event_handle)node->first;
+	}
+	_event.clear();
+	while(pull());
+}
 def_dll int sdl_event_struct::event_register(string event_string,sdl_event_handle event_function)
 {
 	_event.insert(pair<string,sdl_event_handle>(event_string,event_function));
@@ -355,19 +329,27 @@ def_dll int sdl_event_struct::event_unregister(string event_string)
 	_event.erase(event_string);
 	return 0;
 }
-def_dll int sdl_event_struct::push()
+def_dll int sdl_event_struct::push(SDL_Event *e)
 {
-	_event_call_count++;
-	return _event_call_count;
+	SDL_Event* te = new SDL_Event;	
+	memcpy((char*)te,(char*)e,sizeof(SDL_Event));
+	_event_queue.push(te);
+	return _event_queue.size();
 }
 def_dll int sdl_event_struct::pull()
 {
-	if(_event_call_count)_event_call_count--;
-	return _event_call_count;
+	SDL_Event* t;
+	if(_event_queue.size())
+	{
+		t = _event_queue.front();
+		_event_queue.pop();
+		delete t;
+	}
+	return _event_queue.size();
 }
 def_dll int sdl_event_struct::count()
 {
-	return _event_call_count;
+	return _event_queue.size();
 }
 
 
@@ -382,14 +364,21 @@ def_dll int sdl_event_struct::count()
 //-------------------------------------
 /* 
 		对象事件项目列表 
-		用于管理每个对象其中一个事件的托管入口调用
- 
+		用于管理每个对象其中一个事件的委托入口调用
+		一个参数
+		map<string,sdl_event_struct*> _object_event_list;
+		用于存储给对象注册进来的的委托事件,string为引索关键词,格式为"对象地址_委托事件字串"
  */
 class sdl_event_object
 {
 	friend class sdl_event_manager;
 	public:
 		def_dll sdl_event_object();
+		/*
+			 析构函数
+			 删除时清理对象所存储的所有事件 
+		 */
+		def_dll ~sdl_event_object();
 		/* 
 			注册一个事件
 			参数为事件字串
@@ -421,6 +410,15 @@ def_dll sdl_event_object::sdl_event_object()
 	_event_count = 0;
 	_object_event_list.clear();
 }
+def_dll sdl_event_object::~sdl_event_object()
+{
+	map<string,sdl_event_struct*>::iterator node;
+	for(node = _object_event_list.begin();node!=_object_event_list.end();node++)
+	{
+		delete (sdl_event_struct*)(node->second);
+	}
+	_object_event_list.clear();
+}
 def_dll int sdl_event_object::event_register(string event_string)
 {
 	sdl_event_struct* _event_ingress = new sdl_event_struct;
@@ -429,6 +427,9 @@ def_dll int sdl_event_object::event_register(string event_string)
 }
 def_dll int sdl_event_object::event_unregister(string event_string)
 {
+	map<string,sdl_event_struct*>::iterator node;
+	node = _object_event_list.find(event_string);
+	delete (sdl_event_struct*)node->second;
 	_object_event_list.erase(event_string);	
 	return 0;
 }
@@ -459,7 +460,7 @@ def_dll int sdl_event_object::count()
 //
 //-------------------------------------
 /* 
-			事件管理器
+			事件管理器(静态类)
 
 			用于调用对象事件
 			实现委托功能与事件多线程化
@@ -469,9 +470,15 @@ def_dll int sdl_event_object::count()
 			2、给对象注册/注销事件
 			3、给对象事件加入/删除事件委托函数
 			4、自行处理对象事件
+
+
+			一个全局静态操作参数
+			map<sdl_board*,sdl_event_object*> _event_list;
+			用于存储所有对象的事件结构,sdl_board*为关键词引索，使用的是对象的地址
  */
 class sdl_event_manager
 {
+	friend class sdl_frame;
 	public:
 		/* 
 			加入事件对象 参数为对象地址
@@ -491,7 +498,7 @@ class sdl_event_manager
 		def_dll static int pull(sdl_board*,string);
 		/* 
 			加入对象事件委托入口函数
-			参数为对象地址，事件字串，委托入口函数地址
+			参数为对象地址，事件字串，委托对象，委托入口函数处理ID
 		 */
 		def_dll static int push(sdl_board*,string,sdl_board*,int);
 		/* 
@@ -502,20 +509,33 @@ class sdl_event_manager
 		/* 
 			对象事件调用 
 		 */
-		def_dll static int call_event(sdl_board*,string);
+		def_dll static int call_event(sdl_board*,string,SDL_Event*);
 		/* 
 			多线程管理事件列表 
 		 */
 		def_dll static int start();
+		/* 
+			退出时的销毁函数 
+		 */
+		def_dll static int destroy();
 	protected:
 		def_dll static int run(void*);
 	protected:
 		def_dll static map<sdl_board*,sdl_event_object*> _event_list;		
 		def_dll static SDL_Thread* _event_process_thread;
-
+		def_dll static sdl_condition _event_process_thread_cond;
+		def_dll static sdl_condition _event_created_thread_cond;
+		def_dll static sdl_mutex _event_thread_lock;
+		def_dll static int _event_thread_is_lock;
+		def_dll static int _event_thread_is_run;
 };
 def_dll map<sdl_board*,sdl_event_object*> sdl_event_manager::_event_list;
 def_dll SDL_Thread* sdl_event_manager::_event_process_thread = NULL;
+def_dll sdl_condition sdl_event_manager::_event_process_thread_cond;
+def_dll sdl_condition sdl_event_manager::_event_created_thread_cond;
+def_dll sdl_mutex sdl_event_manager::_event_thread_lock;
+def_dll int sdl_event_manager::_event_thread_is_lock=0;
+def_dll int sdl_event_manager::_event_thread_is_run = 1;
 ////////////////////////////////////////////////////
 //
 //
@@ -578,6 +598,7 @@ def_dll int sdl_event_manager::push(sdl_board* connect_object,string event_strin
 	_handle.handle = event_handle;
 	/* 先找到对象列表中的对象事件列表的引索 */
 	event_iter = sdl_event_manager::_event_list.find(connect_object);
+	/* 如果对象列表没有找到返回-1 */
 	if(event_iter == sdl_event_manager::_event_list.end())
 	{
 		return -1;
@@ -594,6 +615,7 @@ def_dll int sdl_event_manager::push(sdl_board* connect_object,string event_strin
 		return -1;
 	}
 	/* 使用对象事件列表自身注册功能 */
+	event_object_string.clear();
 	event_object_string<<event_object<<"_"<<_handle.handle;
 	event_struct = (sdl_event_struct*)event_struct_iter->second;
 
@@ -629,7 +651,7 @@ def_dll int sdl_event_manager::pull(sdl_board* connect_object,string event_strin
 
 	return event_struct->event_unregister(event_object_string.str());
 }
-def_dll int sdl_event_manager::call_event(sdl_board* event_object,string event_string)
+def_dll int sdl_event_manager::call_event(sdl_board* event_object,string event_string,SDL_Event* e)
 {
 	stringstream event_object_string;
 	map<sdl_board*,sdl_event_object*>::iterator event_iter;
@@ -655,7 +677,7 @@ def_dll int sdl_event_manager::call_event(sdl_board* event_object,string event_s
 	}
 	/* 使用对象事件列表累计 */
 	event_struct = (sdl_event_struct*)event_struct_iter->second;
-	return event_struct->push();
+	return event_struct->push(e);
 }
 def_dll int sdl_event_manager::start()
 {
@@ -670,407 +692,98 @@ def_dll int sdl_event_manager::run(void* p)
 	sdl_event_object* event; 
 	sdl_event_struct* event_struct; 
 	sdl_event_handle event_struct_handle;
-	while(1)
+	sdl_board* event_object;
+	while(sdl_event_manager::_event_thread_is_run)
 	{
 		/* 引索所有的托管函数地址 */
 		/* 先找到对象列表中的对象事件列表的引索 */
 		//event_iter = sdl_event_manager::_event_list.begin();
 		for(event_iter = sdl_event_manager::_event_list.begin();event_iter!=sdl_event_manager::_event_list.end();event_iter++)
 		{
-			/* 再读取注册事件对象的事件列表 */
-			event = (sdl_event_object*)event_iter->second;
+			event_object = (sdl_board*)(event_iter->first);
 			/* 
-				然后找到对象事件列表中的事件(委托)结构
-			*/
-			for(event_struct_iter = event->_object_event_list.begin();event_struct_iter!=event->_object_event_list.end();event_struct_iter++)
+				 如果当前对象要销毁则锁定事件处理线程 
+				 然后删除当前窗口节点 
+			 */
+			if(event_object->_is_destroy)
 			{
-				/* 使用对象事件列表累计 */
-				event_struct = (sdl_event_struct*)event_struct_iter->second;
-				if(event_struct->count())
-				{
-					for(event_struct_handle_iter = event_struct->_event.begin();event_struct_handle_iter!=event_struct->_event.end();event_struct_handle_iter++)
-					{
-						/* 调用托管的事件函数 */
-						event_struct_handle = (sdl_event_handle)event_struct_handle_iter->second;
-						if(event_struct_handle.object)
-						{
-							event_struct_handle.object->handle(event_struct_handle.handle);
-						}
-					}
-					event_struct->pull();
-				}
-			}
-		}
-	}
-	return 0;
-}
-//------------------------------------
-//
-//
-// 						输入类
-//
-//
-//
-//------------------------------------
-typedef class sdl_ime : public GUI<sdl_ime,sdl_board>
-{
-	public:
-		sdl_ime();
-		int init(const char*,int,int,int,int,Uint32);
-		/* 输入法系统事件 */
-		int sysevent(SDL_Event*);
-		/* 返回当前输入法输入状态 */
-		int state();
-		/* 设置输入法的码表 */
-		int input_method(const char*);
-		/* 解析按键 */
-		int input(char);
-		/* 设置输入法状态为英文状态 */
-		int input_en_method();
-		/* 设置输入法状态为中文状态 */
-		int input_cn_method();
-		/* 返回当前文字 */
-		const char* word();
-	protected:
-		/* 内部初始化 */
-		int init();
-		/* 根据码表解析当前编码 */
-		int parse();
-		/* 初始化当前编码 */
-		int init_buffer();
-		/* 显示编码对应的词组 */
-		int show_list();
-	protected:
-		/* 当前输入的UTF8文字 */
-		char* _cur_word;
-		/*当前输入法的输入状态*/
-		int _state;
-		/* 输入法的码表文件路径 */
-		char* _input_method_file_path;
-		fstream _input_method_file;
-		/* 当前编辑状态下的按键字符顺序 */
-		char _word_buf[100];
-		/* 存储当前编码所对应的10个词组 */
-		char _word_group[10][100];
-		/* 当前编辑状态下按键顺序引索 */
-		int _word_buf_index;
-		/* 存储当前编码所对应的10个词组引索 */
-		int _word_group_index;
-		/* 输入法宽度 */
-		int ime_width;
-}*sdl_ime_ptr;
-//------------------------------------
-sdl_ime::sdl_ime()
-:
-GUI<sdl_ime,sdl_board>()
-{
-	init();
-}
-int sdl_ime::init()
-{
-	if(sdl_board::init())return -1;
-	//
-	_cur_word = NULL;
-	_input_method_file_path = NULL;
-	_state = sdlgui_ime_en;
-	memset(_word_buf,0x00,sizeof(char)*100);
-	_word_buf_index = 0;
-	_word_group_index = 0;
-	ime_width = 0;
-	//
-	return 0;
-}
-int sdl_ime::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
-{
-	init();
-	if(sdl_board::init(ptitle,px,py,pw,ph,pflag))return -1;
-	ime_width = pw;
-	return 0;
-}
-int sdl_ime::state()
-{
-	return _state;
-}
-int sdl_ime::input_method(const char* pfile)
-{
-	if(!pfile)return -1;
-	if(_input_method_file_path)
-	{
-		delete _input_method_file_path;
-	}
-	_input_method_file_path = new char[strlen(pfile)+1];
-	memset(_input_method_file_path,0x00,sizeof(char)*strlen(pfile)+1);
-	memcpy(_input_method_file_path,pfile,sizeof(char)*strlen(pfile)+1);
-	return input_cn_method();
-}
-int sdl_ime::input_en_method()
-{
-	_state = sdlgui_ime_en;
-	return 0;
-}
-int sdl_ime::input_cn_method()
-{
-	_state = sdlgui_ime_cn_up;
-	return 0;
-}
-int sdl_ime::input(char ch)
-{
-	//return 0;
-	SDL_UserEvent ue;
-	SDL_Event e;
-	//return 0;
-	if(isalpha(ch) && (_state != sdlgui_ime_en)) _state = sdlgui_ime_cn_edit;
-	switch (_state)
-	{
-		case sdlgui_ime_en:
-			if(_parent)
-			{
-				_word_buf_index++;
-				memset(_word_buf,0x00,_word_buf_index);
-				_word_buf_index = 0;
-				_word_buf[0] = ch;
-				ue.type = SDL_USEREVENT;
-				ue.code = sdlgui_ime_en;
-				ue.data1 = (void*)_word_buf;
-				e.type = SDL_USEREVENT;
-				e.user = ue;
-				//cout<<ue.data1<<endl;
-				_parent->event(&e);
-			}
-		break;
-		case sdlgui_ime_cn_edit:
-			ue.code = sdlgui_ime_cn_up;
-			switch(ch)
-			{
-				default:
-					/* 如果输入的字母则解析编码 */
-					if(isalpha(ch))
-					{
-						_word_buf[_word_buf_index] = ch;
-						_word_buf_index++;
-						parse();
-					}
-					else
-					/* 如果输入的数字则选择编码对应的词语 */
-					if(isdigit(ch))
-					{
-						memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
-						_word_buf_index = 0;
-						_cur_word=_word_group[ch-SDLK_0];
-						if(_parent)
-						{
-							ue.type = SDL_USEREVENT;
-							ue.data1 = (void*)word();
-							e.type = SDL_USEREVENT;
-							e.user = ue;
-							_parent->event(&e);
-						}
-						_state = sdlgui_ime_cn_up;
-						init_buffer();
-					}
-				break;
-				/* 如果输入的是空格则选择编码对应的第一个词语 */
-				case SDLK_SPACE:
-					memset(_word_buf,0x0,sizeof(char)*_word_buf_index);
-					_word_buf_index = 0;
-					_cur_word=_word_group[1];
-					if(_parent)
-					{
-						ue.type = SDL_USEREVENT;
-						ue.data1 = (void*)word();
-						e.type = SDL_USEREVENT;
-						e.user = ue;
-						_parent->event(&e);
-					}
-					_state = sdlgui_ime_cn_up;
-					init_buffer();
-				break;
-			}
-		break;
-		case sdlgui_ime_cn_up:
-			/* 如果指定的输入窗口则发送消息 */
-			if(_parent)
-			{
-				ue.type = SDL_USEREVENT;
-				/* 处理可打印字符 */
-				if(isprint(ch))
-				{
-					memset(_word_buf,0x0,100);
-					/* 如果输入的数字 */
-					if(isdigit(ch))
-					{
-						sprintf(_word_buf,"%c",ch);
-					}
-					else
-					/* 如果输入的标点符号 */
-					if(ispunct(ch))
-					{
-						switch(ch)		
-						{
-							case '.':
-								sprintf(_word_buf,"。");
-							break;
-							case ',':
-								sprintf(_word_buf,"，");
-							break;
-							case ';':
-								sprintf(_word_buf,"；");
-							break;
-							case ':':
-								sprintf(_word_buf,"：");
-							break;
-							case '\'':
-								sprintf(_word_buf,"‘");
-							break;
-							case '"':
-								sprintf(_word_buf,"”");
-							break;
-							case '<':
-								sprintf(_word_buf,"《");
-							break;
-							case '>':
-								sprintf(_word_buf,"》");
-							break;
-							case '[':
-								sprintf(_word_buf,"【");
-							break;
-							case ']':
-								sprintf(_word_buf,"】");
-							break;
-							case '!':
-								sprintf(_word_buf,"！");
-							break;
-							case '`':
-								sprintf(_word_buf,"`");
-							break; 
-							case '~':
-								sprintf(_word_buf,"~");
-							break; 
-						}
-					}
-					ue.code = sdlgui_ime_cn_up;
-					ue.data1 = (void*)_word_buf;
-				}
-				/* 处理不可打印的字符 */
-				else
-				{
-					ue.code = sdlgui_ime_cn_ctrl;
-					//ue.data1 = (void*)(int)ch;
-					ue.data1 = (void*)ch;
-				}
-				e.type = SDL_USEREVENT;
-				e.user = ue;
-				_parent->event(&e);
-			}
-		break;
-	}
-	//return 0;
-	show_list();
-	return 0;
-}
-int sdl_ime::parse()
-{
-	//int a,*b;
-	//memset(_word_group,0x0,sizeof(_word_group));
-	memset(_word_group,0x0,1000);
-	memcpy(_word_group[0],_word_buf,100);
-	if(!_word_buf_index)return 0;
-	char *_tc;
-	char _tbuf[1000];
-	//int _file_pt = 0;
-	int _is_parse = 1;
-	if(!_input_method_file_path)return -1;
-	_input_method_file.open(_input_method_file_path,ios::in);
-	memset(_tbuf,0x0,1000);
-	while(_is_parse)
-	{
-		if(strstr(_tbuf,_word_buf)!=_tbuf)
-		{
-			_tc = NULL;
-			memset(_tbuf,0x0,1000);
-			_input_method_file.getline(_tbuf,1000);
-			_tc = strtok(_tbuf," ");
-			//--
-			_is_parse = !_input_method_file.eof();
-		}
-		else
-		{
-			_word_group_index = 0;
-			while(_tc!=NULL)
-			{
-				_tc = strtok(NULL," ");
-				if(_tc)
-				{
-					memcpy(_word_group[_word_group_index+1],_tc,100);
-					_word_group_index++;
-					if(_word_group_index >= 1000)break;
-				}
-			}
-			_is_parse = 0;
-		}
-	}
-	_input_method_file.close();
-	return 0;
-}
-int sdl_ime::show_list()
-{
-	char _word_list[1000] = {0};
-	int i=0;
-	int j=0;
-	for(i=0;i<_word_group_index;i++)
-	{
-		sprintf(_word_list+j,"[%d]%s",i,_word_group[i]);
-		j+=strlen(_word_group[i])+3;
-	}
-	//cout<<_word_list<<endl;
-	text(_word_list);
-	return 0;
-}
-const char* sdl_ime::word()
-{
-	if(_cur_word)return _cur_word;
-	return NULL;
-}
-int sdl_ime::init_buffer()
-{
-	//if(_cur_word)delete _cur_word;
-	//_word_list = NULL;
-	//_cur_word = NULL;
-	memset(_word_buf,0x00,sizeof(_word_buf));
-	_word_buf_index = 0;
-	memset(_word_group,0x00,sizeof(_word_group));
-	_word_group_index=0;
-	return 0;
-}
-int sdl_ime::sysevent(SDL_Event* e)
-{
-	//cout<<e<<endl;
-	//return 0;
-	switch (e->type)
-	{
-		case SDL_MOUSEBUTTONUP:
-			//cout<<_state<<endl;
-			if(_state == sdlgui_ime_en)
-			{
-				size(ime_width,0);				
-				_state = sdlgui_ime_cn_up;
+				/* 删除对象节点时是否要删除事件列表中所有调用该对象的委托事件 */
+				//cout<<event_object<<":"<<event_object->_is_destroy<<endl;
+				sdl_event_manager::_event_list.erase(event_object);				
+				//delete event_object;
 			}
 			else
 			{
-				size(_rect.h,0);
-				_state = sdlgui_ime_en;
+				/* 否则再读取注册事件对象的事件列表 */
+				event = (sdl_event_object*)event_iter->second;
+				/* 
+					然后找到对象事件列表中的事件(委托)结构
+				*/
+				for(event_struct_iter = event->_object_event_list.begin();event_struct_iter!=event->_object_event_list.end();event_struct_iter++)
+				{
+					/* 使用对象事件列表累计 */
+					event_struct = (sdl_event_struct*)event_struct_iter->second;
+					if(event_struct->count())
+					{
+						//cout<<clock()<<endl;
+						for(event_struct_handle_iter = event_struct->_event.begin();event_struct_handle_iter!=event_struct->_event.end();event_struct_handle_iter++)
+						{
+							/* 调用托管的事件函数 */
+							event_struct_handle = (sdl_event_handle)event_struct_handle_iter->second;
+							if(event_struct_handle.object)
+							{
+								//cout<<"event start"<<event_struct_handle.object<<endl;
+								//event_struct_handle.object;
+								if(sdl_event_manager::_event_list.find(event_struct_handle.object)!=sdl_event_manager::_event_list.end())
+								event_struct_handle.object->handle(event_struct_handle.handle,(SDL_Event*)(event_struct->_event_queue.front()));
+								//cout<<"event stop"<<clock()<<endl;
+							}
+						}
+						event_struct->pull();
+					}
+				}
 			}
-			/* 这里引起错误，要调试 */
-			init_buffer();
-		break;
-		case SDL_KEYUP:
-			//cout<<(e->key.keysym.sym)<<endl;
-			input(e->key.keysym.sym);
-		break;
+		}
+		SDL_Delay(1);
 	}
-	//return 0;
-	return sdl_board::sysevent(e);
+	return 0;
 }
+def_dll int sdl_event_manager::destroy()
+{
+	int _thread_state;
+	map<sdl_board*,sdl_event_object*>::iterator node;
+	sdl_event_manager::_event_thread_is_run = 0;
+	SDL_WaitThread(sdl_event_manager::_event_process_thread,&_thread_state);
+	for(node = sdl_event_manager::_event_list.begin();node!=sdl_event_manager::_event_list.end();node++)
+	{
+		delete (sdl_event_object*)node->second;
+	}
+	sdl_event_manager::_event_list.clear();
+	return 0;
+}
+//------------------------------------------
+//
+//
+//					剪辑类
+//
+//
+//------------------------------------------
+typedef class sdl_clip : public sdlsurface
+{
+	public:
+		sdl_clip();
+		sdl_clip(int,int,string);
+		int init();
+		int init(int,int,string);
+		int clip(int,int);
+		int clip(int,int,sdlsurface*,SDL_Rect*);
+		//int blit_surface(int,int,sdlsurface*,SDL_Rect*);
+		//int blit_scael(int,int,sdlsurface*,SDL_Rect*);
+	protected:
+		int _w,_h;
+		int _sur_w,_sur_h;
+		int _row,_column;
+}*sdl_clip_ptr;
 //------------------------------------
 //
 //           工具类
@@ -1105,7 +818,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		int init(const char*,int,int,int,int,Uint32);
 		int redraw();
 		virtual int sysevent(SDL_Event*);
-		int run();
+		int destroy(int);
 		sdlwindow* frame();
 		//------------------------------------------------
 		int pos(int,int);
@@ -1118,62 +831,34 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 	protected:
 		/* 事件分流 */
 		int event_shunt(SDL_Event*);
+	protected:
+		/* 渲染多线程函数 */
+		static int redraw_thread(void*);
 	public:
-		sdl_ime ime;
+		//sdl_ime ime;
+		static int run();
+		static SDL_Event _main_event;
+		/* 消息处理循环变量 */
+		static int _is_exit;
 	protected:
 		static sdl_board* _capture_win;
+		static map<Uint32,sdl_frame*> _window_list;
 	protected:
-		static int call_redraw(void*);
-		static int all_event_process(void*);
-	protected:
-		sdl_board* _active_win;
 		sdlwindow* _window;
-		//sdl_board _screen;
 		sdlsurface _screen;
-		SDL_Event _main_event;
 		double _fps;
 		SDL_Point _window_rect;
-		/* 消息处理循环变量 */
-		int _is_exit;
+		/* 顶级窗口渲染循环 */
+		int _is_redraw;
 		/* 处理消息流的子级线程 */
 		SDL_Thread* _event_thread;
+		/* 处理重绘流的子级线程 */
+		SDL_Thread* _redraw_thread;
 }*sdl_frame_ptr;
 sdl_board* sdl_frame::_capture_win = NULL;
-//-------------------------------------------------------
-//
-//
-//                   剪辑类
-//
-//
-//-------------------------------------------------------
-typedef class sdl_clip : public sdlsurface
-{
-	public:
-		sdl_clip();
-		sdl_clip(sdlsurface*,int,int);
-		~sdl_clip();
-		//用给定的剪辑宽度和高度进行裁剪。
-		int clip(int,int);
-		int init();
-		int init(sdlsurface*,int,int);
-		int init(Uint32,int,int,int,Uint32,Uint32,Uint32,Uint32);
-		int row();
-		int column();
-		int read(int,int);
-		int read();
-		int write();
-		int write(int,int);
-		virtual sdlsurface* operator()(int,int);
-		virtual sdlsurface* operator[](SDL_Point);
-	protected:
-		inline SDL_Rect clip_rect(int,int);
-	protected:
-		sdlsurface* _clip_surface;
-		//sdlsurface** _sub_surface;
-		SDL_Rect _clip_rect;
-		int _width,_height;
-		SDL_Point _sub_size;
-}*sdl_clip_ptr;
+map<Uint32,sdl_frame*> sdl_frame::_window_list;
+SDL_Event sdl_frame::_main_event;
+int sdl_frame::_is_exit=0;
 //--------------------------------------------------
 //
 //
@@ -1278,15 +963,12 @@ GUI<sdl_board,sdlsurface>()
 //底板析构函数
 sdl_board::~sdl_board()
 {
-	//cout<<"sdl_board::~sdl_board()"<<text()<<endl;
 	/* 释放缓冲表面 */
 	if(_board)delete _board;
-	if(_hit_board)delete _hit_board;
-	if(_hit_board_ptr)delete[] _hit_board_ptr;
-	/*释放文本*/
-	if(_text)delete[] _text;
 	/* 释放文本表面 */
 	if(_text_board)delete _text_board;
+	/* 释放子窗口节点 */
+	//destroy(1);
 }
 //底板初始函数
 int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
@@ -1299,48 +981,54 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	_rect.y = py;
 	_rect.w = pw;
 	_rect.h = ph;
+	_global_rect.x = 0;
+	_global_rect.y = 0;
 	//--------------
 	if(_board)delete _board;
 	_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
 	//----------------
-	_hit_rect.w = 0;
-	_hit_rect.h = 0;
-	if(_hit_board)delete _hit_board;
-	_hit_board = new sdlsurface(0,pw,ph,32,0,0,0,0);
-	_hit_board->fill_rect(NULL,*(Uint32*)this);
-	_hit_board->color_key(SDL_TRUE,0);
-	_hit_board->surface_blend_mode(SDL_BLENDMODE_BLEND);
-	/* 初始自身探板对象 */
-	redraw_hit(NULL);
 	//-----------------
 	if(ptitle)
 	{
-		_text_rect.x = 0;
-		_text_rect.y = 0;
-		if(_text_board)delete _text_board;
 		cur_platform = SDL_GetPlatform();
-		if(!cur_platform.compare("Windows"))
+		if(!sdltext::font_path.length())
 		{
-			_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
+			if(!cur_platform.compare("Windows"))
+			{
+				sdltext::font_path = "c:/windows/fonts/simkai.ttf";
+			//_text_board = new sdltext("c:/windows/fonts/simkai.ttf",16);
+			}
+			else
+			if(!cur_platform.compare("Linux"))
+			{
+				sdltext::font_path = "/usr/share/font/truetype/wqy/wqy-zenhei.ttc";
+				//_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
+			}
+			else
+			if(!cur_platform.compare("Android"))
+			{
+				sdltext::font_path = "/system/fonts/DroidSanSansFallback.ttf";
+				//_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
+			}
 		}
-		else
-		if(!cur_platform.compare("Linux"))
-		{
-			_text_board = new sdltext("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",16);
-		}
-		else
-		if(!cur_platform.compare("Android"))
-		{
-			_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
-		}
+		if(_text_board)delete _text_board;
+		_text_board = new sdltext(sdltext::font_path.c_str(),16);
 		if(_text_board)_text_board->render_utf8_solid(ptitle,_text_color);
+		_text_rect.x = (pw-_text_board->clip_rect()->w)/2,_text_rect.y = (ph-_text_board->clip_rect()->h)/2,_text_rect.w = pw,_text_rect.h = ph;
 	}
 	//
-	//cout<<"init board stop"<<endl;
 	/* 注册委托函数 */
 	sdl_event_manager::push(this);
-	sdl_event_manager::push(this,"on_click");
-	connect_event("on_click",this,sdlgui_button_click);
+	register_event("on_click");
+	connect_event("on_click",this,sdlgui_mouse_click);
+	register_event("on_db_click");
+	connect_event("on_db_click",this,sdlgui_mouse_db_click);
+	register_event("on_release");
+	connect_event("on_release",this,sdlgui_mouse_release);
+	register_event("on_motion");
+	connect_event("on_motion",this,sdlgui_mouse_motion);
+	register_event("on_wheel");
+	connect_event("on_wheel",this,sdlgui_mouse_wheel);
 	return 0;
 }
 //------------------------------------------
@@ -1353,55 +1041,17 @@ int sdl_board::init()
 	memset((char*)&_rect,0x00,sizeof(SDL_Rect));
 	_is_show = 1;
 	_is_destroy = 0;
-	_text = NULL;
-	_text_color = 0;
 	_parent = NULL;
-	_end = NULL;
-	_head = NULL;
-	_next = NULL;
-	_last = NULL;
+	//_end = NULL;
+	//_head = NULL;
+	//_next = NULL;
+	//_last = NULL;
 	_board = NULL;
-	_text_board = NULL;
-	_hit_board = NULL;
-	_hit_board_ptr = NULL;
+	_text_board= NULL;
+	_text_color = 0x000000;
+	/* 初始子窗口节点列表 */
+	_board_list.clear();
 	return 0;
-}
-//--------------------------------------
-//设置窗口底板标题
-int sdl_board::text(const char* ptext)
-{
-	if(_text_board)
-	{
-		_text_board->text(ptext);
-		return _text_board->render_utf8_solid(ptext,_text_color);
-	}
-	return -1;
-}
-//-----------------------------------------------
-// 设置当前窗口标题,
-// 参数(标题文本，标题字体，字体大小，文本颜色，渲染范围)
-int sdl_board::text(const char* ptext,const char* pfont,int psize=16,Uint32 pcolor=0x000000,SDL_Rect* prect=NULL)
-{
-	if(_text_board)
-	{
-		delete _text_board;
-		_text_board = NULL;
-	}
-	_text_board = new sdltext(pfont,psize);
-	if(_text_board)
-	{
-		_text_board->text(ptext,pfont,psize);
-		if(prect)memcpy((char*)&_text_rect,prect,sizeof(SDL_Rect));
-		return _text_board->render_utf8_solid(ptext,pcolor);
-	}
-	return -1;
-}
-//---------------------------------------
-//取得窗口底板标题
-const char* sdl_board::text()
-{
-	if(_text_board)
-	return _text_board->text();
 }
 //--------------------------------------
 //设置窗口底板位置
@@ -1409,216 +1059,18 @@ int sdl_board::pos(int x,int y)
 {
 	_rect.x = x;
 	_rect.y = y;
+	if(_parent)
+	{
+		_global_rect.x = _parent->_global_rect.x+_rect.x;
+		_global_rect.y = _parent->_global_rect.y+_rect.y;
+	}
+	else
+	{
+		_global_rect.x = 0;
+		_global_rect.y = 0;
+	}
 	return 0;
 }
-int sdl_board::pos(SDL_Point pt)
-{
-	_rect.x = pt.x;
-	_rect.y = pt.y;
-	return 0;
-}
-int sdl_board::pos_x(int x)
-{
-		_rect.x = x;
-		return 0;
-}
-int sdl_board::pos_y(int y)
-{
-		_rect.y = y;
-		return 0;
-}
-//---------------------------------------------
-/* 
-	获取窗口底板全局位置
-	不断与父级当前坐标合并，至到没有父级
- */
-SDL_Point sdl_board::global_pos()
-{
-	SDL_Point pt = {_rect.x,_rect.y};
-	sdl_board* t =parent();
-	while(t)
-	{
-		pt.x += t->_rect.x;
-		pt.y += t->_rect.y;
-		t=t->parent();
-	}
-	return pt;
-}
-//-----------------------------------------------
-//设置窗口底板全局位置
-int sdl_board::global_pos(int x,int y)
-{
-	int tx,ty;
-	tx = x;
-	ty = y;
-	sdl_board* t = parent();
-	while(t)
-	{
-		tx-=t->_rect.x;
-		ty-=t->_rect.y;
-		t = t->parent();
-	}
-	_rect.x = tx;
-	_rect.y = ty;
-	return 0;
-}
-//-----------------------------------------
-//设置窗口底板全局X坐标
-int sdl_board::global_pos_x(int x)
-{
-	int tx;
-	tx = x;
-	sdl_board* t = parent();
-	while(t)
-	{
-		tx-=t->_rect.x;
-		t = t->parent();
-	}
-	_rect.x = tx;
-	return 0;
-}
-//-----------------------------------------
-//设置窗口底板全局Y坐标
-int sdl_board::global_pos_y(int y)
-{
-	int ty;
-	ty = y;
-	sdl_board* t = parent();
-	while(t)
-	{
-		ty-=t->_rect.y;
-		t = t->parent();
-	}
-	_rect.y = ty;
-	return 0;
-}
-//-----------------------------------------
-//获取窗口底板全局X坐标
-int sdl_board::global_pos_x()
-{
-	int tx;
-	tx = _rect.x;
-	sdl_board* t = parent();
-	while(t)
-	{
-		tx+=t->_rect.x;
-		t = t->parent();
-	}
-	return tx;
-}
-//-----------------------------------------
-//获取窗口底板全局Y坐标
-int sdl_board::global_pos_y()
-{
-	int ty;
-	ty = _rect.y;
-	sdl_board* t = parent();
-	while(t)
-	{
-		ty+=t->_rect.y;
-		t = t->parent();
-	}
-	return ty;
-}
-//-------------------------------------------
-//坐标转换
-int sdl_board::target_pos_x(sdl_board* obj,int px)
-{
-	if(!obj)return -1;
-	int x = global_pos_x();
-	int tx = obj->global_pos_x(); 
-	return (x-tx+px);
-}
-int sdl_board::target_pos_y(sdl_board* obj,int py)
-{
-	if(!obj)return -1;
-	int y = global_pos_y();
-	int ty = obj->global_pos_y(); 
-	return (y-ty+py);
-}
-SDL_Point sdl_board::target_pos(sdl_board* obj,int px,int py)
-{
-	SDL_Point pt1 = global_pos();
-	if(!obj)
-	{
-		pt1.x = 0;
-		pt1.y = 0;
-		return pt1;
-	}
-	SDL_Point pt2 = obj->global_pos();
-	pt1.x = pt2.x-pt1.x+px;
-	pt1.y = pt2.y-pt1.y+py;
-	return pt1;
-}
-//--------------------------------------
-//取得窗口底板位置
-SDL_Point sdl_board::pos()
-{
-	SDL_Point pt={_rect.x,_rect.y};
-	return pt;
-}
-int sdl_board::pos_x()
-{
-	return _rect.x;
-}
-int sdl_board::pos_y()
-{
-	return _rect.y;
-}
-//--------------------------------------
-//设置窗口底板大小
-int sdl_board::size(int w,int h)
-{
-	if(w>0)_rect.w = w;
-	if(h>0)_rect.h = h;
-	/* 申请一个临时表面 */
-	sdlsurface *t = new sdlsurface(0,w,h,32,0,0,0,0);
-	blit_surface(NULL,t,NULL);
-	sdlsurface::init(0,w,h,32,0,0,0,0);
-	t->blit_surface(NULL,this,NULL);
-	delete t;
-	return _board->init(0,w,h,32,0,0,0,0);
-}
-//--------------------------------------
-//设置窗口底板大小
-int sdl_board::size(SDL_Point s)
-{
-	return size(s.x,s.y);
-}
-//--------------------------------------
-//得到窗口底板大小
-SDL_Point sdl_board::size()
-{
-	SDL_Point s = {_rect.w,_rect.h};
-	return s;
-}
-//-------------------------------------
-//得到窗口矩形区域
-SDL_Rect* sdl_board::rect()
-{
-	return &_rect;
-}
-//-------------------------------------------
-//设置窗口宽度
-int sdl_board::width(int pw)
-{
-	_rect.w = pw;
-	return 0;
-}
-//------------------------------------------
-//得到窗口宽度
-int sdl_board::width(){return _rect.w;} 
-//--------------------------------------------
-//设置窗口高度
-int sdl_board::height(int ph)
-{
-	_rect.h = ph;
-	return 0;
-}
-//-----------------------------------------
-//得到窗口高度
-int sdl_board::height(){return _rect.h;}
-//------------------------------------------
 //设置父级窗口
 sdl_board* sdl_board::parent(sdl_board* parent)
 {
@@ -1650,16 +1102,36 @@ int sdl_board::is_child(sdl_board* obj)
 	//如果一直没有返回表示指定窗口不是当前窗口的子级,则返回-1
 	return 0;
 }
+sdl_board* sdl_board::child(int x,int y)
+{
+	//map<sdl_board*,int>::iterator node;
+	map<sdl_board*,int>::reverse_iterator node = _board_list.rbegin();
+	sdl_board* board_node;
+	int px,py,gw,gh;
+	px = x-_rect.x;
+	py = y-_rect.y;
+	for(node = _board_list.rbegin();node!=_board_list.rend();node++)
+	{
+		board_node=(sdl_board*)node->first;
+		gw = board_node->_rect.x+board_node->_rect.w;
+		gh = board_node->_rect.y+board_node->_rect.h;
+		if(px>=board_node->_rect.x && px<=gw && py>=board_node->_rect.y && py<=gh)
+		{
+			return board_node->child(px,py);
+		}
+	}
+	return this;
+}
 //-------------------------------------
 //添加子内部窗口底板
 template<class T>T* sdl_board::add(const char* title,int px,int py,int pw,int ph,Uint32 pflags)
 {
 	T* t = dynamic_cast<T*>(new T);
 	t->init(title,px,py,pw,ph,pflags);
-	//cout<<"add board start"<<endl;
 	t->_parent = this;
-	z_top(t,NULL,0);
-	//cout<<"add board end"<<endl;
+	t->_global_rect.x = _global_rect.x+px;
+	t->_global_rect.y = _global_rect.y+py;
+	z_top(t,NULL,1);
 	return t;
 }
 //---------------------------------------------------
@@ -1669,8 +1141,7 @@ template<class T>T* sdl_board::add(T* obj)
 	if(obj)
 	{
 		obj->_parent = this;
-		//cout<<"obj:"<<obj<<" obj->_parent:"<<obj->_parent<<":"<<this<<endl;
-		z_top(obj,NULL,0);
+		z_top(obj,NULL,1);
 		return obj;
 	}
 	return NULL;
@@ -1679,415 +1150,153 @@ template<class T>T* sdl_board::add(T* obj)
 //调整子窗口Z序
 /* 
 		子窗口Z序的最顶层窗口（即列表尾节点）的NEXT应为NULL 
+		如果b为空
+			如果z为0表示删除a节点
+			否则如果z>0表示插入头节点
+			否则如果z<0表示插入尾节点
+		否则
+			如果z为0表示交换a和b的位置
+			否则如果z>0表示a移动到b的后面
+			否则如果z<0表示a移动到b的前面
  */
-int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=0)
+int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=1)
 {
-	sdl_board* temp;
-	//如果源窗口a不存在则返回错误
-	if(a==NULL)return -1;
-	//如果目标窗口b不存在则按Z序调整窗口顺序
-	if(b==NULL)
+	map<sdl_board*,int>::iterator node;
+	if(!a)return -1;
+	_thread_lock.wait();
+	/* 如果没有b对象表示直接插入或删除 */
+	if(!b)
 	{
-		switch(z)
+		/* 大于0表示插入到尾 */
+		if(z>0)
 		{
-			//如果Z序为0则调整为顶序
-			case 0:
-				//如果没有头节点子窗口则直接设置
-				if(_head==NULL)
-				{
-					a->_next = NULL;
-					a->_last = a;
-					_head = a;
-				}
-				//如果已有子窗口节点
-				else
-				{
-					//cout<<a<<endl;
-					//如果节点为链表尾则直接返回
-					if(a == _head->_last)return 0;
-					//先把A节点脱离出来。
-					if(a->_last)a->_last->_next = a->_next;	
-					if(a->_next)a->_next->_last = a->_last;	
-					//再把A节点放到链表尾
-					_head->_last->_next = a;
-					//更新A节点链表数据
-					a->_last = _head->_last;
-					a->_next = NULL;
-					//如果调整的节点是头节点，则更新头节点到下一个节点
-					if(a == _head)_head = _head->_next;
-					//更新链表尾数据
-					_head->_last = a;
-				}
-			break;
-			//如果Z序指定数据则移动指针
-			defalut:
-				if(z>0)
-				{
-
-				}
-				else
-				{
-
-				}
-			break;
+			_board_list.insert(pair<sdl_board*,int>(a,0));
+		}
+		else
+		/* 小于0表示插入到头 */
+		if(z<0)
+		{
+			_board_list.insert(_board_list.begin(),pair<sdl_board*,int>(a,0));
+		}
+		/* 为0表示删除 */
+		else
+		{
+			_board_list.erase(a);
 		}
 	}
-	//如果窗口B存在，则移动指定的两个子窗口Z序
 	else
 	{
 		if(z>0)
 		{
-
+			node = _board_list.find(b)++;
+			_board_list.erase(a);
+			_board_list.insert(node,pair<sdl_board*,int>(a,0));
 		}
 		else
 		if(z<0)
 		{
-
+			node = _board_list.find(b)++;
+			_board_list.erase(a);
+			_board_list.insert(node,pair<sdl_board*,int>(a,0));
 		}
 		else
 		{
-			//窗口B与窗口A相同表示脱离指定子窗口节点
-			if(a==b)
-			{
-			/* 
-				如果子窗口没有下个窗口
-				   表示子窗口为末尾节点，
-				   则分析当前子窗口是否为第一个子窗口
-				    如果当前子窗口为第一个子窗口
-				      则将父级窗口子节点初始化为NULL
-				    否则如果当前子窗口不是第一个子窗口
-				     则更新子窗口列表末尾指向
-				如果当前子窗口有下个窗口
-				  则分析当前子窗口是否为第一个子窗口
-				    如果当前子窗口是第一个子窗口
-				      则更新你父级窗口子节点的指向
-				    否则如果当前子窗口不是第一个子窗口
-				      则直接脱离当前子窗口
-			 */
-				//cout<<a->text()<<endl;
-				if(a==_head)
-				{
-					_head = _head->_next;
-					if(_head)
-					{
-						_head->_last = _head->_last->_next;
-					}
-				}
-				else
-				if(_head && a==_head->_last)
-				{
-					_head->_last = _head->_last->_last;
-					_head->_last->_next = NULL;
-				}
-				else
-				if(a->_next)
-				{
-					a->_next->_last = a->_last;
-					a->_last->_next= a->_next;
-				}
-				else
-				{
-					/*零时返回-1 */
-					return -1;
-				}
-			}
-			else
-			{
-					/*零时返回-1 */
-				return -1;
-			}
+			node = _board_list.find(a);
+			_board_list.erase(a);
+			_board_list.insert(_board_list.find(b),pair<sdl_board*,int>(a,0));
+			_board_list.erase(b);
+			_board_list.insert(node,pair<sdl_board*,int>(b,0));
 		}
 	}
+	_thread_lock.post();
+	return 0;
+}
+//---------------------------------------------
+//销毁子级窗口参数P表示是否销毁本身
+int sdl_board::destroy(int p=1)
+{
+	map<sdl_board*,int>::iterator node;
+	sdl_board* node_board;
+	_is_destroy = p;
+	if(_is_destroy && _parent)_parent->z_top(this,NULL,0);
+	//cout<<"start destor is "<<this<<endl;
+	for(node = _board_list.begin();node!=_board_list.end();node++)
+	{
+		node_board = (sdl_board*)node->first;
+		if(node_board->destroy(1))return -1;		
+	}
+	//cout<<"stop destor is "<<this<<endl;
 	return 0;
 }
 //--------------------------------------------------------
-//消毁窗口
-int sdl_board::destroy(int p=1)
-{
-	sdl_board* t = _head;
-	_is_destroy = p;
-	while(t)
-	{
-		t->destroy(1);
-		t = t->_next;
-	}
-	return 0;
-}
-//-----------------------------------------------
-//重绘窗口探板
-int sdl_board::redraw_hit(sdl_board* child = NULL)
-{
-	SDL_Rect lrt;
-	int x,y;
-	/* 如果子对象存在表示复制到父级探板 */
-	if(child)
-	{
-		memcpy(&lrt,child->rect(),sizeof(SDL_Rect));
-		//lrt.x = 0;
-		//lrt.y = 0;
-		for(y = (lrt.y>0)?lrt.y:0;y<(lrt.h+lrt.y) && y<_rect.h;y++)
-		{
-			for(x=(lrt.x>0)?lrt.x:0;x<(lrt.w+lrt.x) && x<_rect.w;x++)
-			{
-				_hit_board_ptr[x+y*_rect.w] = child->_hit_board_ptr[(x-child->_rect.x)+(y-child->_rect.y)*child->_rect.w];
-			}
-		}
-		return 0;
-	}
-	/* 如果探板大小与窗口大小不一致表示要创建探板 */
-	if((_hit_rect.w-_rect.w) || (_hit_rect.h-_rect.h))
-	{
-		if(_hit_board_ptr)delete[] _hit_board_ptr;
-		_hit_rect.w = _rect.w;
-		_hit_rect.h = _rect.h;
-		_hit_board_ptr = new sdl_board*[_hit_rect.w*_hit_rect.h];
-	}
-	/* 如果没有子级表示更新自身探板 */
-	memcpy(&lrt,&_rect,sizeof(SDL_Rect));
-	lrt.x = 0;
-	lrt.y = 0;
-	for(y = (lrt.y>0)?lrt.y:0;y<(lrt.h+lrt.y) && y<_rect.h;y++)
-	{
-		for(x=(lrt.x>0)?lrt.x:0;x<(lrt.w+lrt.x) && x<_rect.w;x++)
-		{
-			_hit_board_ptr[x+y*_rect.w] = this;
-		}
-	}
-	return 0;
-}
-//-----------------------------------
-//返回探板中指定坐标的窗口值
-sdl_board* sdl_board::hit_board(int px,int py)
-{
-	//if(_hit_board_ptr)return _hit_board_ptr[px+py*_rect.w];
-	int x = px-_rect.x;
-	int y = py-_rect.y;
-	sdl_board* t;
-	if(_head)
-	{
-		t = _head->_last;	
-		while(t!=_head)
-		{
-			if(
-					x>=t->_rect.x
-				  &&
-					x<=t->_rect.x+_rect.w
-					&&
-					y>=t->_rect.y
-					&&
-					y<=t->_rect.y+_rect.h
-					)
-			{
-				return t->hit_board(x,y);
-			}
-			t = t->_last;
-		}
-	}
-	return this;
-}
-//-------------------------
 //重绘底板窗口
 int sdl_board::redraw()
 {
-	//if(_is_show == 0)return 0;
-	sdl_board* temp = _head;
-	sdl_board* del_board = NULL;
-	SDL_Rect trc1,trc2;
-	//------------------
-	//如果当前窗口不消毁，则处理窗口
-	if(!_is_destroy)
+	sdl_board* node_board;
+	SDL_Rect prt,srt;
+	map<sdl_board*,int>::iterator node = _board_list.begin();
+	//map<sdl_board*,int>::reverse_iterator node = _board_list.rbegin();
+	blit_surface(NULL,_board,NULL);
+	_text_board->blit_surface(NULL,_board,&_text_rect);
+	//_thread_lock.wait();
+	//cout<<"start redraw "<<this<<endl;
+	while(node!=_board_list.end())
 	{
-		//如果显示则绘画窗口
-		if(_is_show)
+		//cout<<node->first<<endl;
+		node_board = (sdl_board*)node->first;
+		node_board->redraw();
+		/* 调整画到父级窗口的绘画范围 */
+		if(node_board->_rect.x>0)
 		{
-			blit_surface(NULL,_board,NULL);
-			/* 处理窗口标签文本 */
-			if(_text_board)
+			srt.x = 0;
+			prt.x = node_board->_rect.x;
+			if(node_board->_rect.x+node_board->_rect.w > _rect.w)
 			{
-				_text_board->blit_surface(NULL,_board,&_text_rect);
+				prt.w = _rect.w-node_board->_rect.x;
+				srt.w = _rect.w-node_board->_rect.x;
 			}
-			/* 重绘新探板 */
-			//redraw_hit();
-			//处理子窗口
-			while(temp)
+			else
 			{
-				del_board = temp;
-				/*
-					 如果子窗口返回0，表示渲染成功 
-					 如果子窗口返回-1，表示子窗口的所有子级窗口删除成功	 
-				 */
-				if(!temp->redraw())
-				{
-						/* 将子窗口绘制到父窗口上 */
-						trc1.x = temp->rect()->x;	
-						trc1.y = temp->rect()->y;	
-						trc1.w = temp->rect()->w;	
-						trc1.h = temp->rect()->h;	
-						trc2.x = 0;
-						trc2.y = 0;
-						trc2.w = temp->rect()->w;
-						trc2.h = temp->rect()->h;
-						if(trc1.x<0)
-						{
-							trc1.w+=trc1.x;
-							trc1.x = 0;
-							trc2.x = temp->rect()->x*-1;
-						}
-						if(trc1.y<0)
-						{
-							trc1.h+=trc1.y;
-							trc1.y = 0;
-							trc2.y = temp->rect()->y*-1;
-						}
-						temp->_board->blit_surface(&trc2,_board,&trc1);
-						/* 将子窗口探板绘制到父窗口上 */
-						//redraw_hit(temp);
-						temp = temp->_next;
-				}
-				else
-				{
-					del_board = temp;
-					temp = temp->_next;
-					//cout<<"delete "<<del_board<<endl;
-					if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
-					{
-						if(del_board->activities() && del_board->parent())del_board->parent()->active();
-						delete del_board;
-					}
-					//cout<<"OK"<<endl;
-				}
-				//temp = temp->_next;
+				prt.w = node_board->_rect.w;
+				srt.w = node_board->_rect.w;
 			}
 		}
 		else
 		{
-			/* 不显示窗口返回0 */
-			return 0;
+			prt.x = 0;
+			prt.w = node_board->_rect.w+node_board->_rect.x;
+			srt.x = node_board->_rect.x*-1;
+			srt.w = node_board->_rect.w+node_board->_rect.x;
 		}
-	}
-	//如果消毁，则移除子级窗口节点并返回-1
-	else
-	if(_is_destroy)
-	{
-		while(temp)		
+		if(node_board->_rect.y>0)
 		{
-			del_board = temp;
-			//如果当前节点有子窗口，则跳到子窗口
-			temp->destroy();
-			//如果重绘函数返回-1，表示已删除子节点
-			if(temp->redraw())
+			srt.y = 0;
+			prt.y = node_board->_rect.y;
+			if(node_board->_rect.y+node_board->_rect.h > _rect.h)
 			{
-				temp = temp->_next;
-				if(del_board->_parent && !del_board->_parent->z_top(del_board,del_board,0))
-				{
-					if(del_board->activities() && del_board->parent())del_board->parent()->active();
-					delete del_board;
-				}
+				prt.h = _rect.h-node_board->_rect.y;
+				srt.h = _rect.h-node_board->_rect.y;
+			}
+			else
+			{
+				prt.h = node_board->_rect.h;
+				srt.h = node_board->_rect.h;
 			}
 		}
-		return -1;
-	}
-	return 0;
-}
-//------------------------------------
-//激活底板窗口
-int sdl_board::active()
-{
-	sdl_board* t = this;
-	while(t->_parent)
-	{
-		t = t->_parent;
-	}
-	((sdl_frame*)t)->_active_win = this;
-	//cout<<t<<":"<<this<<endl;
-	return 0;
-}
-int sdl_board::activities()
-{
-	sdl_board* t = this;
-	while(t->_parent)
-	{
-		t = t->_parent;
-	}
-	return (((sdl_frame*)t)->_active_win == this);
-}
-//------------------------------------------------
-//捕捉鼠标
-int sdl_board::capture(int p)
-{
-	if(p && !sdl_frame::_capture_win)
-	{
-		sdl_frame::_capture_win = this;
-		return 0;
-	}
-	else
-	if(!p)
-	{
-		if(!sdl_frame::_capture_win || sdl_frame::_capture_win == this)
+		else
 		{
-			sdl_frame::_capture_win = NULL;
-			return 0;
+			prt.y = 0;
+			prt.h = node_board->_rect.h+node_board->_rect.y;
+			srt.y = node_board->_rect.y*-1;
+			srt.h = node_board->_rect.h+node_board->_rect.y;
 		}
+		node_board->_board->blit_surface(&srt,_board,&prt);
+		node++;
 	}
-	return -1;
-}
-int sdl_board::capture()
-{
-	return (this == sdl_frame::_capture_win);
-}
-//--------------------------------------------
-//设置关键色
-int sdl_board::color_key(int t,Uint32 color)
-{
-	return _board->color_key(t,color);
-	//return sdlsurface::color_key(t,color);
-}
-//-----------------------------------------------
-//设置透明度
-int sdl_board::alpha(Uint8 p_alpha)
-{
-	return _board->surface_alpha_mod(p_alpha);
-}
-//-----------------------------------------------
-//设置混合模式
-int sdl_board::blend(SDL_BlendMode p_blend)
-{
-	return _board->surface_blend_mode(p_blend);
-}
-//-----------------------------------------------
-//设置探板范围
-int sdl_board::hit_rect(SDL_Rect *rt)
-{
+	//cout<<"stop redraw "<<this<<endl;
+	//_thread_lock.post();
 	return 0;
 }
-//---------------------------------------------
-//添加一个计时器
-//timer_node* sdl_board::add_timer(int t)
-SDL_TimerID sdl_board::add_timer(int t)
-{
-	//return timer_node::add_timer(this,t);
-	return SDL_AddTimer(t,sdl_board::timer_callback,(void*)this);
-}
-Uint32 sdl_board::timer_callback(Uint32 interval,void* p)
-{
-	//sdl_board* t = (sdl_board*)p;
-	SDL_UserEvent userevent;
-	SDL_Event e;
-	//-----------------
-	userevent.type = SDL_USEREVENT;
-	userevent.code = sdlgui_event_timer;
-	userevent.data1 = p;
-	userevent.data2 = (void*)interval;
-	//----------------
-	e.type = SDL_USEREVENT;
-	e.user = userevent;
-	//-----------------
-	SDL_PushEvent(&e);	
-	//t->event(&e);
-	//------------------
-	return interval;
-}
-//---------------------------------------------
 //显示一个底板窗口
 int sdl_board::show()
 {
@@ -2109,35 +1318,146 @@ int sdl_board::is_show()
 }
 //---------------------------------------------
 //底板窗口委托事件处理
-int sdl_board::handle(int id)
+int sdl_board::handle(int id,SDL_Event* e)
 {
 	switch(id)
 	{
-		case sdlgui_button_click:
-			on_click(this,NULL);
+		case sdlgui_mouse_click:
+			on_click(This,(void*)e);
+		break;
+		case sdlgui_mouse_motion:
+			on_motion(This,(void*)e);
+		break;
+		case sdlgui_mouse_wheel:
+			on_wheel(This,(void*)e);
+		break;
+		case sdlgui_mouse_db_click:
+			on_db_click(This,(void*)e);
+		break;
+		case sdlgui_mouse_release:
+			on_release(This,(void*)e);
 		break;
 		default:
+			cout<<"other events"<<endl;
 		break;
 	}
 	return 0;
 }
 //----------------------------------------------
+//底板窗口注册事件函数
+int sdl_board::register_event(string event_string)
+{
+	return sdl_event_manager::push(this,event_string);
+}
+//----------------------------------------------
 //底板窗口连接委托事件函数
 int sdl_board::connect_event(string event_string,sdl_board* event_object,int event_handle)
 {
-	return sdl_event_manager::push(this,event_string,event_object,event_handle);
+	return sdl_event_manager::push(This,event_string,event_object,event_handle);
 }
 //----------------------------------------------
 //给底板窗口发送信号
-int sdl_board::event_signal(string event_string)
+int sdl_board::event_signal(string event_string,SDL_Event*e)
 {
-	return sdl_event_manager::call_event(this,event_string);
+	return sdl_event_manager::call_event(This,event_string,e);
 }
 //---------------------------------------------
 //底板窗口鼠标点击事件委托函数
 int sdl_board::on_click(sdl_board* obj,void* data)
 {
-	cout<<"click board is:"<<this<<endl;
+	//cout<<"click mouse on board is:"<<this<<endl;
+	return 0;
+}
+//---------------------------------------------
+//底板窗口鼠标释放事件委托函数
+int sdl_board::on_release(sdl_board* obj,void* data)
+{
+	//cout<<"release mouse on board is:"<<this<<endl;
+	return 0;
+}
+//---------------------------------------------
+//底板窗口鼠标双击事件委托函数
+int sdl_board::on_db_click(sdl_board* obj,void* data)
+{
+	//cout<<"db_click mouse on board is:"<<this<<endl;
+	return 0;
+}
+//---------------------------------------------
+//底板窗口鼠标移动事件委托函数
+int sdl_board::on_motion(sdl_board* obj,void* data)
+{
+	//cout<<"motion board is:"<<this<<endl;
+	return 0;
+}
+//-------------------------------------------------
+// 鼠标中键滚动事件 
+int sdl_board::on_wheel(sdl_board* obj,void* data)
+{
+	//cout<<"mouse wheel is"<<this<<endl;
+	return 0;
+}
+//------------------------------------------------
+//
+//
+//
+//
+//
+//
+//
+//
+//------------------------------------------------
+sdl_clip::sdl_clip()
+{
+	init();
+}
+sdl_clip::sdl_clip(int pw,int ph,string f)
+{
+	init(pw,ph,f);
+}
+int sdl_clip::init()
+{
+	return 0;
+}
+int sdl_clip::init(int pw,int ph,string f)
+{
+	init();
+	if(img_load(f.c_str()))return -1;
+	clip(pw,ph);
+	return 0;
+}
+int sdl_clip::clip(int pw,int ph)
+{
+	_w = pw;
+	_h = ph;
+	_sur_w = clip_rect()->w;
+	_sur_h = clip_rect()->h;
+	//
+	_column = _sur_w/_w;
+	if(_sur_w%_w)
+	{
+		_column += 1;
+	}
+	_row = _sur_h / _h;
+	if(_sur_h % _h)
+	{
+		_row += 1;
+	}
+	return 0;
+}
+int sdl_clip::clip(int ps,int pe,sdlsurface* dst,SDL_Rect *rt = NULL)
+{
+	SDL_Rect srt={(ps%_column)*_w,(ps/_column)*_h,(pe%_column-ps%_column+1)*_w,((ps-pe)/_column+1)*_h};
+	//cout<<srt.x<<":"<<srt.y<<"-"<<srt.w<<":"<<srt.h<<endl;
+	if(!dst)return -1;
+	if(rt)
+	{
+		return blit_scaled(&srt,dst,rt);		
+	}
+	else
+	{
+		return blit_surface(&srt,dst,NULL);
+	}
+	return -1;
 }
 //-------------------------------------------
 //
@@ -2167,9 +1487,16 @@ GUI<sdl_frame,sdl_board>()
 //框架析构函数
 sdl_frame::~sdl_frame()
 {
+	int _thread_state;
 	if(_window)
 	{
 		delete _window;
+	}
+	if(_redraw_thread)
+	{
+		_is_redraw = 0;
+		SDL_WaitThread(_redraw_thread,&_thread_state);
+		_redraw_thread = NULL;
 	}
 }
 //-------------------------
@@ -2180,8 +1507,8 @@ int sdl_frame::init()
 	_window = NULL;
 	//_renderer = NULL;
 	_event_thread = NULL;
-	_active_win = this;
-	_is_exit = 0;
+	//_is_exit = 0;
+	_is_redraw = 1;
 	return 0;
 }
 //-------------------------
@@ -2195,6 +1522,7 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//-------------------
 	//创建窗口
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
+	sdl_frame::_window_list.insert(pair<Uint32,sdl_frame*>(SDL_GetWindowID(_window->window()),this));
 	/* 创建渲染器 */
 	if(_window)
 	{
@@ -2206,12 +1534,10 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		//_rect.w = _window_rect.y;
 	}
 	_screen.surface(_window->get_window_surface()->surface());
-	//创建输入法,默认隐藏
-	ime.init("",0,ph-30,pw,30,1);
-	ime.fill_rect(NULL,0x0000ff);
-	ime.hide();
 	/* 开启消息流子级线程 */
 	//_event_thread = SDL_CreateThread(all_event_process,"event_process",(void*)this);
+	/* 开启重绘流子级线程 */
+	_redraw_thread = SDL_CreateThread(redraw_thread,"redraw_thread",(void*)this);
 	return 0;
 }
 //-----------------------------------
@@ -2225,19 +1551,47 @@ sdlwindow* sdl_frame::frame()
 //用于把_board对象显示到窗口框架
 int sdl_frame::redraw()
 {
-	sdl_board::_frame_count = 0;
+	/* 更新窗口 */
 	sdl_board::redraw();
-	if(ime.is_show())
-	{
-		ime.redraw();
-		ime._board->blit_surface(NULL,_board,ime.rect());
-		//cout<<ime.rect()->w<<endl;
-		ime.redraw_hit();
-		redraw_hit(&ime);
-		//ime._hit_board->blit_surface(NULL,_hit_board,ime.rect());
-	}
+	/* 将窗口传输到屏幕 */
 	_board->blit_surface(NULL,&_screen,NULL);
-	//_window->update_window_surface();
+	/* 刷新屏幕 */
+	return _window->update_window_surface();
+}
+//----------------------------------------
+//重画函数子线程处理函数
+int sdl_frame::redraw_thread(void* data)
+{
+	clock_t _frame_timer;
+	double sleep = 0;
+	sdl_frame* f = (sdl_frame*)data;
+	while(f->_is_redraw)
+	{
+		//cout<<f<<endl;
+		_frame_timer = clock();
+		//
+		f->redraw();
+		//
+		//f->_window->update_window_surface();
+		/* 计算帧频 */
+		f->_fps = 1000 / ((clock() - _frame_timer + 0.001));
+		//cout<<f->_fps<<endl;
+		sleep = 1000/60-1000/f->_fps;
+		sleep = (sleep>0)?sleep:0;
+		SDL_Delay((sleep<(1000/60))?sleep:(1000/60));
+	}
+	return 0;
+}
+//-------------------------------------------
+//销毁顶级窗口
+int sdl_frame::destroy(int p=1)
+{
+	int _thread_state;
+	_is_redraw = 0;
+	SDL_WaitThread(_redraw_thread,&_thread_state);
+	_redraw_thread = NULL;
+	_window->destroy();
+	sdl_frame::_window_list.erase(SDL_GetWindowID(_window->window()));
 	return 0;
 }
 //-------------------------------------
@@ -2268,80 +1622,67 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			y = e->tfinger.y * _window_rect.y;
 		break;
 	}
-	t = hit_board(x,y);
+	t = child(x,y);
 	t = (t==0)?(sdl_board*)this : t;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
-			if(sdl_frame::_capture_win)
+			//if(sdl_frame::_capture_win)
 			{
-				sdl_frame::_capture_win->event(e);
-				sdl_frame::_capture_win->event_signal("on_click");
+				//sdl_frame::_capture_win->event(e);
+				//sdl_frame::_capture_win->event_signal("on_click");
 			}
-			else
+			//
+			if(t != this)
 			{
-				if(t!=_active_win)
-				{
-					/* 先给失去焦点的窗口发送失去焦点消息 */
-					ue.type = SDL_USEREVENT;
-					ue.code = sdlgui_window_focus;
-					ue.data1 = (void*)0;
-					ue.data2 = (void*)t;
-					te.type = SDL_USEREVENT;
-					te.user = ue;
-					if(_active_win)_active_win->event(&te);
-					cout<<t<<endl;
-					/* 然后给得到焦点的窗口发送得到焦点消息 */
-					ue.data1= (void*)1;
-					ue.data2 = (void*)_active_win;
-					te.type = SDL_USEREVENT;
-					te.user = ue;
-					t->event(&te);
-					/* 再更新焦点状态 */
-					t->active();
-				}
-				/* 最后发送当前消息 */
 				t->event(e);
-				t->event_signal("on_click");
+				//if(e->button.clicks==2)
+				{
+					//t->event_signal("on_db_click",e);
+				}
+				//else
+				{
+					t->event_signal("on_click",e);
+				}
 			}
-			//if(t != this)t->event(e);
 		break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_FINGERUP:
-		case SDL_FINGERMOTION:
-		case SDL_MOUSEMOTION:
-		case SDL_MOUSEWHEEL:
-			//if(t != this)t->event(e);
-			if(sdl_frame::_capture_win)
-			{
-				sdl_frame::_capture_win->event(e);
-			}
-			else
+			if(t != this)
 			{
 				t->event(e);
+				t->event_signal("on_release",e);
+			}
+		break;
+		case SDL_FINGERMOTION:
+		case SDL_MOUSEMOTION:
+			if(t != this)
+			{
+				t->event(e);
+				t->event_signal("on_motion",e);
+			}
+		break;
+		case SDL_MOUSEWHEEL:
+			//if(t != this)t->event(e);
+			//if(sdl_frame::_capture_win)
+			{
+				//sdl_frame::_capture_win->event(e);
+				//sdl_frame::_capture_win->event_signal("on_click");
+			}
+			//else
+			{
+				t->event(e);
+				t->event_signal("on_wheel",e);
 			}
 		break;
 		case SDL_KEYUP:
-			//
-			//if(_active_win != this)
-			{
-				if(ime.is_show())
-				{
-					ime.parent(_active_win);
-					ime.event(e);
-				}
-				else
-				{
-					_active_win->event(e);
-				}
-			}
 		break;
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
 		case SDL_KEYDOWN:
 			//if(_active_win != this)_active_win->event(e);
-			_active_win->event(e);
+			//_active_win->event(e);
 		break;
 	}
 	return 0;
@@ -2360,8 +1701,11 @@ int sdl_frame::sysevent(SDL_Event* e)
 				case SDL_WINDOWEVENT_RESTORED:
 					_screen.surface(_window->get_window_surface()->surface());
 				break;
+				case SDL_WINDOWEVENT_CLOSE:
+					destroy();
+				break;
 				default:
-					cout<<"Window Event"<<endl;
+					//cout<<"Window Event"<<endl;
 				break;
 			}
 		break;
@@ -2375,113 +1719,80 @@ int sdl_frame::sysevent(SDL_Event* e)
 //窗口框架运行函数
 int sdl_frame::run()
 {
-	clock_t _frame_timer;
-	double sleep = 0;
 	//sdltexture* tex=NULL;
-	while(!_is_exit)
+	map<Uint32,sdl_frame*>::iterator _node;
+	sdl_frame* _node_window;
+	//cout<<"window destroy start"<<endl;
+	while(!sdl_frame::_is_exit)
 	{
-		_frame_timer = clock();
-		while(SDL_PollEvent(&_main_event))
+		//cout<<_is_exit<<endl;
+		if(sdl_frame::_window_list.empty())
 		{
-			switch(_main_event.type)
-			{
-				case SDL_QUIT:
-					event(&_main_event);
-				break;
-				case SDL_WINDOWEVENT:
-					event(&_main_event);
-				break;
-				case SDL_USEREVENT:
-					/* 计时器消息分流 */
-					if(_main_event.user.code == sdlgui_event_timer)
-					{
-							((sdl_board*)_main_event.user.data1)->event(&_main_event);
-					}
-					else
-					{
-						event(&_main_event);
-					}
-				break;
-				default:
-					/* 其它消息分流 */
-					event_shunt(&_main_event);
-				break;
-			}
-		}
-		redraw();
-		//
-		/* 刷新屏幕 */
-		_window->update_window_surface();
-		/* 计算帧频 */
-		_fps = 1000 / ((clock() - _frame_timer + 0.001));
-		sleep = 1000/60-1000/_fps;
-		sleep = (sleep>0)?sleep:0;
-		SDL_Delay((sleep<(1000/60))?sleep:(1000/60));
-	}
-	return 0;
-}
-//------------------------------------------------
-//窗口框架调用重画函数的全局函数
-int sdl_frame::call_redraw(void* obj)
-{
-	sdl_frame* _this = (sdl_frame*)obj;
-	while(SDL_PollEvent(&(_this->_main_event)))
-	{
-		//clock_t _frame_timer;
-		switch(_this->_main_event.type)
-		{
-			case SDL_QUIT:
-				exit(0);
-			break;
-			case 0:
-			break;
-			default:
-				_this->event(&(_this->_main_event));
+			sdl_frame::_is_exit = 1;
+			//return 0;
 			break;
 		}
-		SDL_Delay(1);
-	}
-	return 0;  
-}
-//------------------------------------------------
-//窗口消息流事件处理函数
-int sdl_frame::all_event_process(void* obj)
-{
-	sdl_board* This = (sdl_board*)obj;
-	sdl_board* temp = This;
-	/* 退出出前一直处理消息流 */
-	return 0;
-	while(1)
-	{
-		/* 每次都从主窗口消息开始处理 */
-		temp = This;
-		while(temp)
+		else
 		{
-			/* 处理每个节点的消息流 */
-			//temp->event_process();
-			/* 
-				 以下操作为消息节点的跳转 
-					1.如果没有下个节点则跳转到上级 
-					2.如果有子级则跳转到子级
-			 */
-			if(temp->_head)
+			while(SDL_PollEvent(&sdl_frame::_main_event))
 			{
-				temp = temp->_head;
-			}
-			else
-			if(temp->_next)
-			{
-				temp = temp->_next;
-			}
-			else
-			{
-				temp = temp->_parent;
+				/* 如果事件处理线程没有锁定则锁定后创建事件 */
+				//sdl_event_manager::_event_thread_lock.lock();
+				if(!sdl_event_manager::_event_thread_is_lock)
+				{
+					//sdl_event_manager::_event_process_thread_cond.wait(sdl_event_manager::_event_thread_lock);
+					sdl_event_manager::_event_thread_is_lock = 1;
+				}
+				/* 确定事件窗口 */
+				_node = _window_list.find(sdl_frame::_main_event.window.windowID);
+				_node_window = (sdl_frame*)_node->second;
+				//if(!_node_window)return -1;
+				if(!_node_window)
+				{
+					sdl_frame::_is_exit = 1;
+					//return 0;
+					break;
+				}
+				/* 创建事件 */
+				switch(sdl_frame::_main_event.type)
+				{
+					case SDL_QUIT:
+						//cout<<_node_window<<endl;
+						_node_window->event(&_main_event);
+					break;
+					case SDL_WINDOWEVENT:
+						//event(&_main_event);
+						_node_window->event(&sdl_frame::_main_event);
+					break;
+					case SDL_USEREVENT:
+						/* 计时器消息分流 */
+						if(sdl_frame::_main_event.user.code == sdlgui_event_timer)
+						{
+							((sdl_board*)sdl_frame::_main_event.user.data1)->event(&_main_event);
+						}
+						else
+						{
+							//event(&_main_event);
+							_node_window->event(&sdl_frame::_main_event);
+						}
+					break;
+					default:
+						/* 其它消息分流 */
+						//event_shunt(&_main_event);
+						_node_window->event_shunt(&sdl_frame::_main_event);
+					break;
+				}
+				/* 事件线程解锁 */
+				sdl_event_manager::_event_thread_lock.unlock();
 			}
 			SDL_Delay(1);
 		}
-		SDL_Delay(1);
 	}
+	//cout<<"window destroy stop"<<endl;
+	sdl_event_manager::destroy();
+	return 0;
 }
+//------------------------------------------------
 //------------------------------------------
 //更新窗口位置
 int sdl_frame::pos(int x,int y)
@@ -2495,7 +1806,7 @@ int sdl_frame::size(int w,int h)
 {
 	if(!_window)return -1;
 	if(_window->size(w,h))return -1;
-	if(sdl_board::size(w,h))return -1;
+	//if(sdl_board::size(w,h))return -1;
 	_screen.surface(_window->get_window_surface()->surface());
 	return 0;
 }
@@ -2556,371 +1867,5 @@ int sdl_widget::init(const char* title,int px,int py,int pw,int ph,Uint32 pflags
 int sdl_widget::sysevent(SDL_Event* e)
 {
 	return sdl_board::sysevent(e);
-}
-//------------------------------------------------------------------
-//
-//
-//
-//---------------------------------------------------------------------
-sdl_clip::sdl_clip()
-:
-sdlsurface()
-{
-	init();
-}
-sdl_clip::sdl_clip(sdlsurface* clip,int w,int h)
-:
-sdlsurface()
-{
-	init(clip,w,h);	
-}
-sdl_clip::~sdl_clip()
-{
-	delete[] _clip_surface;	
-}
-int sdl_clip::init()
-{
-	_clip_surface = NULL;
-	if(sdlsurface::init())return -1;
-	return 0;
-}
-int sdl_clip::init(sdlsurface* pclip,int w,int h)
-{
-	SDL_Rect* rt;
-	init();
-	if(pclip == NULL)return -1;
-	//更新操作对象
-	rt = pclip->clip_rect();
-	sdlsurface::init(0,rt->w,rt->h,32,0,0,0,0);
-	pclip->blit_surface(NULL,this,NULL);
-	//初始化剪辑
-	return clip(w,h);
-}
-int sdl_clip::init(Uint32 pflags,int pw,int ph,int pdepth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
-{
-	return	sdlsurface::init(pflags,pw,ph,pdepth,Rmask,Gmask,Bmask,Amask); 
-}
-//用于初始化表面剪辑
-//w和h分别表示每个剪辑的宽度和高度
-//这个函数会自动计算把表面分成了几个剪辑
-int sdl_clip::clip(int w,int h)
-{
-	//return 0;
-	int x,y;
-	//SDL_Rect tclip;
-	//先得取当前表面的宽度和高度
-	int src_w = sdlsurface::clip_rect()->w;
-	int src_h = sdlsurface::clip_rect()->h;
-	//更新每个剪辑的高度和宽度
-	_clip_rect.w = w;
-	_clip_rect.h = h;
-	//计算这个表面可以剪辑的行与列
-	_clip_rect.x = int(src_w/_clip_rect.w+0.9);
-	_clip_rect.y = int(src_h/_clip_rect.h+0.9);
-	//更新剪辑数组
-	if(_clip_surface)delete[] _clip_surface;
-	_clip_surface = new sdlsurface[row()*column()];
-	//更新每个剪辑表面
-	for(y=0;y<row();y++)
-	{
-		for(x=0;x<column();x++)
-		{
-			//初始子剪辑
-			_clip_surface[x+y*column()].init(0,_clip_rect.w,_clip_rect.h,32,0,0,0,0);
-			//更新子剪辑表面
-			read(x,y);
-		}
-	}
-	return 0;
-}
-/* 读取所有剪辑 */
-int sdl_clip::read()
-{
-	int x,y;
-	for(y=0;y<column();y++)
-	{
-		for(x=0;x<row();x++)
-		{
-			read(x,y);
-		}
-	}
-	return 0;
-}
-int sdl_clip::read(int x,int y)
-{
-	//取得指定的剪辑引索
-	int tx = (x>column())?column():x;
-	int ty = (y>row())?row():y;
-	//取得指定剪辑的坐标
-	SDL_Rect rt = clip_rect(tx,ty);
-	//更新指定剪辑表面
-	blit_surface(&rt,operator()(x,y),NULL);
-	return 0;
-}
-int sdl_clip::row()
-{
-	return _clip_rect.y;
-	return _width;
-}
-int sdl_clip::column()
-{
-	return _clip_rect.x;
-	return _height;
-}
-int sdl_clip::write()
-{
-	int i,j;
-	for(i=0;i<row();i++)
-	{
-		for(j=0;j<column();j++)
-		{
-			write(j,i);
-		}
-	}
-	return 0;
-}
-int sdl_clip::write(int x,int y)
-{
-	sdlsurface* t = operator()(x,y);
-	SDL_Rect rt = clip_rect(x,y);
-	if(t)t->blit_surface(NULL,this,&rt);
-	return  0;
-}
-//取得指定引索的剪辑对象
-sdlsurface* sdl_clip::operator()(int x,int y)
-{
-	if((x+y*column()) >= row()*column())return NULL;
-	if(_clip_surface)return &_clip_surface[y*column()+x];
-	return NULL;
-}
-sdlsurface* sdl_clip::operator[](SDL_Point pt)
-{
-	return operator()(pt.x,pt.y);
-}
-//取得指定引索的剪辑范围
-SDL_Rect sdl_clip::clip_rect(int x,int y)
-{
-	SDL_Rect rt;
-	rt.x = ((x>=column())?column()-1:x)*_clip_rect.w;
-	rt.y = ((y>=column())?row()-1:y)*_clip_rect.h;
-	rt.w = _clip_rect.w;
-	rt.h = _clip_rect.h;
-	return rt;
-}
-//-----------------------------------------------------------------------------
-//
-//
-//
-//
-//
-//                           基础工具集
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//---------------------------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------------------------
-//
-//
-//  								Button 类
-//
-//---------------------------------------------------------------------------------------------------------
-typedef class sdl_button : public GUI<sdl_button,sdl_widget>
-{
-	public:
-		sdl_button();
-		sdl_button(const char*,int,int,int,int,Uint32);
-		virtual ~sdl_button();
-		int init();
-		int init(const char*,int,int,int,int,Uint32);
-		int sysevent(SDL_Event*);
-		/* 失去焦点页面 */
-		sdlsurface* killfocus_page();
-		/* 释放鼠标页面 */
-		sdlsurface* release_page();
-		/* 按下鼠标页面 */
-		sdlsurface* press_page();
-		/* 更新页面 */
-		int update_page();
-		int clip(sdlsurface*);
-		int clip(const char*);
-	protected:
-		/* 内部初始化表面 */
-		int draw();
-	protected:
-		sdlsurface _button_frame;
-		sdl_clip _button_clip;
-}*sdl_button_ptr;
-//---------------------------------------------------
-//
-//
-//
-//----------------------------------------------------
-//
-sdl_button::sdl_button()
-:
-GUI<sdl_button,sdl_widget>()
-{
-	init();
-}
-sdl_button::sdl_button(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
-:
-GUI<sdl_button,sdl_widget>()
-{
-	init(ptitle,px,py,pw,ph,pflag);
-}
-sdl_button::~sdl_button()
-{
-
-}
-int sdl_button::init()
-{
-	if(sdl_widget::init())return -1;
-	return 0;
-}
-int sdl_button::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
-{
-	string text_str(SDL_GetPlatform());
-	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
-	/* 设置按钮文本渲染范围 */
-	_text_rect.x = (_rect.w-_text_board->clip_rect()->w)/2;
-	_text_rect.y = (_rect.h-_text_board->clip_rect()->h)/2;
-	//
-	_button_clip.init(0,pw*4,ph,32,0,0,0,0);
-	_button_clip.clip(pw,ph);
-	//-------------------------------------------
-	//_button_clip(0,0)->fill_rect(NULL,0xff0000);
-	//_button_clip(1,0)->fill_rect(NULL,0x00ff00);
-	//_button_clip(2,0)->fill_rect(NULL,0x0000ff);
-	//_button_clip(3,0)->fill_rect(NULL,0xffff00);
-	//_button_clip.write();
-	draw();
-	_button_clip(0,0)->blit_surface(NULL,this,NULL);
-	return 0;
-}
-int sdl_button::clip(sdlsurface* sur)
-{
-	if(!sur)return -1;
-	//sur->blit_surface(_button_clip.clip_rect(),&_button_clip,NULL);
-	sur->blit_surface(sur->clip_rect(),&_button_clip,NULL);
-	_button_clip.read();
-	_button_clip(0,0)->blit_surface(NULL,this,NULL);
-	return 0;
-}
-int sdl_button::clip(const char* path)
-{
-	if(!path)return 0;
-	_button_clip.img_load(path);
-	_button_clip.read();
-	_button_clip(0,0)->blit_surface(NULL,this,NULL);
-	return 0;
-}
-sdlsurface* sdl_button::killfocus_page()
-{
-	return _button_clip(0,0);
-}
-sdlsurface* sdl_button::release_page()
-{
-	return _button_clip(1,0);
-}
-sdlsurface* sdl_button::press_page()
-{
-	return _button_clip(2,0);
-}
-int sdl_button::update_page()
-{
-	return _button_clip.write();
-
-}
-int sdl_button::draw()
-{
-	sdlsurface* tsur;
-	int x,y;
-	Uint32 color;
-	y = _rect.w;
-	y = ((y>_rect.h)?_rect.h:y)/2.0+0.5;
-	/* 画离开页面 */
-	tsur = _button_clip(0,0);
-	for(x=0;x<y;x++)
-	{
-		color = 0xfff000 | ((2*x-1)*8);
-		tsur->rectangle(x,x,_rect.w-x,_rect.h-x-1,color);
-	}
-	/* 画释放页面 */
-	tsur = _button_clip(1,0);
-	for(x=0;x<y;x++)
-	{
-		color = 0xffff00 | ((2*x-1)*8);
-		tsur->rectangle(x,x,_rect.w-x,_rect.h-x-1,color);
-	}
-	/* 画点击页面 */
-	tsur = _button_clip(2,0);
-	for(x=0;x<y;x++)
-	{
-		color = 0xff0f00 | ((2*x-1)*8);
-		tsur->rectangle(x,x,_rect.w-x,_rect.h-x-1,color);
-	}
-	/* 更新按钮表面 */
-	_button_clip.write();
-	//
-	return 0;
-}
-int sdl_button::sysevent(SDL_Event* e)
-{
-	static int is_down = 0;
-	SDL_Event _event;
-	SDL_UserEvent _ue;
-	_ue.type = SDL_USEREVENT;
-	_ue.data1= this;
-	switch(e->type)
-	{
-		case SDL_USEREVENT:
-			switch(e->user.code)
-			{
-				case sdlgui_window_focus:
-					if(*(int*)e->user.data1)
-					{
-						//_button_clip(1,0)->blit_surface(NULL,this,NULL);
-					}
-				break;
-			}
-		break;
-		case SDL_MOUSEBUTTONUP:
-			if(is_down)
-			{
-				_ue.type = SDL_USEREVENT;
-				_ue.code= sdlgui_button_click;
-				_ue.data1 = this;
-				_event.type = SDL_USEREVENT;
-				_event.user = _ue;
-				parent()->event(&_event);
-			}
-			_button_clip(1,0)->blit_surface(NULL,this,NULL);
-			is_down = 0;
-			capture(0);
-		break;
-		case SDL_MOUSEBUTTONDOWN:
-			is_down = 1;
-			_button_clip(2,0)->blit_surface(NULL,this,NULL);
-			capture(1);
-			//---------
-		break;
-		case SDL_KEYUP:
-			_event.type = SDL_MOUSEBUTTONUP;
-			event(&_event);
-		break;
-		case SDL_KEYDOWN:
-			_event.type = SDL_MOUSEBUTTONDOWN;
-			event(&_event);
-		break;
-	}
-	return sdl_widget::sysevent(e);
 }
 #endif//__SDLWINDOW_HANDLE__

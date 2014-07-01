@@ -1,4 +1,1 @@
-﻿#ifndef __SDLGUI_EVENT_MANAGER_HEAD__
-#define __SDLGUI_EVENT_MANAGER_HEAD__
-
-#endif //__SDLGUI_EVENT_MANAGER_HEAD__
+﻿

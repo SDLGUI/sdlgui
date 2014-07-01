@@ -42,6 +42,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <cmath>
 #include <iostream>
+#include "sdlthread.h"
 using namespace std;
 /////////////////////////////////////////////////
 class sdlsurface;
@@ -67,6 +68,8 @@ typedef class sdlsurface
 	protected:
 		SDL_Surface *_surface;
 		SDL_Rect _surface_rect;
+		/* 线程锁 */
+		sdl_semaphore _thread_lock;
 	public:
 		///-------------------------------------
 		sdlrenderer* create_software_renderer();
@@ -183,6 +186,8 @@ typedef class sdltext : public sdlsurface
 		int render_unicode_blended(const Uint16*,Uint32);
 		int render_glyph_blended(const Uint16,Uint32);
 		//--------------------------------------
+	public:
+		static string font_path;
 	protected:
 		TTF_Font* _font;
 		char* _text;
@@ -190,6 +195,7 @@ typedef class sdltext : public sdlsurface
 		static int is_init;
 }*sdltext_ptr;
 int sdltext::is_init = 0;
+string sdltext::font_path="";
 //--------------------------------------------
 //
 ///
@@ -296,6 +302,7 @@ class sdlwindow
 sdlsurface::sdlsurface()
 {
 	_surface = NULL;
+	_thread_lock.init(1);
 	init();
 }
 sdlsurface::sdlsurface(SDL_Surface* sur)
@@ -316,18 +323,25 @@ sdlsurface::~sdlsurface()
 {
 	if(_surface)
 	{
+		//_thread_lock.wait();
 		free_surface();
+		//SDL_FreeSurface(_surface);
+		//_thread_lock.post();
 	}
+	_thread_lock.destroy();
 }
 int sdlsurface::surface(SDL_Surface* surface)
 {
+	int i=-1;
 	if(surface)
 	{
+		_thread_lock.wait();
 		if(_surface)free_surface();
 		_surface = surface;
-		return 0;
+		i = 0;
+		_thread_lock.post();
 	}
-	return -1;
+	return i;
 }
 int sdlsurface::init()
 {
@@ -336,37 +350,50 @@ int sdlsurface::init()
 }
 int sdlsurface::init(SDL_Surface* sur)
 {
+	int i=-1;
 	if(sur)
 	{
+		_thread_lock.wait();
 		if(_surface)free_surface();
 		_surface = sur;		
-		return 0;
+		i = 0;
+		_thread_lock.post();
 	}
-	return -1;
+	return i;
 }
 int sdlsurface::init(Uint32 flags,int width,int height,int depth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
 {
+	//_thread_lock.wait();
 	if(_surface)free_surface();
 	create_rgb_surface(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
+	//cout<<"surface unlock"<<endl;
+	//_thread_lock.post();
 	return 0;
 }
 int sdlsurface::create_rgb_surface(Uint32 flags,int width,int height,int depth,Uint32 Rmask,Uint32 Gmask,Uint32 Bmask,Uint32 Amask)
 {
+	_thread_lock.wait();
 	if(_surface)free_surface();
-	//_surface = NULL;
 	_surface = SDL_CreateRGBSurface(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
+	_thread_lock.post();
 	if(_surface)return 0;
 	return -1;
 }
 int sdlsurface::fill_rect(const SDL_Rect* rect,Uint32 color)
 {
-	return SDL_FillRect(_surface,rect,color);
+	int i;
+	//_thread_lock.wait();
+	i = 	SDL_FillRect(_surface,rect,color);
+	//_thread_lock.post();
+	return i;
 }
 int sdlsurface::load_bmp(const char* file)
 {
+	_thread_lock.wait();
 	if(_surface)free_surface();
 	_surface = SDL_LoadBMP(file);
 	//_surface = SDL_CreateRGBSurfaceFrom(t->pixels,t->w,t->h,t->format->BitsPerPixel,t->pitch,t->format->Rmask,t->format->Gmask,t->format->Bmask,t->format->Amask);
+	_thread_lock.post();
 	if(_surface)return 0;
 	return -1;
 }
@@ -374,78 +401,116 @@ int sdlsurface::load_bmp(const char* file)
 //位块传输方法，第一个参数为位块源的传输范围，第二个参数为目标位块，第三个参数为目标传输范围。成功返回0
 int sdlsurface::blit_surface(const SDL_Rect* srcrect,sdlsurface* dst,SDL_Rect* dstrect)
 {
+	int i=-1;
 	if(dst)
 	{
-		return SDL_BlitSurface(_surface,srcrect,dst->surface(),dstrect);
+		//_thread_lock.wait();
+		i = SDL_BlitSurface(_surface,srcrect,dst->surface(),dstrect);
+		//_thread_lock.post();
 	}
-	return -1;
+	return i;
 }
 //-------------------------------------------------
 //释放无用的surface
 int sdlsurface::free_surface()
 {
 	/* 这个函数没有返回值 */
+	//_thread_lock.wait();
 	SDL_FreeSurface(_surface);
 	_surface = NULL;
+	//_thread_lock.post();
 	return 0;
 }
 //设置表面混合模式
 int sdlsurface::surface_blend_mode(SDL_BlendMode mode)
 {
-	return SDL_SetSurfaceBlendMode(_surface,mode);
+	int i;
+	_thread_lock.wait();
+	i = SDL_SetSurfaceBlendMode(_surface,mode);
+	_thread_lock.post();
+	return i; 
 }
 //-------------------------------------------------
 //设置表面色彩模式
 int sdlsurface::surface_color_mod(Uint8 r,Uint8 g,Uint8 b)
 {
-	return SDL_SetSurfaceColorMod(_surface,r,g,b);
+	int i;
+	_thread_lock.wait();
+	i = SDL_SetSurfaceColorMod(_surface,r,g,b);
+	_thread_lock.post();
+	return i;
 }
 //--------------------------------------------------
 //设置表面ALPHA模式
 int sdlsurface::surface_alpha_mod(Uint8 a)
 {
-	return SDL_SetSurfaceAlphaMod(_surface,a);
+	int i;
+	_thread_lock.wait();
+	i =	SDL_SetSurfaceAlphaMod(_surface,a);
+	_thread_lock.post();
+	return i;
 }
 //--------------------------------------------------
 //得到表面ALPHA模式
 Uint8 sdlsurface::surface_alpha_mod()
 {
 	Uint8 a;
+	_thread_lock.wait();
 	SDL_GetSurfaceAlphaMod(_surface,&a);
+	_thread_lock.post();
 	return a;
 }
 //--------------------------------------
 //设置表面调色盘
 int sdlsurface::set_surface_palette(SDL_Palette* palette)
 {
-	return SDL_SetSurfacePalette(_surface,palette);
+	int i;
+	_thread_lock.wait();
+	i = SDL_SetSurfacePalette(_surface,palette);
+	_thread_lock.post();
+	return i;
 }
 //-------------------------------------------
 //将表面以BMP位图格式写入磁盘文件。
 int sdlsurface::save_BMP(const char* file)
 {
-	return SDL_SaveBMP(_surface,file);
+	int i;
+	_thread_lock.wait();
+	i = SDL_SaveBMP(_surface,file);
+	_thread_lock.post();
+	return i;
 }
 //----------------------------------------------
 //将表面缩放传输到目标位块。
 int sdlsurface::blit_scaled(const SDL_Rect* srcrect,sdlsurface* dst,SDL_Rect* dstrect)
 {
+	int i=-1;
 	if(dst)
-	return SDL_BlitScaled(_surface,srcrect,dst->surface(),dstrect);
-	return -1;
+	{
+		//_thread_lock.wait();
+		i = SDL_BlitScaled(_surface,srcrect,dst->surface(),dstrect);
+		//_thread_lock.post();
+	}
+	return i;
 }
 //------------------------------------------------
 //将表面转换成指定格式，并返回新的表面指针
 sdlsurface* sdlsurface::convert_surface(SDL_PixelFormat* fmt,Uint32 flags = 0)
 {
-	return new sdlsurface(SDL_ConvertSurface(_surface,fmt,flags));
+	sdlsurface* tsur;
+	_thread_lock.wait();
+	tsur = new sdlsurface(SDL_ConvertSurface(_surface,fmt,flags));
+	_thread_lock.post();
+	return  tsur;
 }
 //----------------------------------------------
 //得到表面剪辑
 SDL_Rect* sdlsurface::clip_rect()
 {
+	_thread_lock.wait();
 	memset((char*)&_surface_rect,0x00,sizeof(SDL_Rect));
 	SDL_GetClipRect(_surface,&_surface_rect);
+	_thread_lock.post();
 	return &_surface_rect;
 }
 //------------------------------------------------------
@@ -758,15 +823,21 @@ int sdltext::render_glyph_blended(const Uint16 ptext,Uint32 pcolor)
 //由表面创建一个渲染器
 sdlrenderer* sdlsurface::create_software_renderer()
 {
-	return new sdlrenderer(SDL_CreateSoftwareRenderer(_surface));
+	_thread_lock.wait();
+	sdlrenderer* tren;
+	tren= new sdlrenderer(SDL_CreateSoftwareRenderer(_surface));
+	_thread_lock.post();
+	return tren;
 }
 //-----------------------------------------
 //得到指定坐标的像素值
 int sdlsurface::pixel(int x,int y)
 {
 	if(_surface==NULL)return -1;
+	_thread_lock.wait();
 	int bpp = _surface->format->BytesPerPixel;
 	Uint8 *p = (Uint8 *)_surface->pixels + y * _surface->pitch + x * bpp;
+	_thread_lock.post();
 	switch(bpp)
 	{
 		case 1:return *p;
@@ -786,6 +857,7 @@ int sdlsurface::pixel(int x,int y)
 int sdlsurface::pixel(int x,int y,Uint32 v)
 {
 	if(_surface == NULL)return -1;
+	_thread_lock.wait();
 	int bpp = _surface->format->BytesPerPixel;
 	Uint8 *p = (Uint8*)_surface->pixels+y*_surface->pitch+x*bpp;
 	switch(bpp)
@@ -814,6 +886,7 @@ int sdlsurface::pixel(int x,int y,Uint32 v)
 				*(Uint32*)p=v;
 			break;
 	}
+	_thread_lock.post();
 	return 0;
 }
 //----------------------------------------------------------
@@ -1160,12 +1233,14 @@ int sdlsurface::rotate(float j)
 int sdlsurface::img_load(const char* pfile)
 {
 	if(pfile == NULL)return -1;
+	_thread_lock.wait();
 	if(_surface)
 	{
 		SDL_FreeSurface(_surface);
 		_surface = NULL;
 	}
 	_surface = IMG_Load(pfile);
+	_thread_lock.post();
 	if(_surface)return 0;
 	return -1;
 }
@@ -1179,41 +1254,60 @@ int sdlsurface::must_lock()
 //锁定表面
 int sdlsurface::lock_surface()
 {
-	SDL_LockSurface(_surface);
+	int i;
+	_thread_lock.wait();
+	i = SDL_LockSurface(_surface);
+	_thread_lock.post();
 	return 0;
 }
 //-----------------------------------------------
 //解锁表面
 int sdlsurface::unlock_surface()
 {
+	_thread_lock.wait();
 	SDL_UnlockSurface(_surface);
+	_thread_lock.post();
 	return 0;
 }
 //-------------------------------------------------
 //设置表面ALPHA模式的关键色
 int sdlsurface::color_key(int flag,Uint32 key)
 {
-	return SDL_SetColorKey(_surface,flag,key);
+	int i;
+	_thread_lock.wait();
+	i= SDL_SetColorKey(_surface,flag,key);
+	_thread_lock.post();
+	return i;
 }
 //-------------------------------------------------
 //得到ALPHA模式的关键色
 Uint32 sdlsurface::color_key()
 {
 	Uint32 key;
+	_thread_lock.wait();
 	SDL_GetColorKey(_surface,&key);
+	_thread_lock.post();
 	return key;
 }
 //-------------------------------------------------
 //
 Uint32 sdlsurface::map_rgb(Uint8 r,Uint8 g,Uint8 b)
 {
-	return SDL_MapRGB(_surface->format,r,g,b);
+	Uint32 i;
+	_thread_lock.wait();
+	i= SDL_MapRGB(_surface->format,r,g,b);
+	_thread_lock.post();
+	return i;
 }
 //-------------------------------------------------
 //
 Uint32 sdlsurface::map_rgba(Uint8 r,Uint8 g,Uint8 b,Uint8 a)
 {
-	return SDL_MapRGBA(_surface->format,r,g,b,a);
+	Uint32 i;
+	_thread_lock.wait();
+	i = SDL_MapRGBA(_surface->format,r,g,b,a);
+	_thread_lock.post();
+	return  i;
 }
 #ifndef __ANDROID_OS__
 //-----------------------------------------------------
