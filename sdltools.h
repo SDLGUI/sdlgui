@@ -74,9 +74,11 @@ int sdl_button::handle(int id,SDL_Event* e)
 		case sdlgui_mouse_release:
 			on_release(this,(void*)e);
 		break;
+		default:
+			return sdl_board::handle(id,e);
+		break;
 	}
 	return 0;
-	//return sdl_board::handle(id,e);
 }
 int sdl_button::on_click(sdl_board* obj,void* data)
 {

@@ -1024,6 +1024,8 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//
 	/* 注册委托函数 */
 	sdl_event_manager::push(this);
+	register_event("on_timer");
+	connect_event("on_timer",this,sdlgui_event_timer);
 	register_event("on_click");
 	connect_event("on_click",this,sdlgui_mouse_click);
 	register_event("on_db_click");
@@ -1325,17 +1327,25 @@ int sdl_board::is_show()
 //给底板加入计时器
 SDL_TimerID sdl_board::add_timer(Uint32 timer)
 {
-	return SDL_AddTimer(timer,sdl_board::timer_proc,this);
+	return SDL_AddTimer(timer,sdl_board::timer_proc,(void*)this);
 }
 //-------------------------------------------------
 //窗口计时器公共函数
 Uint32 sdl_board::timer_proc(Uint32 interval,void* p)
 {
+	SDL_Event e;
+	SDL_UserEvent ue;
 	if(p)
 	{
-		((sdl_board*)p)->event_signal("on_timer",(void*)&interval);
+		ue.type = SDL_USEREVENT;
+		ue.code = interval;
+		e.type = SDL_USEREVENT;
+		e.user = ue;
+		((sdl_board*)p)->event_signal("on_timer",(SDL_Event*)&interval);
+		//((sdl_board*)p)->event_signal("on_timer",&e);
+		//((sdl_board*)p)->event_signal("on_click",&e);
 	}
-	return 0;
+	return interval;
 }
 //---------------------------------------------
 //底板窗口委托事件处理
@@ -1424,7 +1434,7 @@ int sdl_board::on_wheel(sdl_board* obj,void* data)
 //窗口计时事件
 int sdl_board::on_timer(sdl_board* obj,void* data)
 {
-	cout<<"timer is"<<(Uint32)data<<endl;
+	cout<<"timer is"<<clock()<<endl;
 	return 0;
 }
 //------------------------------------------------
