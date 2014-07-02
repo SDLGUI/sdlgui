@@ -215,7 +215,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		/* 初始化时用于绘图窗口的虚函数 */
 		virtual int draw(){return 0;}
 		/* 重画当前窗口 */
-		int redraw();
+		virtual int redraw();
 		/* 给底板加入计时器*/
 		//-----------------------------------------------
 		SDL_TimerID add_timer(Uint32);
