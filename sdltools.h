@@ -231,8 +231,7 @@ int sdl_scroll::on_timer(sdl_board* obj,void* e)
 		_step-=0.05;
 		_speed-=_step*(_speed*0.05);
 	}
-	//cout<<_speed<<endl;
-	//fill_rect(NULL,clock());
+	event_signal("on_scroll",(SDL_Event*)e);
 	return 0;
 }
 int sdl_scroll::on_motion(sdl_board* obj,void* e)
@@ -353,6 +352,11 @@ int sdl_v_scroll::on_timer(sdl_board* obj,void* data)
 	float s = _speed/(_rect.h-_bar_rect.h);
 	_point+=s;
 	point(_point);
+	/* 如果指定了滚动对象，则调整对象位置 */
+	if(_scroll_object)	
+	{
+		_scroll_object->pos_y(_scroll_rect.y+(_scroll_rect.y-_scroll_rect.x)*_point);
+	}
 	return 0;
 }
 //-------------------------------------------------
@@ -434,6 +438,11 @@ int sdl_h_scroll::on_timer(sdl_board* obj,void* data)
 	float s = _speed/(_rect.w-_bar_rect.w);
 	_point+=s;
 	point(_point,1);
+	/* 如果指定了滚动对象，则调整对象位置 */
+	if(_scroll_object)	
+	{
+		_scroll_object->pos_y(_scroll_rect.y+(_scroll_rect.y-_scroll_rect.x)*_point);
+	}
 	return 0;
 }
 float sdl_h_scroll::point(float p,int m=0)
