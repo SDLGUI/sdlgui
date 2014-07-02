@@ -1597,7 +1597,7 @@ int sdl_frame::redraw()
 	/* 将窗口传输到屏幕 */
 	_board->blit_surface(NULL,&_screen,NULL);
 	/* 刷新屏幕 */
-	return _window->update_window_surface();
+	return 0;//_window->update_window_surface();
 }
 //----------------------------------------
 //重画函数子线程处理函数
@@ -1826,8 +1826,13 @@ int sdl_frame::run()
 				/* 事件线程解锁 */
 				sdl_event_manager::_event_thread_lock.unlock();
 			}
-			SDL_Delay(1);
+			for(_node = _window_list.begin();_node!=_window_list.end();_node++)
+			{
+				_node_window = (sdl_frame*)_node->second;
+				_node_window->_window->update_window_surface();
+			}
 		}
+		SDL_Delay(1);
 	}
 	//cout<<"window destroy stop"<<endl;
 	sdl_event_manager::destroy();
