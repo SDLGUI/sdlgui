@@ -108,6 +108,7 @@ const int sdlgui_edit_change= edit_event_macro(001);
 const int sdlgui_scroll_point= scroll_event_macro(001);
 const int sdlgui_scroll_show= scroll_event_macro(002);
 const int sdlgui_scroll_hide= scroll_event_macro(003);
+const int sdlgui_scroll_scroll= scroll_event_macro(004);
 //窗口事件类消息集合1005
 #define window_event_macro(y) __event_macro__(1005,y) 
 /* 消息焦点改变时发送的消息 */
@@ -177,8 +178,26 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int hide();
 		/* 返回当前窗口的显示状态 */
 		int is_show();
-		/* 设置当前窗口标题 */
+		/* 设置当前窗口坐标 */
 		int pos(int,int);
+		int pos_x(int);
+		int pos_y(int);
+		/* 得到当前窗口坐标 */
+		SDL_Point pos();
+		int pos_x();
+		int pos_y();
+		/* 设置当前窗口的全局坐标 */
+		/* 得到当前窗口的全局坐标 */
+		SDL_Point global_pos();
+		int global_pos_x();
+		int global_pos_y();
+		/* 坐标转换 */
+		SDL_Point to_global_pos(int,int);
+		int to_global_pos_x(int);
+		int to_global_pos_y(int);
+		SDL_Point to_local_pos(int,int);
+		int to_local_pos_x(int);
+		int to_local_pos_y(int);
 		/* 设置父级窗口对象 */
 		sdl_board* parent(sdl_board*);
 		/* 返回父级窗口对象 */
@@ -1066,17 +1085,113 @@ int sdl_board::pos(int x,int y)
 {
 	_rect.x = x;
 	_rect.y = y;
-	if(_parent)
-	{
-		_global_rect.x = _parent->_global_rect.x+_rect.x;
-		_global_rect.y = _parent->_global_rect.y+_rect.y;
-	}
-	else
-	{
-		_global_rect.x = 0;
-		_global_rect.y = 0;
-	}
 	return 0;
+}
+int sdl_board::pos_x(int x)
+{
+	_rect.x = x;
+	return 0;
+}
+int sdl_board::pos_y(int y)
+{
+	_rect.y = y;
+	return 0;
+}
+//设置当前窗口坐标
+SDL_Point sdl_board::pos()
+{
+	SDL_Point p = {_rect.x,_rect.y};
+	return p;
+}
+int sdl_board::pos_x()
+{
+	return _rect.x;
+}
+int sdl_board::pos_y()
+{
+	return _rect.y;
+}
+//得到当前窗口的全局坐标
+SDL_Point sdl_board::global_pos()
+{
+	return to_global_pos(_rect.x,_rect.y);
+}
+int sdl_board::global_pos_x()
+{
+	return to_global_pos_x(_rect.x);
+}
+int sdl_board::global_pos_y()
+{
+	return to_global_pos_y(_rect.y);
+}
+//坐标转换
+SDL_Point sdl_board::to_global_pos(int x,int y)
+{
+	SDL_Point p={x,y};
+	sdl_board* t = _parent;
+	while(t)
+	{
+		p.x+=t->_rect.x;
+		p.y+=t->_rect.y;
+		t = t->_parent;
+	}
+	return p;
+}
+int sdl_board::to_global_pos_x(int x)
+{
+	int px=_rect.x;
+	sdl_board* t = _parent;
+	while(t)
+	{
+		px+=t->_rect.x;
+		t = t->_parent;
+	}
+	return px;
+}
+int sdl_board::to_global_pos_y(int y)
+{
+	int py=_rect.y;
+	sdl_board* t = _parent;
+	while(t)
+	{
+		py+=t->_rect.y;
+		t = t->_parent;
+	}
+	return py;
+}
+SDL_Point sdl_board::to_local_pos(int x,int y)
+{
+	SDL_Point p={x,y};
+	sdl_board* t = _parent;
+	while(t)
+	{
+		p.x-=t->_rect.x;
+		p.y-=t->_rect.y;
+		t = t->_parent;
+	}
+	return p;
+}
+int sdl_board::to_local_pos_x(int x)
+{
+	int px=_rect.x;
+	sdl_board* t = _parent;
+	while(t)
+	{
+		px-=t->_rect.x;
+		t = t->_parent;
+	}
+	return px;
+}
+int sdl_board::to_local_pos_y(int y)
+{
+	int py=_rect.y;
+	sdl_board* t = _parent;
+	while(t)
+	{
+		py-=t->_rect.y;
+		t = t->_parent;
+	}
+	return py;
 }
 //设置父级窗口
 sdl_board* sdl_board::parent(sdl_board* parent)

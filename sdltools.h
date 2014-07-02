@@ -5,6 +5,13 @@
 #include "sdlthread.h"
 #include "sdl_event_manager.h"
 using namespace std;
+//----------------------------------------------------------------
+//
+//
+//					按钮类
+//
+//
+//----------------------------------------------------------------
 typedef class sdl_button : public GUI<sdl_button,sdl_widget>
 {
 	public:
@@ -91,5 +98,202 @@ int sdl_button::on_release(sdl_board* obj,void* data)
 	_page.clip(1,1,this,NULL);
 	return 0;
 	//return sdl_widget::on_release(obj,data);
+}
+//----------------------------------------------------------------
+//
+//
+//
+//					滚动条基类
+//
+//
+//----------------------------------------------------------------
+typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
+{
+	public:
+		sdl_scroll();
+		sdl_scroll(const char*,int,int,int,int,Uint32);
+		virtual ~sdl_scroll();
+		int init();
+		int init(const char*,int,int,int,int,Uint32);
+		int sysevent(SDL_Event*);
+		int handle(int,SDL_Event*);
+		int on_timer(sdl_board*,void*);
+		int on_motion(sdl_board*,void*);
+		virtual int on_scroll(sdl_board*,void*);
+		float point();
+		float point(float,int);
+		int scroll(sdl_board*,float,float);
+	public:
+		/* 滑块表面 */
+		sdlsurface bar;
+		/* 滑条 */
+		sdlsurface line;
+	protected:
+		/* 当前滑动点 */
+		float _point;
+		/* 滑动范围 */
+		SDL_Point _rect;
+		/* 滑块坐标 */
+		SDL_Rect _bar_rect;
+		/* 滑动速度 当前滑动点与上个滑动点的差值*/
+		float _speed;
+		/* 滚动对象 */
+		sdl_board* _scroll_object;
+		/* 滚动条计时器 */
+		SDL_TimerID _scroll_timer;
+}*sdl_scroll_ptr;
+sdl_scroll::sdl_scroll()
+	:
+		GUI<sdl_scroll,sdl_widget>()
+{
+	init();
+}
+sdl_scroll::sdl_scroll(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+	:
+		GUI<sdl_scroll,sdl_widget>()
+{
+	init(ptitle,px,py,pw,ph,pflag);
+}
+sdl_scroll::~sdl_scroll()
+{
+	if(_scroll_timer)SDL_RemoveTimer(_scroll_timer);
+}
+int sdl_scroll::init()
+{
+	if(sdl_widget::init())return -1;
+	return 0;
+}
+int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+{
+	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
+	_scroll_timer = NULL;
+	_scroll_object = NULL;
+	fill_rect(NULL,0x00ff00);
+	register_event("on_scroll");
+	connect_event("on_scroll",this,sdlgui_scroll_scroll);
+	return 0;
+}
+float sdl_scroll::point()
+{
+	return _point;
+}
+float sdl_scroll::point(float p,int f=0)
+{
+	_speed = (f)?p-_point:0;
+	_point = p;
+	return p;
+}
+int sdl_scroll::scroll(sdl_board* obj,float start,float end)
+{
+	if(obj)_scroll_object = obj;
+	_rect.x = start;
+	_rect.y = end;
+	return 0;
+}
+int sdl_scroll::sysevent(SDL_Event*e)
+{
+	switch(e->type)
+	{
+		default:
+		break;
+	}
+	return sdl_widget::sysevent(e);
+}
+int sdl_scroll::handle(int id,SDL_Event* e)
+{
+	switch(id)
+	{
+		case sdlgui_scroll_scroll:
+			on_scroll(this,(void*)e);
+		break;
+	}
+	return sdl_board::handle(id,e);
+}
+int sdl_scroll::on_timer(sdl_board* obj,void* e)
+{
+	//cout<<this<<endl;
+	fill_rect(NULL,clock());
+}
+int sdl_scroll::on_motion(sdl_board* obj,void* e)
+{
+	if(((SDL_Event*)e)->motion.state==SDL_BUTTON_LMASK)
+	{
+		event_signal("on_scroll",(SDL_Event*)e);
+	}
+}
+int sdl_scroll::on_scroll(sdl_board* obj,void* e)
+{
+	cout<<this<<" is scrolled"<<endl;
+	return 0;
+}
+//----------------------------------------------
+//
+//
+//				垂直滚动条
+//
+//
+//----------------------------------------------
+typedef class sdl_v_scroll : public GUI<sdl_v_scroll,sdl_scroll>
+{
+	public:
+		sdl_v_scroll();
+		sdl_v_scroll(const char*,int,int,int,int,Uint32);
+		int init();
+		int init(const char*,int,int,int,int,Uint32);
+		int sysevent(SDL_Event*);
+		int handle(int,SDL_Event*);
+		int on_release(sdl_board*,void*);
+		int on_motion(sdl_board*,void*);
+	protected:
+		
+}*sdl_v_scroll_ptr;
+sdl_v_scroll::sdl_v_scroll()
+	:
+		GUI<sdl_v_scroll,sdl_scroll>()
+{
+	init();
+}
+sdl_v_scroll::sdl_v_scroll(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+	:
+		GUI<sdl_v_scroll,sdl_scroll>()
+{
+	init(ptitle,px,py,pw,ph,pflag);
+}
+int sdl_v_scroll::init()
+{
+	if(sdl_scroll::init())return -1;
+	return 0;
+}
+int sdl_v_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
+{
+	if(sdl_scroll::init(ptitle,px,py,pw,ph,pflag))return -1;
+	return 0;
+}
+int sdl_v_scroll::sysevent(SDL_Event*e)
+{
+	switch(e->type)
+	{
+		default:
+			break;
+	}
+	return sdl_scroll::sysevent(e);
+}
+int sdl_v_scroll::handle(int id,SDL_Event* e)
+{
+	return sdl_scroll::handle(id,e);
+}
+int sdl_v_scroll::on_release(sdl_board*obj,void* data)
+{
+	cout<<((SDL_Event*)data)->button.y<<endl;
+	//cout<<this<<endl;
+}
+/* 
+		鼠标移动时计算垂直运动速度 
+ */
+int sdl_v_scroll::on_motion(sdl_board* obj,void* data)
+{
+	int x = ((SDL_Event*)data)->motion.x;
+	cout<<x<<endl;
+	return sdl_scroll::on_motion(obj,data);
 }
 #endif// __SDLGUI_TOOLS_HEAD__
