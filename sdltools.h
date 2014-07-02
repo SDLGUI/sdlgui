@@ -223,7 +223,7 @@ int sdl_scroll::on_motion(sdl_board* obj,void* e)
 }
 int sdl_scroll::on_scroll(sdl_board* obj,void* e)
 {
-	cout<<this<<" is scrolled"<<endl;
+	//cout<<this<<" is scrolled"<<endl;
 	return 0;
 }
 //----------------------------------------------
@@ -293,7 +293,7 @@ int sdl_v_scroll::on_release(sdl_board*obj,void* data)
 int sdl_v_scroll::on_motion(sdl_board* obj,void* data)
 {
 	int x = ((SDL_Event*)data)->motion.x;
-	cout<<x<<endl;
+	cout<<"local:"<<to_local_pos_x(x)<<endl;
 	return sdl_scroll::on_motion(obj,data);
 }
 #endif// __SDLGUI_TOOLS_HEAD__

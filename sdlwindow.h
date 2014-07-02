@@ -1127,7 +1127,7 @@ int sdl_board::global_pos_y()
 //坐标转换
 SDL_Point sdl_board::to_global_pos(int x,int y)
 {
-	SDL_Point p={x,y};
+	SDL_Point p={x+_rect.x,y+_rect.y};
 	sdl_board* t = _parent;
 	while(t)
 	{
@@ -1139,7 +1139,7 @@ SDL_Point sdl_board::to_global_pos(int x,int y)
 }
 int sdl_board::to_global_pos_x(int x)
 {
-	int px=_rect.x;
+	int px=x+_rect.x;
 	sdl_board* t = _parent;
 	while(t)
 	{
@@ -1150,7 +1150,7 @@ int sdl_board::to_global_pos_x(int x)
 }
 int sdl_board::to_global_pos_y(int y)
 {
-	int py=_rect.y;
+	int py=y+_rect.y;
 	sdl_board* t = _parent;
 	while(t)
 	{
@@ -1161,7 +1161,7 @@ int sdl_board::to_global_pos_y(int y)
 }
 SDL_Point sdl_board::to_local_pos(int x,int y)
 {
-	SDL_Point p={x,y};
+	SDL_Point p={x-_rect.x,y-_rect.y};
 	sdl_board* t = _parent;
 	while(t)
 	{
@@ -1173,7 +1173,7 @@ SDL_Point sdl_board::to_local_pos(int x,int y)
 }
 int sdl_board::to_local_pos_x(int x)
 {
-	int px=_rect.x;
+	int px=x-_rect.x;
 	sdl_board* t = _parent;
 	while(t)
 	{
@@ -1184,7 +1184,7 @@ int sdl_board::to_local_pos_x(int x)
 }
 int sdl_board::to_local_pos_y(int y)
 {
-	int py=_rect.y;
+	int py=y-_rect.y;
 	sdl_board* t = _parent;
 	while(t)
 	{
