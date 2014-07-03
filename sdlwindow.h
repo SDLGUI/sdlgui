@@ -120,6 +120,10 @@ const int sdlgui_mouse_db_click= mouse_event_macro(002);
 const int sdlgui_mouse_release= mouse_event_macro(003);
 const int sdlgui_mouse_motion= mouse_event_macro(004);
 const int sdlgui_mouse_wheel= mouse_event_macro(005);
+/* 按键事件集合1007 */
+#define key_event_macro(y) __event_macro__(1007,y) 
+const int sdlgui_key_down= key_event_macro(001);
+const int sdlgui_key_up= key_event_macro(002);
 
 //-------------------------------------
 //
@@ -242,6 +246,10 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		virtual int on_motion(sdl_board*,void*);
 		/* 鼠标中键滚动事件 */
 		virtual int on_wheel(sdl_board*,void*);
+		/* 键盘按下事件 */
+		virtual int on_keydown(sdl_board*,void*);
+		/* 键盘释放事件 */
+		virtual int on_keyup(sdl_board*,void*);
 		/* 计时事件 */
 		virtual int on_timer(sdl_board*,void*);
 	protected:
@@ -826,6 +834,7 @@ typedef class sdl_widget : public GUI<sdl_widget,sdl_board>
 		~sdl_widget();
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
+		int handle(int,SDL_Event*);
 		int sysevent(SDL_Event*);
 }*sdl_widget_ptr;
 //-------------------------------------
@@ -845,6 +854,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int redraw();
+		int handle(int,SDL_Event*);
 		virtual int sysevent(SDL_Event*);
 		int destroy(int);
 		sdlwindow* frame();
@@ -1059,6 +1069,10 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	connect_event("on_motion",this,sdlgui_mouse_motion);
 	register_event("on_wheel");
 	connect_event("on_wheel",this,sdlgui_mouse_wheel);
+	register_event("on_key_down");
+	connect_event("on_key_down",this,sdlgui_key_down);
+	register_event("on_key_up");
+	connect_event("on_key_up",this,sdlgui_key_up);
 	return 0;
 }
 //------------------------------------------
@@ -1513,6 +1527,12 @@ int sdl_board::handle(int id,SDL_Event* e)
 		case sdlgui_event_timer:
 			on_timer(This,(void*)e);
 		break;
+		case sdlgui_key_down:
+			on_keydown(This,(void*)e);
+		break;
+		case sdlgui_key_up:
+			on_keyup(This,(void*)e);
+		break;
 		default:
 			cout<<"other events"<<endl;
 		break;
@@ -1570,6 +1590,20 @@ int sdl_board::on_motion(sdl_board* obj,void* data)
 int sdl_board::on_wheel(sdl_board* obj,void* data)
 {
 	//cout<<"mouse wheel is"<<this<<endl;
+	return 0;
+}
+//---------------------------------------------
+//底板窗口键盘按下事件委托函数
+int sdl_board::on_keydown(sdl_board* obj,void* data)
+{
+	cout<<"key down is:"<<this<<endl;
+	return 0;
+}
+//---------------------------------------------
+//底板窗口键盘释放事件委托函数
+int sdl_board::on_keyup(sdl_board* obj,void* data)
+{
+	cout<<"key up is:"<<this<<endl;
 	return 0;
 }
 //------------------------------------------------
@@ -1860,16 +1894,28 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			}
 		break;
 		case SDL_KEYUP:
+			t->event(e);
+			t->event_signal("on_key_up",e);
 		break;
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
 		case SDL_KEYDOWN:
+			//cout<<this<<endl;
+			t->event(e);
+			t->event_signal("on_key_down",e);
 			//if(_active_win != this)_active_win->event(e);
 			//_active_win->event(e);
 		break;
 	}
 	return 0;
 }
+//---------------------------------------------
+//重载窗口委托入口函数
+int sdl_frame::handle(int id,SDL_Event*e)
+{
+	return sdl_board::handle(id,e);
+}
+//--------------------------------------------
 //重载窗口的系统事件处理函数。
 int sdl_frame::sysevent(SDL_Event* e)
 {
@@ -1941,7 +1987,7 @@ int sdl_frame::run()
 				{
 					case SDL_QUIT:
 						//cout<<_node_window<<endl;
-						_node_window->event(&_main_event);
+						_node_window->event(&sdl_frame::_main_event);
 					break;
 					case SDL_WINDOWEVENT:
 						//event(&_main_event);
@@ -2051,6 +2097,10 @@ int sdl_widget::init(const char* title,int px,int py,int pw,int ph,Uint32 pflags
 {
 	if(sdl_board::init(title,px,py,pw,ph,pflags))return -1;
 	return 0;
+}
+int sdl_widget::handle(int id,SDL_Event* e)
+{
+	return sdl_board::handle(id,e);
 }
 int sdl_widget::sysevent(SDL_Event* e)
 {
