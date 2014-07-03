@@ -164,11 +164,12 @@ sdl_scroll::~sdl_scroll()
 int sdl_scroll::init()
 {
 	if(sdl_widget::init())return -1;
+	_point = 0;
 	return 0;
 }
 int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
-	if(sdl_widget::init(ptitle,px,py,pw,ph,pflag))return -1;
+	if(sdl_widget::init(NULL,px,py,pw,ph,pflag))return -1;
 	_scroll_timer = NULL;
 	_scroll_object = NULL;
 	fill_rect(NULL,0x00ff00);
@@ -182,8 +183,8 @@ float sdl_scroll::point()
 }
 float sdl_scroll::point(float p,int f=0)
 {
-	_speed = (f)?p-_point:0;
-	_point = p;
+	//_speed = (f)?p-_point:0;
+	//_point = p;
 	return p;
 }
 int sdl_scroll::scroll(sdl_board* obj,float start,float end)
@@ -220,9 +221,8 @@ int sdl_scroll::handle(int id,SDL_Event* e)
 }
 int sdl_scroll::on_timer(sdl_board* obj,void* e)
 {
-	if((_step<0))
+	if((_step<=0))
 	{
-		_speed = 0;
 		SDL_RemoveTimer(_scroll_timer);
 		_scroll_timer = 0;
 	}
@@ -238,6 +238,7 @@ int sdl_scroll::on_motion(sdl_board* obj,void* e)
 {
 	if(!_scroll_timer && (((SDL_Event*)e)->motion.state==SDL_BUTTON_LMASK))
 	{
+		_step = 1;
 		_scroll_timer = add_timer(100);
 	}
 	return 0;
@@ -248,6 +249,7 @@ int sdl_scroll::on_release(sdl_board* obj,void* e)
 }
 int sdl_scroll::on_scroll(sdl_board* obj,void* e)
 {
+	//cout<<"scroll is:"<<this<<endl;
 	return 0;
 }
 //----------------------------------------------
@@ -307,11 +309,13 @@ float sdl_v_scroll::point(float p,int m=0)
 	if(_point>1)
 	{
 		_point = 1;
+		_step = 0;
 	}
 	else
 	if(_point<0)
 	{
 		_point = 0;
+		_step = 0;
 	}
 	_bar_rect.y = _rect.h*_point;
 	if(_bar_rect.y>_rect.h-_bar_rect.h)
@@ -351,7 +355,7 @@ int sdl_v_scroll::on_timer(sdl_board* obj,void* data)
 	if(sdl_scroll::on_timer(obj,data))return -1;
 	float s = _speed/(_rect.h-_bar_rect.h);
 	_point+=s;
-	point(_point);
+	point(_point,1);
 	/* 如果指定了滚动对象，则调整对象位置 */
 	if(_scroll_object)	
 	{

@@ -1359,7 +1359,10 @@ int sdl_board::redraw()
 	map<sdl_board*,int>::iterator node = _board_list.begin();
 	//map<sdl_board*,int>::reverse_iterator node = _board_list.rbegin();
 	blit_surface(NULL,_board,NULL);
-	_text_board->blit_surface(NULL,_board,&_text_rect);
+	if(_text_board)
+	{
+		_text_board->blit_surface(NULL,_board,&_text_rect);
+	}
 	//_thread_lock.wait();
 	//cout<<"start redraw "<<this<<endl;
 	while(node!=_board_list.end())
