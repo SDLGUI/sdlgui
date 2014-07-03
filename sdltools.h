@@ -236,10 +236,13 @@ int sdl_scroll::on_timer(sdl_board* obj,void* e)
 }
 int sdl_scroll::on_motion(sdl_board* obj,void* e)
 {
-	if(!_scroll_timer && (((SDL_Event*)e)->motion.state==SDL_BUTTON_LMASK))
+	if(((SDL_Event*)e)->motion.state==SDL_BUTTON_LMASK)
 	{
 		_step = 1;
-		_scroll_timer = add_timer(100);
+		if(!_scroll_timer)
+		{
+			_scroll_timer = add_timer(100);
+		}
 	}
 	return 0;
 }
@@ -342,11 +345,14 @@ int sdl_v_scroll::handle(int id,SDL_Event* e)
  */
 int sdl_v_scroll::on_motion(sdl_board* obj,void* data)
 {
-	int y;
+	int s;
+	float p;
 	if((((SDL_Event*)data)->motion.state==SDL_BUTTON_LMASK))
 	{
-		y = ((SDL_Event*)data)->motion.yrel;
-		_speed = y;
+		s = ((SDL_Event*)data)->motion.yrel;
+		_speed = s;
+		p = to_local_pos_y((float)((SDL_Event*)data)->motion.y)/(float)_rect.h;
+		point(p,0);
 	}
 	return sdl_scroll::on_motion(obj,data);
 }
@@ -428,11 +434,14 @@ int sdl_h_scroll::handle(int id,SDL_Event* e)
 }
 int sdl_h_scroll::on_motion(sdl_board* obj,void* data)
 {
-	int x;
+	int s;
+	float p;
 	if((((SDL_Event*)data)->motion.state==SDL_BUTTON_LMASK))
 	{
-		x = ((SDL_Event*)data)->motion.xrel;
-		_speed = x;
+		s = ((SDL_Event*)data)->motion.xrel;
+		_speed = s;
+		p = to_local_pos_x((float)((SDL_Event*)data)->motion.x)/(float)_rect.w;
+		point(p,0);
 	}
 	return sdl_scroll::on_motion(obj,data);
 }
