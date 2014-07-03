@@ -217,8 +217,12 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		/* 重画当前窗口 */
 		virtual int redraw();
 		/* 给底板加入计时器*/
-		//-----------------------------------------------
 		SDL_TimerID add_timer(Uint32);
+		/* 设置底板透明度 */
+		int alpha(Uint8);
+		/* 设置底板混合模式 */
+		int blend(SDL_BlendMode);
+		//-----------------------------------------------
 	public:
 		/* 重载委托事件函数处理 */
 		int handle(int,SDL_Event*);
@@ -1464,6 +1468,26 @@ Uint32 sdl_board::timer_proc(Uint32 interval,void* p)
 		//((sdl_board*)p)->event_signal("on_click",&e);
 	}
 	return interval;
+}
+//--------------------------------------------------
+//设置底板透明度
+int sdl_board::alpha(Uint8 a)
+{
+	if(_board)
+	{
+		return _board->surface_alpha_mod(a);
+	}
+	return -1;
+}
+//----------------------------------------------
+//设置底板混合模式
+int sdl_board::blend(SDL_BlendMode b)
+{
+	if(_board)
+	{
+		return _board->surface_blend_mode(b);
+	}
+	return -1;
 }
 //---------------------------------------------
 //底板窗口委托事件处理
