@@ -813,6 +813,8 @@ typedef class sdl_clip : public sdlsurface
 		int init(int,int,string);
 		int clip(int,int);
 		int clip(int,int,sdlsurface*,SDL_Rect*);
+		int clip_width();
+		int clip_height();
 		//int blit_surface(int,int,sdlsurface*,SDL_Rect*);
 		//int blit_scael(int,int,sdlsurface*,SDL_Rect*);
 	protected:
@@ -1596,21 +1598,21 @@ int sdl_board::on_wheel(sdl_board* obj,void* data)
 //底板窗口键盘按下事件委托函数
 int sdl_board::on_keydown(sdl_board* obj,void* data)
 {
-	cout<<"key down is:"<<this<<endl;
+	//cout<<"key down is:"<<this<<endl;
 	return 0;
 }
 //---------------------------------------------
 //底板窗口键盘释放事件委托函数
 int sdl_board::on_keyup(sdl_board* obj,void* data)
 {
-	cout<<"key up is:"<<this<<endl;
+	//cout<<"key up is:"<<this<<endl;
 	return 0;
 }
 //------------------------------------------------
 //窗口计时事件
 int sdl_board::on_timer(sdl_board* obj,void* data)
 {
-	cout<<"timer is"<<clock()<<endl;
+	//cout<<"timer is"<<clock()<<endl;
 	return 0;
 }
 //------------------------------------------------
@@ -1663,8 +1665,9 @@ int sdl_clip::clip(int pw,int ph)
 }
 int sdl_clip::clip(int ps,int pe,sdlsurface* dst,SDL_Rect *rt = NULL)
 {
+	//cout<<"clip:"<<_column<<endl;
 	SDL_Rect srt={(ps%_column)*_w,(ps/_column)*_h,(pe%_column-ps%_column+1)*_w,((ps-pe)/_column+1)*_h};
-	//cout<<srt.x<<":"<<srt.y<<"-"<<srt.w<<":"<<srt.h<<endl;
+	cout<<srt.x<<":"<<srt.y<<"-"<<srt.w<<":"<<srt.h<<endl;
 	if(!dst)return -1;
 	if(rt)
 	{
@@ -1675,6 +1678,14 @@ int sdl_clip::clip(int ps,int pe,sdlsurface* dst,SDL_Rect *rt = NULL)
 		return blit_surface(&srt,dst,NULL);
 	}
 	return -1;
+}
+int sdl_clip::clip_width()
+{
+	return _w;
+}
+int sdl_clip::clip_height()
+{
+	return _h;
 }
 //-------------------------------------------
 //
