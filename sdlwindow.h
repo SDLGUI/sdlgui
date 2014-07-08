@@ -220,12 +220,16 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		virtual int draw(){return 0;}
 		/* 重画当前窗口 */
 		virtual int redraw();
+		/* 设置底板标题 */
+		int text(const char*);
 		/* 给底板加入计时器*/
 		SDL_TimerID add_timer(Uint32);
 		/* 设置底板透明度 */
 		int alpha(Uint8);
 		/* 设置底板混合模式 */
 		int blend(SDL_BlendMode);
+		/* 设置底板透明色 */
+		int color_key(int,Uint32);
 		//-----------------------------------------------
 	public:
 		/* 重载委托事件函数处理 */
@@ -601,9 +605,7 @@ def_dll int sdl_event_manager::push(sdl_board* obj,string event_string)
 		return -1;
 	}
 	/* 再注册事件到对象事件列表 */
-	//cout<<"event_register start"<<endl;
 	event = (sdl_event_object*)(event_iter->second);
-	//cout<<"event_register stop"<<endl;
 	/* 使用对象事件列表自身注册功能 */
 	return event->event_register(event_string);
 }
@@ -744,7 +746,6 @@ def_dll int sdl_event_manager::run(void* p)
 			if(event_object->_is_destroy)
 			{
 				/* 删除对象节点时是否要删除事件列表中所有调用该对象的委托事件 */
-				//cout<<event_object<<":"<<event_object->_is_destroy<<endl;
 				sdl_event_manager::_event_list.erase(event_object);				
 				//delete event_object;
 			}
@@ -761,18 +762,15 @@ def_dll int sdl_event_manager::run(void* p)
 					event_struct = (sdl_event_struct*)event_struct_iter->second;
 					if(event_struct->count())
 					{
-						//cout<<clock()<<endl;
 						for(event_struct_handle_iter = event_struct->_event.begin();event_struct_handle_iter!=event_struct->_event.end();event_struct_handle_iter++)
 						{
 							/* 调用托管的事件函数 */
 							event_struct_handle = (sdl_event_handle)event_struct_handle_iter->second;
 							if(event_struct_handle.object)
 							{
-								//cout<<"event start"<<event_struct_handle.object<<endl;
 								//event_struct_handle.object;
 								if(sdl_event_manager::_event_list.find(event_struct_handle.object)!=sdl_event_manager::_event_list.end())
 								event_struct_handle.object->handle(event_struct_handle.handle,(SDL_Event*)(event_struct->_event_queue.front()));
-								//cout<<"event stop"<<clock()<<endl;
 							}
 						}
 						event_struct->pull();
@@ -1013,7 +1011,6 @@ sdl_board::~sdl_board()
 //底板初始函数
 int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
-	//cout<<"init board start"<<endl;
 	string cur_platform;
 	if(sdlsurface::init(0,pw,ph,32,0,0,0,0))return -1;
 	//-------------
@@ -1257,7 +1254,7 @@ sdl_board* sdl_board::child(int x,int y)
 		board_node=(sdl_board*)node->first;
 		gw = board_node->_rect.x+board_node->_rect.w;
 		gh = board_node->_rect.y+board_node->_rect.h;
-		if(px>=board_node->_rect.x && px<=gw && py>=board_node->_rect.y && py<=gh)
+		if(board_node->_is_show && !(board_node->_is_destroy) && px>=board_node->_rect.x && px<=gw && py>=board_node->_rect.y && py<=gh)
 		{
 			return board_node->child(px,py);
 		}
@@ -1361,13 +1358,11 @@ int sdl_board::destroy(int p=1)
 	sdl_board* node_board;
 	_is_destroy = p;
 	if(_is_destroy && _parent)_parent->z_top(this,NULL,0);
-	//cout<<"start destor is "<<this<<endl;
 	for(node = _board_list.begin();node!=_board_list.end();node++)
 	{
 		node_board = (sdl_board*)node->first;
 		if(node_board->destroy(1))return -1;		
 	}
-	//cout<<"stop destor is "<<this<<endl;
 	return 0;
 }
 //--------------------------------------------------------
@@ -1377,70 +1372,93 @@ int sdl_board::redraw()
 	sdl_board* node_board;
 	SDL_Rect prt,srt;
 	map<sdl_board*,int>::iterator node = _board_list.begin();
-	//map<sdl_board*,int>::reverse_iterator node = _board_list.rbegin();
+	/* 如果当前底板不显示或准备销毁则不进行重绘 */
 	blit_surface(NULL,_board,NULL);
 	if(_text_board)
 	{
 		_text_board->blit_surface(NULL,_board,&_text_rect);
 	}
 	//_thread_lock.wait();
-	//cout<<"start redraw "<<this<<endl;
 	while(node!=_board_list.end())
 	{
-		//cout<<node->first<<endl;
 		node_board = (sdl_board*)node->first;
-		node_board->redraw();
-		/* 调整画到父级窗口的绘画范围 */
-		if(node_board->_rect.x>0)
+		//if(!node_board->_is_show || node_board->_is_destroy)return 0;
+		if(!node_board->_is_destroy)
 		{
-			srt.x = 0;
-			prt.x = node_board->_rect.x;
-			if(node_board->_rect.x+node_board->_rect.w > _rect.w)
+			if(node_board->_is_show)
 			{
-				prt.w = _rect.w-node_board->_rect.x;
-				srt.w = _rect.w-node_board->_rect.x;
-			}
-			else
-			{
-				prt.w = node_board->_rect.w;
-				srt.w = node_board->_rect.w;
+				node_board->redraw();
+				/* 调整画到父级窗口的绘画范围 */
+				if(node_board->_rect.x>0)
+				{
+					srt.x = 0;
+					prt.x = node_board->_rect.x;
+					if(node_board->_rect.x+node_board->_rect.w > _rect.w)
+					{
+						prt.w = _rect.w-node_board->_rect.x;
+						srt.w = _rect.w-node_board->_rect.x;
+					}
+					else
+					{
+						prt.w = node_board->_rect.w;
+						srt.w = node_board->_rect.w;
+					}
+				}
+				else
+				{
+					prt.x = 0;
+					prt.w = node_board->_rect.w+node_board->_rect.x;
+					srt.x = node_board->_rect.x*-1;
+					srt.w = node_board->_rect.w+node_board->_rect.x;
+				}
+				if(node_board->_rect.y>0)
+				{
+					srt.y = 0;
+					prt.y = node_board->_rect.y;
+					if(node_board->_rect.y+node_board->_rect.h > _rect.h)
+					{
+						prt.h = _rect.h-node_board->_rect.y;
+						srt.h = _rect.h-node_board->_rect.y;
+					}
+					else
+					{
+						prt.h = node_board->_rect.h;
+						srt.h = node_board->_rect.h;
+					}
+				}
+				else
+				{
+					prt.y = 0;
+					prt.h = node_board->_rect.h+node_board->_rect.y;
+					srt.y = node_board->_rect.y*-1;
+					srt.h = node_board->_rect.h+node_board->_rect.y;
+				}
+				node_board->_board->blit_surface(&srt,_board,&prt);
 			}
 		}
-		else
-		{
-			prt.x = 0;
-			prt.w = node_board->_rect.w+node_board->_rect.x;
-			srt.x = node_board->_rect.x*-1;
-			srt.w = node_board->_rect.w+node_board->_rect.x;
-		}
-		if(node_board->_rect.y>0)
-		{
-			srt.y = 0;
-			prt.y = node_board->_rect.y;
-			if(node_board->_rect.y+node_board->_rect.h > _rect.h)
-			{
-				prt.h = _rect.h-node_board->_rect.y;
-				srt.h = _rect.h-node_board->_rect.y;
-			}
-			else
-			{
-				prt.h = node_board->_rect.h;
-				srt.h = node_board->_rect.h;
-			}
-		}
-		else
-		{
-			prt.y = 0;
-			prt.h = node_board->_rect.h+node_board->_rect.y;
-			srt.y = node_board->_rect.y*-1;
-			srt.h = node_board->_rect.h+node_board->_rect.y;
-		}
-		node_board->_board->blit_surface(&srt,_board,&prt);
 		node++;
 	}
-	//cout<<"stop redraw "<<this<<endl;
 	//_thread_lock.post();
 	return 0;
+}
+//-----------------------------------------------
+//设置底板标题
+int sdl_board::text(const char* ptext)
+{
+	if(!_text_board)
+	{
+		_text_board = new sdltext(sdltext::font_path.c_str(),16);
+	}
+	if(_text_board)
+	{
+		_text_board->render_utf8_solid(ptext,_text_color);
+		_text_rect.x = (_rect.w-_text_board->clip_rect()->w)/2,_text_rect.y = (_rect.h-_text_board->clip_rect()->h)/2,_text_rect.w = _rect.w,_text_rect.h = _rect.h;
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
 }
 //显示一个底板窗口
 int sdl_board::show()
@@ -1502,6 +1520,16 @@ int sdl_board::blend(SDL_BlendMode b)
 	if(_board)
 	{
 		return _board->surface_blend_mode(b);
+	}
+	return -1;
+}
+//----------------------------------------------
+//设置底板透明色
+int sdl_board::color_key(int flag,Uint32 color)
+{
+	if(_board)
+	{
+		return _board->color_key(flag,color);
 	}
 	return -1;
 }
@@ -1665,9 +1693,7 @@ int sdl_clip::clip(int pw,int ph)
 }
 int sdl_clip::clip(int ps,int pe,sdlsurface* dst,SDL_Rect *rt = NULL)
 {
-	//cout<<"clip:"<<_column<<endl;
 	SDL_Rect srt={(ps%_column)*_w,(ps/_column)*_h,(pe%_column-ps%_column+1)*_w,((ps-pe)/_column+1)*_h};
-	cout<<srt.x<<":"<<srt.y<<"-"<<srt.w<<":"<<srt.h<<endl;
 	if(!dst)return -1;
 	if(rt)
 	{
@@ -1795,7 +1821,6 @@ int sdl_frame::redraw_thread(void* data)
 	sdl_frame* f = (sdl_frame*)data;
 	while(f->_is_redraw)
 	{
-		//cout<<f<<endl;
 		_frame_timer = clock();
 		//
 		f->redraw();
@@ -1803,7 +1828,6 @@ int sdl_frame::redraw_thread(void* data)
 		//f->_window->update_window_surface();
 		/* 计算帧频 */
 		f->_fps = 1000 / ((clock() - _frame_timer + 0.001));
-		//cout<<f->_fps<<endl;
 		sleep = 1000/60-1000/f->_fps;
 		sleep = (sleep>0)?sleep:0;
 		SDL_Delay((sleep<(1000/60))?sleep:(1000/60));
@@ -1911,7 +1935,6 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
 		case SDL_KEYDOWN:
-			//cout<<this<<endl;
 			t->event(e);
 			t->event_signal("on_key_down",e);
 			//if(_active_win != this)_active_win->event(e);
@@ -1997,7 +2020,6 @@ int sdl_frame::run()
 				switch(sdl_frame::_main_event.type)
 				{
 					case SDL_QUIT:
-						//cout<<_node_window<<endl;
 						_node_window->event(&sdl_frame::_main_event);
 					break;
 					case SDL_WINDOWEVENT:
@@ -2033,7 +2055,6 @@ int sdl_frame::run()
 		}
 		SDL_Delay(1);
 	}
-	//cout<<"window destroy stop"<<endl;
 	sdl_event_manager::destroy();
 	return 0;
 }
@@ -2097,7 +2118,6 @@ GUI<sdl_widget,sdl_board>()
 //窗口工具析构函数
 sdl_widget::~sdl_widget()
 {
-	//cout<<this<<endl;
 }
 int sdl_widget::init()
 {

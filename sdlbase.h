@@ -543,6 +543,7 @@ sdltext::~sdltext()
 {
 	delete[] _text;
 	font(NULL,0);
+	sdlsurface::free_surface();
 }
 int sdltext::init()
 {
@@ -709,10 +710,12 @@ int sdltext::render_text_solid(const char* ptext,Uint32 pcolor)
 }
 int sdltext::render_utf8_solid(const char* ptext,Uint32 pcolor)
 {
+	//cout<<"sdltext::"<<ptext<<endl;
 	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
 	_surface = TTF_RenderUTF8_Solid(_font,ptext,c);
+	text(ptext);
 	if(!_surface)return -1;
 	return 0;
 }
