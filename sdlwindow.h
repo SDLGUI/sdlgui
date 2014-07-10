@@ -125,6 +125,9 @@ const int sdlgui_mouse_wheel= mouse_event_macro(005);
 const int sdlgui_key_down= key_event_macro(001);
 const int sdlgui_key_up= key_event_macro(002);
 
+/* 自定义事件ID */
+#define sdlgui_custom_event 1008
+#define sdlgui_custom_event_macro(x,y) (sdlgui_custom_event+x)*1000+y
 //-------------------------------------
 //
 //
@@ -230,6 +233,10 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int blend(SDL_BlendMode);
 		/* 设置底板透明色 */
 		int color_key(int,Uint32);
+		/* 激活当前窗口 */
+		int active();
+		/* 是否捕捉当前窗口事件 */
+		int capture(int);
 		//-----------------------------------------------
 	public:
 		/* 重载委托事件函数处理 */
@@ -720,6 +727,7 @@ def_dll int sdl_event_manager::call_event(sdl_board* event_object,string event_s
 def_dll int sdl_event_manager::start()
 {
 	sdl_event_manager::_event_process_thread = SDL_CreateThread(sdl_event_manager::run,"sdl_event_manager::run",NULL);
+	return 0;
 }
 def_dll int sdl_event_manager::run(void* p)
 {
@@ -880,6 +888,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		static int _is_exit;
 	protected:
 		static sdl_board* _capture_win;
+		static sdl_board* _active_win;
 		static map<Uint32,sdl_frame*> _window_list;
 	protected:
 		sdlwindow* _window;
@@ -894,6 +903,7 @@ typedef class sdl_frame : public GUI<sdl_frame,sdl_board>
 		SDL_Thread* _redraw_thread;
 }*sdl_frame_ptr;
 sdl_board* sdl_frame::_capture_win = NULL;
+sdl_board* sdl_frame::_active_win= NULL;
 map<Uint32,sdl_frame*> sdl_frame::_window_list;
 SDL_Event sdl_frame::_main_event;
 int sdl_frame::_is_exit=0;
@@ -1533,6 +1543,30 @@ int sdl_board::color_key(int flag,Uint32 color)
 	}
 	return -1;
 }
+//-----------------------------------------------
+//激活当前底板
+int sdl_board::active()
+{
+	return 0;
+}
+//------------------------------------------------
+//是否捕捉当前窗口事件
+int sdl_board::capture(int p=1)
+{
+	if(!sdl_frame::_capture_win)
+	{
+		if(p)
+		{
+			sdl_frame::_capture_win = this;
+		}
+		else
+		{
+			sdl_frame::_capture_win = NULL;
+		}
+		return 0;
+	}
+	return -1;
+}
 //---------------------------------------------
 //底板窗口委托事件处理
 int sdl_board::handle(int id,SDL_Event* e)
@@ -1874,7 +1908,14 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			y = e->tfinger.y * _window_rect.y;
 		break;
 	}
+	if(sdl_frame::_capture_win)
+	{
+		t = sdl_frame::_capture_win;
+	}
+	else
+	{
 	t = child(x,y);
+	}
 	t = (t==0)?(sdl_board*)this : t;
 	switch(e->type)
 	{
@@ -2008,7 +2049,6 @@ int sdl_frame::run()
 				/* 确定事件窗口 */
 				_node = _window_list.find(sdl_frame::_main_event.window.windowID);
 				_node_window = (sdl_frame*)_node->second;
-				//if(!_node_window)return -1;
 				if(!_node_window)
 				{
 					//sdl_frame::_is_exit = 1;

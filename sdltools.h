@@ -170,7 +170,7 @@ int sdl_scroll::init()
 int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag)
 {
 	if(sdl_widget::init(NULL,px,py,pw,ph,pflag))return -1;
-	_scroll_timer = NULL;
+	_scroll_timer = 0;
 	_scroll_object = NULL;
 	fill_rect(NULL,0x00ff00);
 	register_event("on_scroll");
@@ -249,6 +249,7 @@ int sdl_scroll::on_motion(sdl_board* obj,void* e)
 int sdl_scroll::on_release(sdl_board* obj,void* e)
 {
 	_step = 1;
+	return 0;
 }
 int sdl_scroll::on_scroll(sdl_board* obj,void* e)
 {

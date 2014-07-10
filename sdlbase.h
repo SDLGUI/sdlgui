@@ -1019,7 +1019,7 @@ int sdlsurface::circle(int px,int py,int pr,Uint32 color,int pm =0)
 	int i = 0;
 	//新点坐标
 	float tx,ty,tx1,ty1;
-	float pj=0;
+	float pj = 0;
 	switch(bpp)
 	{
 		/* 单色 */

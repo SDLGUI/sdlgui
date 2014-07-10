@@ -26,6 +26,7 @@ def_dll sdl_semaphore::~sdl_semaphore()
 def_dll int sdl_semaphore::init()
 {
 	_semaphore = NULL;
+	return 0;
 }
 def_dll int sdl_semaphore::init(int d)
 {
