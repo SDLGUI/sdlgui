@@ -205,6 +205,12 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		SDL_Point to_local_pos(int,int);
 		int to_local_pos_x(int);
 		int to_local_pos_y(int);
+		/* 设置当前底板大小 */
+		int size(int,int);
+		int width(int);
+		int width();
+		int height(int);
+		int height();
 		/* 设置父级窗口对象 */
 		sdl_board* parent(sdl_board*);
 		/* 返回父级窗口对象 */
@@ -1219,6 +1225,34 @@ int sdl_board::to_local_pos_y(int y)
 		t = t->_parent;
 	}
 	return py;
+}
+//设置底板大小
+int sdl_board::size(int w,int h)
+{
+	sdlsurface tsur(0,w,h,32,0,0,0,0);
+	blit_surface(NULL,&tsur,NULL);
+	_rect.w = w;
+	_rect.h = h;
+	sdlsurface::init(0,w,h,32,0,0,0,0);
+	tsur.blit_surface(NULL,this,NULL);
+	_board->init(0,w,h,32,0,0,0,0);
+	return 0;
+}
+int sdl_board::width(int w)
+{
+	return size(w,_rect.h);
+}
+int sdl_board::width()
+{
+	return _rect.w;
+}
+int sdl_board::height(int h)
+{
+	return size(_rect.w,h);
+}
+int sdl_board::height()
+{
+	return _rect.h;
 }
 //设置父级窗口
 sdl_board* sdl_board::parent(sdl_board* parent)
