@@ -1378,7 +1378,7 @@ int sdl_board::redraw()
 	{
 		_text_board->blit_surface(NULL,_board,&_text_rect);
 	}
-	//_thread_lock.wait();
+	_thread_lock.wait();
 	while(node!=_board_list.end())
 	{
 		node_board = (sdl_board*)node->first;
@@ -1438,7 +1438,7 @@ int sdl_board::redraw()
 		}
 		node++;
 	}
-	//_thread_lock.post();
+	_thread_lock.post();
 	return 0;
 }
 //-----------------------------------------------
