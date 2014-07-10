@@ -1373,12 +1373,12 @@ int sdl_board::redraw()
 	SDL_Rect prt,srt;
 	map<sdl_board*,int>::iterator node = _board_list.begin();
 	/* 如果当前底板不显示或准备销毁则不进行重绘 */
+	_thread_lock.wait();
 	blit_surface(NULL,_board,NULL);
 	if(_text_board)
 	{
 		_text_board->blit_surface(NULL,_board,&_text_rect);
 	}
-	_thread_lock.wait();
 	while(node!=_board_list.end())
 	{
 		node_board = (sdl_board*)node->first;
@@ -1992,7 +1992,6 @@ int sdl_frame::run()
 		if(sdl_frame::_window_list.empty())
 		{
 			sdl_frame::_is_exit = 1;
-			//return 0;
 			break;
 		}
 		else
@@ -2000,7 +1999,7 @@ int sdl_frame::run()
 			while(SDL_PollEvent(&sdl_frame::_main_event))
 			{
 				/* 如果事件处理线程没有锁定则锁定后创建事件 */
-				//sdl_event_manager::_event_thread_lock.lock();
+				sdl_event_manager::_event_thread_lock.lock();
 				if(!sdl_event_manager::_event_thread_is_lock)
 				{
 					//sdl_event_manager::_event_process_thread_cond.wait(sdl_event_manager::_event_thread_lock);
@@ -2012,9 +2011,9 @@ int sdl_frame::run()
 				//if(!_node_window)return -1;
 				if(!_node_window)
 				{
-					sdl_frame::_is_exit = 1;
-					//return 0;
-					break;
+					//sdl_frame::_is_exit = 1;
+					_node = _window_list.begin();
+					_node_window = (sdl_frame*)_node->second;
 				}
 				/* 创建事件 */
 				switch(sdl_frame::_main_event.type)
@@ -2023,7 +2022,6 @@ int sdl_frame::run()
 						_node_window->event(&sdl_frame::_main_event);
 					break;
 					case SDL_WINDOWEVENT:
-						//event(&_main_event);
 						_node_window->event(&sdl_frame::_main_event);
 					break;
 					case SDL_USEREVENT:
@@ -2034,13 +2032,11 @@ int sdl_frame::run()
 						}
 						else
 						{
-							//event(&_main_event);
 							_node_window->event(&sdl_frame::_main_event);
 						}
 					break;
 					default:
 						/* 其它消息分流 */
-						//event_shunt(&_main_event);
 						_node_window->event_shunt(&sdl_frame::_main_event);
 					break;
 				}
