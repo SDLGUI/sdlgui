@@ -112,7 +112,8 @@ const int sdlgui_scroll_scroll= scroll_event_macro(004);
 //窗口事件类消息集合1005
 #define window_event_macro(y) __event_macro__(1005,y) 
 /* 消息焦点改变时发送的消息 */
-const int sdlgui_window_focus= window_event_macro(001);
+const int sdlgui_window_get_focus= window_event_macro(001);
+const int sdlgui_window_kill_focus= window_event_macro(002);
 /* 鼠标事件集合1006 */
 #define mouse_event_macro(y) __event_macro__(1006,y) 
 const int sdlgui_mouse_click= mouse_event_macro(001);
@@ -269,6 +270,10 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		virtual int on_keyup(sdl_board*,void*);
 		/* 计时事件 */
 		virtual int on_timer(sdl_board*,void*);
+		/* 底板得到焦点事件 */
+		virtual int on_get_focus(sdl_board*,void*);
+		/* 底板失去焦点事件 */
+		virtual int on_kill_focus(sdl_board*,void*);
 	protected:
 		static Uint32 timer_proc(Uint32,void*);
 	protected:
@@ -284,7 +289,8 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		SDL_Rect  _text_rect;
 		int _is_show;
 		int _is_destroy;
-		map<sdl_board*,int> _board_list;
+		//map<sdl_board*,int> _board_list;
+		list<sdl_board*> _board_list;
 }*sdl_board_ptr;
 //sdl_board** sdl_board::_hit_board_ptr=NULL;
 //-------------------------------------
@@ -1088,6 +1094,10 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	connect_event("on_key_down",this,sdlgui_key_down);
 	register_event("on_key_up");
 	connect_event("on_key_up",this,sdlgui_key_up);
+	register_event("on_get_focus");
+	connect_event("on_get_focus",this,sdlgui_window_get_focus);
+	register_event("on_kill_focus");
+	connect_event("on_kill_focus",this,sdlgui_window_kill_focus);
 	return 0;
 }
 //------------------------------------------
@@ -1101,10 +1111,6 @@ int sdl_board::init()
 	_is_show = 1;
 	_is_destroy = 0;
 	_parent = NULL;
-	//_end = NULL;
-	//_head = NULL;
-	//_next = NULL;
-	//_last = NULL;
 	_board = NULL;
 	_text_board= NULL;
 	_text_color = 0x000000;
@@ -1288,14 +1294,16 @@ int sdl_board::is_child(sdl_board* obj)
 sdl_board* sdl_board::child(int x,int y)
 {
 	//map<sdl_board*,int>::iterator node;
-	map<sdl_board*,int>::reverse_iterator node = _board_list.rbegin();
+	list<sdl_board*>::reverse_iterator node = _board_list.rbegin();
+	///map<sdl_board*,int>::reverse_iterator node = _board_list.rbegin();
 	sdl_board* board_node;
 	int px,py,gw,gh;
 	px = x-_rect.x;
 	py = y-_rect.y;
 	for(node = _board_list.rbegin();node!=_board_list.rend();node++)
 	{
-		board_node=(sdl_board*)node->first;
+		//board_node=(sdl_board*)node->first;
+		board_node = *node;
 		gw = board_node->_rect.x+board_node->_rect.w;
 		gh = board_node->_rect.y+board_node->_rect.h;
 		if(board_node->_is_show && !(board_node->_is_destroy) && px>=board_node->_rect.x && px<=gw && py>=board_node->_rect.y && py<=gh)
@@ -1344,7 +1352,7 @@ template<class T>T* sdl_board::add(T* obj)
  */
 int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=1)
 {
-	map<sdl_board*,int>::iterator node;
+	list<sdl_board*>::iterator node;
 	if(!a)return -1;
 	_thread_lock.wait();
 	/* 如果没有b对象表示直接插入或删除 */
@@ -1353,42 +1361,44 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=1)
 		/* 大于0表示插入到尾 */
 		if(z>0)
 		{
-			_board_list.insert(pair<sdl_board*,int>(a,0));
+			//_board_list.insert(pair<sdl_board*,int>(a,0));
+			//_board_list.insert(a);
+			_board_list.push_back(a);
 		}
 		else
 		/* 小于0表示插入到头 */
 		if(z<0)
 		{
-			_board_list.insert(_board_list.begin(),pair<sdl_board*,int>(a,0));
+			//_board_list.insert(_board_list.begin(),pair<sdl_board*,int>(a,0));
+			_board_list.push_front(a);
 		}
 		/* 为0表示删除 */
 		else
 		{
-			_board_list.erase(a);
+			//_board_list.erase(a);
+			_board_list.remove(a);
 		}
 	}
+	/* 如果有b对象表示将A对象与B对象进行交换 */
 	else
+	if(a!=b)	
 	{
 		if(z>0)
 		{
-			node = _board_list.find(b)++;
-			_board_list.erase(a);
-			_board_list.insert(node,pair<sdl_board*,int>(a,0));
+			for(node = _board_list.begin();((*node) != b) && (node!=_board_list.end());node++);
+			_board_list.remove(a);
+			_board_list.insert(node,a);
 		}
 		else
 		if(z<0)
 		{
-			node = _board_list.find(b)++;
-			_board_list.erase(a);
-			_board_list.insert(node,pair<sdl_board*,int>(a,0));
+			for(node = _board_list.begin();((*node) != b) && (node!=_board_list.end());node++);
+			_board_list.remove(a);
+			_board_list.insert(node,a);
 		}
 		else
 		{
-			node = _board_list.find(a);
-			_board_list.erase(a);
-			_board_list.insert(_board_list.find(b),pair<sdl_board*,int>(a,0));
-			_board_list.erase(b);
-			_board_list.insert(node,pair<sdl_board*,int>(b,0));
+
 		}
 	}
 	_thread_lock.post();
@@ -1398,13 +1408,13 @@ int sdl_board::z_top(sdl_board* a,sdl_board *b,int z=1)
 //销毁子级窗口参数P表示是否销毁本身
 int sdl_board::destroy(int p=1)
 {
-	map<sdl_board*,int>::iterator node;
+	list<sdl_board*>::iterator node;
 	sdl_board* node_board;
 	_is_destroy = p;
 	if(_is_destroy && _parent)_parent->z_top(this,NULL,0);
 	for(node = _board_list.begin();node!=_board_list.end();node++)
 	{
-		node_board = (sdl_board*)node->first;
+		node_board = *node;
 		if(node_board->destroy(1))return -1;		
 	}
 	return 0;
@@ -1415,7 +1425,7 @@ int sdl_board::redraw()
 {
 	sdl_board* node_board;
 	SDL_Rect prt,srt;
-	map<sdl_board*,int>::iterator node = _board_list.begin();
+	list<sdl_board*>::iterator node=_board_list.begin();
 	/* 如果当前底板不显示或准备销毁则不进行重绘 */
 	_thread_lock.wait();
 	blit_surface(NULL,_board,NULL);
@@ -1425,8 +1435,7 @@ int sdl_board::redraw()
 	}
 	while(node!=_board_list.end())
 	{
-		node_board = (sdl_board*)node->first;
-		//if(!node_board->_is_show || node_board->_is_destroy)return 0;
+		node_board = *node;
 		if(!node_board->_is_destroy)
 		{
 			if(node_board->_is_show)
@@ -1581,25 +1590,43 @@ int sdl_board::color_key(int flag,Uint32 color)
 //激活当前底板
 int sdl_board::active()
 {
+	sdl_board* p = _parent;
+	sdl_board* t;
+	sdl_board* d = this;
+	list<sdl_board*>::reverse_iterator r;
+	if(sdl_frame::_active_win == this)return 0;
+	while(p)
+	{
+		t = *(p->_board_list.rbegin());
+		p->z_top(d,t,1);
+		p = p->_parent;
+		d = d->_parent;
+	}
+	if(sdl_frame::_active_win)
+	{
+		sdl_frame::_active_win->event_signal("on_kill_focus",(SDL_Event*)this);
+	}
+	event_signal("on_get_focus",(SDL_Event*)sdl_frame::_active_win);
+	sdl_frame::_active_win = this;
 	return 0;
 }
 //------------------------------------------------
 //是否捕捉当前窗口事件
 int sdl_board::capture(int p=1)
 {
-	if(!sdl_frame::_capture_win)
+	if((sdl_frame::_capture_win && p) || ((sdl_frame::_capture_win!=this) && (!p)))
 	{
-		if(p)
-		{
-			sdl_frame::_capture_win = this;
-		}
-		else
-		{
-			sdl_frame::_capture_win = NULL;
-		}
-		return 0;
+		return -1;
 	}
-	return -1;
+	if(p)
+	{
+		sdl_frame::_capture_win = this;
+	}
+	else
+	{
+		sdl_frame::_capture_win = NULL;
+	}
+	return 0;
 }
 //---------------------------------------------
 //底板窗口委托事件处理
@@ -1630,6 +1657,12 @@ int sdl_board::handle(int id,SDL_Event* e)
 		break;
 		case sdlgui_key_up:
 			on_keyup(This,(void*)e);
+		break;
+		case sdlgui_window_get_focus:
+			on_get_focus(This,(void*)e);
+		break;
+		case sdlgui_window_kill_focus:
+			on_kill_focus(This,(void*)e);
 		break;
 		default:
 			cout<<"other events"<<endl;
@@ -1709,6 +1742,20 @@ int sdl_board::on_keyup(sdl_board* obj,void* data)
 int sdl_board::on_timer(sdl_board* obj,void* data)
 {
 	//cout<<"timer is"<<clock()<<endl;
+	return 0;
+}
+//------------------------------------------------
+//底板得到焦点事件
+int sdl_board::on_get_focus(sdl_board* obj,void* data)
+{
+	cout<<"board get focus"<<endl;
+	return 0;
+}
+//------------------------------------------------
+//底板失去焦点事件
+int sdl_board::on_kill_focus(sdl_board* obj,void* data)
+{
+	cout<<"board kill focus"<<endl;
 	return 0;
 }
 //------------------------------------------------
@@ -1860,6 +1907,15 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//_event_thread = SDL_CreateThread(all_event_process,"event_process",(void*)this);
 	/* 开启重绘流子级线程 */
 	_redraw_thread = SDL_CreateThread(redraw_thread,"redraw_thread",(void*)this);
+	/* 激活新窗口 */
+	if(sdl_frame::_active_win)
+	{
+		active();
+	}
+	else
+	{
+		sdl_frame::_active_win = this;
+	}
 	return 0;
 }
 //-----------------------------------
@@ -2004,16 +2060,22 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			}
 		break;
 		case SDL_KEYUP:
+			if(sdl_frame::_active_win)
+			{
+				t = sdl_frame::_active_win;
+			}
 			t->event(e);
 			t->event_signal("on_key_up",e);
 		break;
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
 		case SDL_KEYDOWN:
+			if(sdl_frame::_active_win)
+			{
+				t = sdl_frame::_active_win;
+			}
 			t->event(e);
 			t->event_signal("on_key_down",e);
-			//if(_active_win != this)_active_win->event(e);
-			//_active_win->event(e);
 		break;
 	}
 	return 0;
@@ -2057,13 +2119,10 @@ int sdl_frame::sysevent(SDL_Event* e)
 //窗口框架运行函数
 int sdl_frame::run()
 {
-	//sdltexture* tex=NULL;
 	map<Uint32,sdl_frame*>::iterator _node;
 	sdl_frame* _node_window;
-	//cout<<"window destroy start"<<endl;
 	while(!sdl_frame::_is_exit)
 	{
-		//cout<<_is_exit<<endl;
 		if(sdl_frame::_window_list.empty())
 		{
 			sdl_frame::_is_exit = 1;

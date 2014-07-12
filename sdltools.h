@@ -90,12 +90,14 @@ int sdl_button::handle(int id,SDL_Event* e)
 int sdl_button::on_click(sdl_board* obj,void* data)
 {
 	_page.clip(0,0,this,NULL);
-	//return 0;
+	capture(1);
+	active();
 	return sdl_board::on_click(obj,data);
 }
 int sdl_button::on_release(sdl_board* obj,void* data)
 {
 	_page.clip(1,1,this,NULL);
+	capture(0);
 	return 0;
 	//return sdl_widget::on_release(obj,data);
 }
