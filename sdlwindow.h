@@ -1293,16 +1293,13 @@ int sdl_board::is_child(sdl_board* obj)
 }
 sdl_board* sdl_board::child(int x,int y)
 {
-	//map<sdl_board*,int>::iterator node;
 	list<sdl_board*>::reverse_iterator node = _board_list.rbegin();
-	///map<sdl_board*,int>::reverse_iterator node = _board_list.rbegin();
 	sdl_board* board_node;
 	int px,py,gw,gh;
 	px = x-_rect.x;
 	py = y-_rect.y;
 	for(node = _board_list.rbegin();node!=_board_list.rend();node++)
 	{
-		//board_node=(sdl_board*)node->first;
 		board_node = *node;
 		gw = board_node->_rect.x+board_node->_rect.w;
 		gh = board_node->_rect.y+board_node->_rect.h;
@@ -1884,6 +1881,7 @@ int sdl_frame::init()
 //窗口框架初始函数
 int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
+	string cur_platform;
 	if(sdl_board::init("",px,py,pw,ph,0))return -1;
 	/* 设置窗口位置 */
 	_rect.x = 0;
@@ -1892,17 +1890,24 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	//创建窗口
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
 	sdl_frame::_window_list.insert(pair<Uint32,sdl_frame*>(SDL_GetWindowID(_window->window()),this));
-	/* 创建渲染器 */
+	/* 调整窗口 */
 	if(_window)
 	{
-		/* 取窗口大小 */
-		_window->size(&_window_rect.x,&_window_rect.y);
-		//_screen.init(ptitle,px,py,_window_rect.x,_window_rect.y,pflags);
-		size(_window_rect.x,_window_rect.y);
-		//_rect.h = _window_rect.y;
-		//_rect.w = _window_rect.y;
-	}
-	_screen.surface(_window->get_window_surface()->surface());
+		cur_platform = SDL_GetPlatform();
+		if(!cur_platform.compare("Android"))
+		{
+			/* 取窗口大小 */
+			_window->size(&_window_rect.x,&_window_rect.y);
+			/* 调整窗口大小 */
+			size(_window_rect.x,_window_rect.y);
+		}
+		else
+		{
+			_window_rect.x = pw;
+			_window_rect.y = ph;
+			_screen.surface(_window->get_window_surface()->surface());
+		}
+
 	/* 开启消息流子级线程 */
 	//_event_thread = SDL_CreateThread(all_event_process,"event_process",(void*)this);
 	/* 开启重绘流子级线程 */
