@@ -1907,7 +1907,7 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 			_window_rect.y = ph;
 			_screen.surface(_window->get_window_surface()->surface());
 		}
-
+	}
 	/* 开启消息流子级线程 */
 	//_event_thread = SDL_CreateThread(all_event_process,"event_process",(void*)this);
 	/* 开启重绘流子级线程 */
