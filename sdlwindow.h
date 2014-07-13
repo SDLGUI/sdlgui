@@ -1066,7 +1066,7 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 			else
 			if(!cur_platform.compare("Android"))
 			{
-				sdltext::font_path = "/system/fonts/DroidSanSansFallback.ttf";
+				sdltext::font_path = "/system/fonts/DroidSansFallback.ttf";
 				//_text_board = new sdltext("/system/fonts/DroidSanSansFallback.ttf",16);
 			}
 		}
@@ -2201,7 +2201,7 @@ int sdl_frame::size(int w,int h)
 {
 	if(!_window)return -1;
 	if(_window->size(w,h))return -1;
-	//if(sdl_board::size(w,h))return -1;
+	if(sdl_board::size(w,h))return -1;
 	_screen.surface(_window->get_window_surface()->surface());
 	return 0;
 }
