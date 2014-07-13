@@ -1882,10 +1882,7 @@ int sdl_frame::init()
 int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags)
 {
 	string cur_platform;
-	if(sdl_board::init("",px,py,pw,ph,0))return -1;
-	/* 设置窗口位置 */
-	_rect.x = 0;
-	_rect.y = 0;
+	if(sdl_board::init("",0,0,pw,ph,0))return -1;
 	//-------------------
 	//创建窗口
 	_window = new sdlwindow(ptitle,px,py,pw,ph,pflags);
@@ -1985,8 +1982,8 @@ double sdl_frame::fps()
 //用于消息事件分流
 int sdl_frame::event_shunt(SDL_Event* e)
 {
-	static sdl_board* t;
-	static int x,y;
+	sdl_board* t;
+	int x,y;
 	SDL_Event te;
 	SDL_UserEvent ue;
 	switch(e->type)
@@ -2009,19 +2006,13 @@ int sdl_frame::event_shunt(SDL_Event* e)
 	}
 	else
 	{
-	t = child(x,y);
+		t = child(x,y);
 	}
 	t = (t==0)?(sdl_board*)this : t;
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
-			//if(sdl_frame::_capture_win)
-			{
-				//sdl_frame::_capture_win->event(e);
-				//sdl_frame::_capture_win->event_signal("on_click");
-			}
-			//
 			if(t != this)
 			{
 				t->event(e);
@@ -2052,13 +2043,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			}
 		break;
 		case SDL_MOUSEWHEEL:
-			//if(t != this)t->event(e);
-			//if(sdl_frame::_capture_win)
-			{
-				//sdl_frame::_capture_win->event(e);
-				//sdl_frame::_capture_win->event_signal("on_click");
-			}
-			//else
+			if(t != this)
 			{
 				t->event(e);
 				t->event_signal("on_wheel",e);
@@ -2207,6 +2192,7 @@ int sdl_frame::size(int w,int h)
 	if(!_window)return -1;
 	if(_window->size(w,h))return -1;
 	if(sdl_board::size(w,h))return -1;
+	if(_window->size(&_window_rect.x,&_window_rect.y))return -1;
 	_screen.surface(_window->get_window_surface()->surface());
 	return 0;
 }
