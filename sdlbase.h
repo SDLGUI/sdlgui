@@ -42,14 +42,58 @@
 #include <SDL2/SDL_ttf.h>
 #include <cmath>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include "sdlthread.h"
 using namespace std;
 /////////////////////////////////////////////////
+class sdlgui_debug;
 class sdlsurface;
 class sdltext;
 class sdltexture;
 class sdlrenderer;
 class sdlwidnow;
+//-------------------------------------------------
+//
+//			SDLGUI调试工具
+//
+//------------------------------------------------
+class sdlgui_debug
+{
+	public:
+		sdlgui_debug();
+		template<typename T>
+		sdlgui_debug& operator<<(const T&);
+		int out_file(string);
+		int out_screen();
+	protected:
+		stringstream _debug_buf;
+		fstream _debug_file;
+};
+sdlgui_debug::sdlgui_debug()
+{
+	_debug_buf.str("");
+}
+template<typename T>
+sdlgui_debug& sdlgui_debug::operator<<(const T& o)
+{
+	_debug_buf<<o;
+	return *this;
+}
+int sdlgui_debug::out_file(string p)
+{
+	_debug_file.open(p.c_str(),ios::out | ios::trunc);
+	_debug_file.write(_debug_buf.str().c_str(),_debug_buf.str().length());
+	_debug_file.close();
+	_debug_buf.str("");
+	return 0;
+}
+int sdlgui_debug::out_screen()
+{
+	cout<<_debug_buf.str()<<endl;
+	_debug_buf.str("");
+	return 0;
+}
 ///////////////////////////////////////////////////////////////////////
 //
 //						SDL表面对象操作函数的封装
