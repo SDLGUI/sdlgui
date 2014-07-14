@@ -61,6 +61,8 @@ class sdl_ime;
 class sdl_frame;
 class sdl_widget;
 class sdl_clip;
+//--------------------------------------
+static sdlgui_debug bug;
 //----------------------------------------------
 //
 // 					自定义消息常量定义
@@ -1293,11 +1295,12 @@ int sdl_board::is_child(sdl_board* obj)
 }
 sdl_board* sdl_board::child(int x,int y)
 {
-	list<sdl_board*>::reverse_iterator node = _board_list.rbegin();
+	list<sdl_board*>::reverse_iterator node;// = _board_list.rbegin();
 	sdl_board* board_node;
 	int px,py,gw,gh;
 	px = x-_rect.x;
 	py = y-_rect.y;
+	//find(_board_list.begin(),_board_list.end(),this);
 	for(node = _board_list.rbegin();node!=_board_list.rend();node++)
 	{
 		board_node = *node;
@@ -1873,6 +1876,7 @@ int sdl_frame::init()
 	_window = NULL;
 	//_renderer = NULL;
 	_event_thread = NULL;
+	_redraw_thread = NULL;
 	//_is_exit = 0;
 	_is_redraw = 1;
 	return 0;
@@ -1891,10 +1895,10 @@ int sdl_frame::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 	if(_window)
 	{
 		cur_platform = SDL_GetPlatform();
+		/* 取窗口大小 */
+		_window->size(&_window_rect.x,&_window_rect.y);
 		if(!cur_platform.compare("Android"))
 		{
-			/* 取窗口大小 */
-			_window->size(&_window_rect.x,&_window_rect.y);
 			/* 调整窗口大小 */
 			size(_window_rect.x,_window_rect.y);
 		}
@@ -1945,6 +1949,7 @@ int sdl_frame::redraw_thread(void* data)
 	clock_t _frame_timer;
 	double sleep = 0;
 	sdl_frame* f = (sdl_frame*)data;
+	if(!f)return -1;
 	while(f->_is_redraw)
 	{
 		_frame_timer = clock();
@@ -1992,6 +1997,8 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
 			SDL_GetMouseState(&x,&y);
+			bug<<x;
+			bug.out_file("test.txt");
 		break;
 		case SDL_FINGERUP:
 		case SDL_FINGERDOWN:
@@ -2013,9 +2020,11 @@ int sdl_frame::event_shunt(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
+			bug<<"test"<<"..."<<1;
+			bug.out_file("test.txt");
 			if(t != this)
 			{
-				t->event(e);
+				//t->event(e);
 				//if(e->button.clicks==2)
 				{
 					//t->event_signal("on_db_click",e);
@@ -2030,7 +2039,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_FINGERUP:
 			if(t != this)
 			{
-				t->event(e);
+				//t->event(e);
 				t->event_signal("on_release",e);
 			}
 		break;
@@ -2038,14 +2047,14 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_MOUSEMOTION:
 			if(t != this)
 			{
-				t->event(e);
+				//t->event(e);
 				t->event_signal("on_motion",e);
 			}
 		break;
 		case SDL_MOUSEWHEEL:
 			if(t != this)
 			{
-				t->event(e);
+				//t->event(e);
 				t->event_signal("on_wheel",e);
 			}
 		break;
@@ -2054,7 +2063,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			{
 				t = sdl_frame::_active_win;
 			}
-			t->event(e);
+			//t->event(e);
 			t->event_signal("on_key_up",e);
 		break;
 		case SDL_TEXTINPUT:
@@ -2064,7 +2073,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			{
 				t = sdl_frame::_active_win;
 			}
-			t->event(e);
+			//t->event(e);
 			t->event_signal("on_key_down",e);
 		break;
 	}
@@ -2116,7 +2125,6 @@ int sdl_frame::run()
 		if(sdl_frame::_window_list.empty())
 		{
 			sdl_frame::_is_exit = 1;
-			break;
 		}
 		else
 		{
@@ -2131,13 +2139,11 @@ int sdl_frame::run()
 				}
 				/* 确定事件窗口 */
 				_node = _window_list.find(sdl_frame::_main_event.window.windowID);
-				_node_window = (sdl_frame*)_node->second;
-				if(!_node_window)
+				if(_node==_window_list.end())
 				{
-					//sdl_frame::_is_exit = 1;
 					_node = _window_list.begin();
-					_node_window = (sdl_frame*)_node->second;
 				}
+				_node_window = (sdl_frame*)(_node->second);
 				/* 创建事件 */
 				switch(sdl_frame::_main_event.type)
 				{
