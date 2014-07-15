@@ -1614,7 +1614,12 @@ int sdl_board::active()
 //是否捕捉当前窗口事件
 int sdl_board::capture(int p=1)
 {
-	if((sdl_frame::_capture_win && p) || ((sdl_frame::_capture_win!=this) && (!p)))
+	/* 
+		 P为1表示捕捉窗口，但如果现在已经有窗口被捕捉，则返回-1 
+			如果当前捕捉窗口就是本窗口，但更新捕捉窗口时直接返回-1 
+			如果要释放捕捉窗口，但本窗口又不是被捕捉的窗口，则返回-1(表示不给本窗口发送信息)
+	 */
+	if(((sdl_frame::_capture_win==this) && p) || ((sdl_frame::_capture_win!=this) && (!p)))
 	{
 		return -1;
 	}
