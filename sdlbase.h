@@ -82,6 +82,7 @@ sdlgui_debug& sdlgui_debug::operator<<(const T& o)
 }
 int sdlgui_debug::out_file(string p)
 {
+	_debug_buf<<"   error info>> file:"<<__FILE__<<" func:"<<__func__<<"  line:"<<__LINE__;
 	_debug_file.open(p.c_str(),ios::out | ios::trunc);
 	_debug_file.write(_debug_buf.str().c_str(),_debug_buf.str().length());
 	_debug_file.close();
