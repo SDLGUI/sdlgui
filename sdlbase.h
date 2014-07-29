@@ -43,9 +43,10 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <sstream>
 #include "sdlthread.h"
-using namespace std;
+//using namespace std;
 /////////////////////////////////////////////////
 class sdlgui_debug;
 class sdlsurface;
@@ -64,11 +65,11 @@ class sdlgui_debug
 		sdlgui_debug();
 		template<typename T>
 		sdlgui_debug& operator<<(const T&);
-		int out_file(string);
+		int out_file(std::string);
 		int out_screen();
 	protected:
-		stringstream _debug_buf;
-		fstream _debug_file;
+		std::stringstream _debug_buf;
+		std::fstream _debug_file;
 };
 sdlgui_debug::sdlgui_debug()
 {
@@ -80,10 +81,10 @@ sdlgui_debug& sdlgui_debug::operator<<(const T& o)
 	_debug_buf<<o;
 	return *this;
 }
-int sdlgui_debug::out_file(string p)
+int sdlgui_debug::out_file(std::string p)
 {
 	_debug_buf<<"   error info>> file:"<<__FILE__<<" func:"<<__func__<<"  line:"<<__LINE__;
-	_debug_file.open(p.c_str(),ios::out | ios::trunc);
+	_debug_file.open(p.c_str(),std::ios::out | std::ios::trunc);
 	_debug_file.write(_debug_buf.str().c_str(),_debug_buf.str().length());
 	_debug_file.close();
 	_debug_buf.str("");
@@ -91,7 +92,7 @@ int sdlgui_debug::out_file(string p)
 }
 int sdlgui_debug::out_screen()
 {
-	cout<<_debug_buf.str()<<endl;
+	std::cout<<_debug_buf.str()<<std::endl;
 	_debug_buf.str("");
 	return 0;
 }
@@ -181,17 +182,17 @@ typedef class sdltext : public sdlsurface
 {
 	public:
 		sdltext();
-		sdltext(const char*,int);
+		sdltext(const std::string,int);
 		~sdltext();
 		int init();
-		int text(const char*);
+		int text(const std::string);
 		/* 
 		 设置当前文本,
 		 参数(文本，字体，字体大小)
 		*/
-		int text(const char*,const char*,int);
-		char* text();
-		int font(const char*,int);
+		int text(const std::string,const std::string,int);
+		std::string& text();
+		int font(const std::string,int);
 		int close_font();
 		//--------------------------------------
 		int font_style();	
@@ -212,35 +213,35 @@ typedef class sdltext : public sdlsurface
 		char* font_face_style_name();
 		int glyph_is_provided(Uint16);
 		int glyph_metrics(Uint16,int*,int*,int*,int*,int*);
-		int size_text(char*,int*,int*);
-		int size_utf8(const char*,int*,int*);
+		int size_text(std::string&,int*,int*);
+		int size_utf8(const std::string&,int*,int*);
 		int size_unicode(const Uint16*,int*,int*);
 		//
-		int render_text_solid(const char*,Uint32);
-		int render_utf8_solid(const char*,Uint32);
+		int render_text_solid(const std::string&,Uint32);
+		int render_utf8_solid(const std::string&,Uint32);
 		int render_unicode_solid(const Uint16*,Uint32);
 		int render_glyph_solid(const Uint16,Uint32);
 		//
-		int render_text_shaded(const char*,Uint32,Uint32);
-		int render_utf8_shaded(const char*,Uint32,Uint32);
+		int render_text_shaded(const std::string&,Uint32,Uint32);
+		int render_utf8_shaded(const std::string&,Uint32,Uint32);
 		int render_unicode_shaded(const Uint16*,Uint32,Uint32);
 		int render_glyph_shaded(const Uint16,Uint32,Uint32);
 		//
-		int render_text_blended(const char*,Uint32);
-		int render_utf8_blended(const char*,Uint32);
+		int render_text_blended(const std::string&,Uint32);
+		int render_utf8_blended(const std::string&,Uint32);
 		int render_unicode_blended(const Uint16*,Uint32);
 		int render_glyph_blended(const Uint16,Uint32);
 		//--------------------------------------
 	public:
-		static string font_path;
+		static std::string font_path;
 	protected:
 		TTF_Font* _font;
-		char* _text;
+		std::string _text;
 	protected:
 		static int is_init;
 }*sdltext_ptr;
 int sdltext::is_init = 0;
-string sdltext::font_path="";
+std::string sdltext::font_path="";
 //--------------------------------------------
 //
 ///
@@ -411,7 +412,6 @@ int sdlsurface::init(Uint32 flags,int width,int height,int depth,Uint32 Rmask,Ui
 	//_thread_lock.wait();
 	if(_surface)free_surface();
 	create_rgb_surface(flags,width,height,depth,Rmask,Gmask,Bmask,Amask);
-	//cout<<"surface unlock"<<endl;
 	//_thread_lock.post();
 	return 0;
 }
@@ -570,13 +570,14 @@ sdltext::sdltext()
 :
 sdlsurface()
 {
+	_text="";
 	_font = NULL;
 	init();
 }
 /* 
 	使用指定的字体和字号来构造一个文本表面对象 
  */
-sdltext::sdltext(const char* pfont,int psize)
+sdltext::sdltext(const std::string pfont,int psize)
 :
 sdlsurface()
 {
@@ -586,7 +587,6 @@ sdlsurface()
 }
 sdltext::~sdltext()
 {
-	delete[] _text;
 	font(NULL,0);
 	sdlsurface::free_surface();
 }
@@ -601,36 +601,30 @@ int sdltext::init()
 	if(sdlsurface::init())return -1;
 	return 0;
 }
-int sdltext::text(const char* ptext)
+int sdltext::text(const std::string ptext)
 {
-	if(_text)delete[] _text;
-	int len = strlen(ptext)+1;
-	_text = new char[len];
-	memset(_text,0x00,len);
-	strcpy(_text,ptext);
-	//---------------------------------
+	_text = ptext;
 	return 0;
 }
-int sdltext::text(const char* ptext,const char* pfont,int psize)
+int sdltext::text(const std::string ptext,const std::string pfont,int psize)
 {
 	if(text(ptext))return -1;
 	if(font(pfont,psize))return -1;
 	return 0;
 }
-char* sdltext::text()
+std::string& sdltext::text()
 {
-	if(_text) return _text;
-	return NULL;
+	return _text;
 }
-int sdltext::font(const char* font_path,int font_size=16)
+int sdltext::font(const std::string font_path,int font_size=16)
 {
 	if(_font)
 	{
 		TTF_CloseFont(_font);
 		_font = NULL;
 	}
-	if(!font_path)return -1;
-	_font = TTF_OpenFont(font_path,font_size);
+	if(font_path.empty())return -1;
+	_font = TTF_OpenFont(font_path.c_str(),font_size);
 	if(!_font)return -1;
 	return 0;
 }
@@ -728,38 +722,37 @@ int sdltext::glyph_metrics(Uint16 ch,int* minx,int* maxx,int* miny,int* maxy,int
 	if(!_font)return -1;
 	return TTF_GlyphMetrics(_font,ch,minx,maxx,miny,maxy,advance);
 }
-int sdltext::size_text(char* ptext,int* pw,int* ph)
+int sdltext::size_text(std::string& ptext,int* pw,int* ph)
 {
 	if(!_font)return -1;
-	return TTF_SizeText(_font,ptext,pw,ph);
+	return TTF_SizeText(_font,ptext.c_str(),pw,ph);
 }
-int sdltext::size_utf8(const char* ptext,int* pw,int* ph)
+int sdltext::size_utf8(const std::string& ptext,int* pw,int* ph)
 {
 	if(!_font)return -1;
-	return TTF_SizeUTF8(_font,ptext,pw,ph);
+	return TTF_SizeUTF8(_font,ptext.c_str(),pw,ph);
 }
 int sdltext::size_unicode(const Uint16* ptext,int* pw,int* ph)
 {
 	if(!_font)return -1;
 	return TTF_SizeUNICODE(_font,ptext,pw,ph);
 }
-int sdltext::render_text_solid(const char* ptext,Uint32 pcolor)
+int sdltext::render_text_solid(const std::string& ptext,Uint32 pcolor)
 {
 	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	//SDL_Color tc = {0,255,255};
 	if(!_font)return -1;
 	free_surface();
-	_surface = TTF_RenderText_Solid(_font,ptext,c);
+	_surface = TTF_RenderText_Solid(_font,ptext.c_str(),c);
 	if(!_surface)return -1;
 	return 0;
 }
-int sdltext::render_utf8_solid(const char* ptext,Uint32 pcolor)
+int sdltext::render_utf8_solid(const std::string& ptext,Uint32 pcolor)
 {
-	//cout<<"sdltext::"<<ptext<<endl;
 	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
-	_surface = TTF_RenderUTF8_Solid(_font,ptext,c);
+	_surface = TTF_RenderUTF8_Solid(_font,ptext.c_str(),c);
 	text(ptext);
 	if(!_surface)return -1;
 	return 0;
@@ -782,23 +775,23 @@ int sdltext::render_glyph_solid(const Uint16 ptext,Uint32 pcolor)
 	if(!_surface)return -1;
 	return 0;
 }
-int sdltext::render_text_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
+int sdltext::render_text_shaded(const std::string& ptext,Uint32 pcolor,Uint32 pcolor1)
 {
 	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	SDL_Color c1 = {(Uint8)((pcolor1 & 0xff0000)>>16),(Uint8)((pcolor1 & 0x00ff00)>>8),(Uint8)(pcolor1 & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
-	_surface = TTF_RenderText_Shaded(_font,ptext,c,c1);
+	_surface = TTF_RenderText_Shaded(_font,ptext.c_str(),c,c1);
 	if(!_surface)return -1;
 	return 0;
 }
-int sdltext::render_utf8_shaded(const char* ptext,Uint32 pcolor,Uint32 pcolor1)
+int sdltext::render_utf8_shaded(const std::string& ptext,Uint32 pcolor,Uint32 pcolor1)
 {
 	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	SDL_Color c1 = {(Uint8)((pcolor1 & 0xff0000)>>16),(Uint8)((pcolor1 & 0x00ff00)>>8),(Uint8)(pcolor1 & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
-	_surface = TTF_RenderUTF8_Shaded(_font,ptext,c,c1);
+	_surface = TTF_RenderUTF8_Shaded(_font,ptext.c_str(),c,c1);
 	if(!_surface)return -1;
 	return 0;
 }
@@ -822,21 +815,21 @@ int sdltext::render_glyph_shaded(const Uint16 ptext,Uint32 pcolor,Uint32 pcolor1
 	if(!_surface)return -1;
 	return 0;
 }
-int sdltext::render_text_blended(const char* ptext,Uint32 pcolor)
+int sdltext::render_text_blended(const std::string& ptext,Uint32 pcolor)
 {
 	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
-	_surface = TTF_RenderText_Blended(_font,ptext,c);
+	_surface = TTF_RenderText_Blended(_font,ptext.c_str(),c);
 	if(!_surface)return -1;
 	return 0;
 }
-int sdltext::render_utf8_blended(const char* ptext,Uint32 pcolor)
+int sdltext::render_utf8_blended(const std::string& ptext,Uint32 pcolor)
 {
 	SDL_Color c = {(Uint8)((pcolor & 0xff0000)>>16),(Uint8)((pcolor & 0x00ff00)>>8),(Uint8)(pcolor & 0x0000ff)};
 	if(!_font)return -1;
 	free_surface();
-	_surface = TTF_RenderUTF8_Blended(_font,ptext,c);
+	_surface = TTF_RenderUTF8_Blended(_font,ptext.c_str(),c);
 	if(!_surface)return -1;
 	return 0;
 }
@@ -1042,7 +1035,6 @@ int sdlsurface::line(int x0,int y0,int x1,int y1,Uint32 color)
 			{
 				for(x = 0;x<x_off;x++)
 				{
-					//if(!x_off)cout<<y_off<<endl;
 					y = x/(x_off/y_off);	
 					*(Uint32*)(p+x*bpp+y*_surface->pitch) = color;
 				}
@@ -1228,7 +1220,6 @@ int sdlsurface::rotate(float j)
 			/* 更新p1坐标 */
 			p1x = column_off;
 			p1y = row_off;
-			//cout<<p1x<<":"<<p1y<<endl;
 			/* 算出三角形边长 */
 			a = sqrt((p1x-op_x)*(p1x-op_x)+(p1y-op_y)*(p1y-op_y));
 			c = sqrt((p1x-p0x)*(p1x-p0x)+(p1y-p0y)*(p1y-p0y));
