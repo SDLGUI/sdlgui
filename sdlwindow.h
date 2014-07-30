@@ -6,7 +6,7 @@
 //						文档名：						sdlwindow.h
 //
 //						文档创建日期：			2014年2月22日
-//						文档更新日期：			2014年6月25日
+//						文档更新日期：			2014年7月28日
 //						文档创建者：				徐荣
 //						文档更新者：				徐荣
 //						文档创建者联系方式：Email:twtfcu3@126.com
@@ -45,6 +45,8 @@
 #include <fstream>
 #include <ctime>
 #include <string.h>
+#include <vector>
+#include <functional>
 #include <map>
 #include <queue>
 #include <list>
@@ -55,6 +57,7 @@
 //-----------------------------------------------
 using namespace std;
 //--------------------------------------------------
+class event_struct;
 class sdl_board;
 template<class T,class B> class GUI;
 class sdl_ime;
@@ -131,6 +134,127 @@ const int sdlgui_key_up= key_event_macro(002);
 /* 自定义事件ID */
 #define sdlgui_custom_event 1008
 #define sdlgui_custom_event_macro(x,y) (sdlgui_custom_event+x)*1000+y
+//-------------------------------------------------
+//
+//
+//
+//
+//						用于节点对象事件驱动
+//
+//
+//
+//
+//-------------------------------------
+/* 
+	事件驱动类有两个公共接口
+	1.
+	event_signal::operator()();
+	这个接口用于返回一个事件函数对象，使用者可以用这个对象来创建自定义事件处理函数
+	事件处理函数格式为int [value](sdl_board&,SDL_Event&){return 0;};
+	2.
+	event_signal::operator()(sdl_board&,SDL_Event&);
+	这个接口用于发送一个事件到全局事件处理序列，SDLGUI会自动即时处理你定义好的事件
+	3.
+	例子
+	假如对象sdl_board test中有一个事件on_click;
+	test.on_click()=[](sdl_board& obj,SDL_Event& e)
+	{
+		std::cout<<"on_click signal"<<std::endl;
+		return 0;
+	}
+	这个表达式就创建了一个事件处理函数，
+	当你触发on_click事件时就是调用你定义好的函数，
+	向标准输出传一个"on_click"字符串。
+	sdl_board test2;
+	SDL_Event e;
+	test.on_click(test2,e);
+	这个表示式就是向SDLGUI发送一个on_click的事件
+ */
+class event_signal
+{
+	friend class sdl_frame;
+	public:
+		event_signal()
+		{
+		}
+		/* 用户创建事件处理函数接口 */
+		std::function<int(sdl_board&,SDL_Event&)>& operator()()
+		{
+			std::function<int(sdl_board&,SDL_Event&)>* t = new std::function<int(sdl_board&,SDL_Event&)>;
+			_event_list.push_back(t);
+			return *t;
+		}
+		/* 用于调用事件接口 */
+		int operator()(sdl_board& obj,SDL_Event& e)
+		{
+			/* 向事件参数尾追加一个对象 */
+			_event_called_board.push(&obj);
+			/* 向事件参数尾追加一个事件参数 */
+			SDL_Event* te = new SDL_Event;
+			memcpy((char*)te,(char*)&e,sizeof(SDL_Event));
+			_event_called_arg.push(te);
+			/* 向全局事件序列追加一个事件 */
+			event_signal::_event_queue.push(this);
+			return 0;
+		}
+	protected:
+		int call_event()
+		{
+			if(!_event_list.empty())
+			{
+				for(auto p :_event_list)
+				{
+					(*p)(*(_event_called_board.front()),*(_event_called_arg.front()));	
+					//* 消除已经调用过的参数 */
+					_event_called_board.pop();
+					delete _event_called_arg.front();
+					_event_called_arg.pop();
+				}
+			}
+			return 0;
+		}
+	protected:
+		/* 
+			用于保存当前事件所处理的函数集列表
+		 */
+		std::vector<std::function<int(sdl_board&,SDL_Event&)>* > _event_list;
+		std::queue<sdl_board*> _event_called_board;
+		std::queue<SDL_Event*> _event_called_arg;
+	protected:
+		/* 
+			用于处理全局事件序列 
+		*/
+		static int start()
+		{
+			if(!_event_queue_thread)
+			{
+				_event_queue_thread = SDL_CreateThread(event_process,"event_process",NULL);
+			}
+			return 0;
+		}
+		static int event_process(void* data)
+		{
+			event_signal* p=NULL;
+			while(1)
+			{
+				//std::cout<<p<<std::endl;
+				if(!event_signal::_event_queue.empty())
+				{
+					event_signal::_event_queue.front()->call_event();
+					event_signal::_event_queue.pop();
+				}
+			}
+			return 0;
+		}
+	protected:
+		static SDL_Thread* _event_queue_thread;
+		/* 
+			用于保存事件全局序列 
+		*/
+		static std::queue<event_signal*> _event_queue;
+};
+std::queue<event_signal*> event_signal::_event_queue;
+SDL_Thread* event_signal::_event_queue_thread=NULL;
 //-------------------------------------
 //
 //
@@ -157,7 +281,6 @@ class GUI : public B
 		int event(int(*)(T*,SDL_Event*));//GU专用类内部事件处理函数（设置用户事件函数接口）
 		virtual int sysevent(SDL_Event*e){return 0;};//GUI专用类系统事件处理函数的虚类
 		virtual int handle(int handle,SDL_Event*e){return 0;}
-		//int handle(int handle,SDL_Event*e){return 0;}
 	protected:
 		static int sysprocess(T*,SDL_Event*);
 		static int userprocess(T*,SDL_Event*);
@@ -172,7 +295,6 @@ class GUI : public B
 typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 {
 	public:
-		friend class sdl_event_manager;
 		friend class sdl_frame;
 	public:
 		sdl_board();
@@ -248,34 +370,18 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int capture(int);
 		//-----------------------------------------------
 	public:
-		/* 重载委托事件函数处理 */
-		int handle(int,SDL_Event*);
-		/* 注册事件 */
-		virtual int register_event(string);
-		/* 连接委托函数 */
-		virtual int connect_event(string,sdl_board*,int);
-		/* 发送事件信号 */
-		int event_signal(string,SDL_Event*);
-		/* 鼠标点击事件 */
-		virtual int on_click(sdl_board*,void*);
-		/* 鼠标双击事件 */
-		virtual int on_db_click(sdl_board*,void*);
-		/* 鼠标释放事件 */
-		virtual int on_release(sdl_board*,void*);
-		/* 鼠标移动事件 */
-		virtual int on_motion(sdl_board*,void*);
-		/* 鼠标中键滚动事件 */
-		virtual int on_wheel(sdl_board*,void*);
-		/* 键盘按下事件 */
-		virtual int on_keydown(sdl_board*,void*);
-		/* 键盘释放事件 */
-		virtual int on_keyup(sdl_board*,void*);
-		/* 计时事件 */
-		virtual int on_timer(sdl_board*,void*);
-		/* 底板得到焦点事件 */
-		virtual int on_get_focus(sdl_board*,void*);
-		/* 底板失去焦点事件 */
-		virtual int on_kill_focus(sdl_board*,void*);
+		/* 硬事件 */
+		event_signal on_click;
+		event_signal on_release;
+		event_signal on_motion;
+		event_signal on_wheel;
+		event_signal on_keydown;
+		event_signal on_keyup;
+		event_signal on_input;
+		/* 软事件 */
+		event_signal on_created;
+		event_signal on_destroy;
+		event_signal on_sizeed;
 	protected:
 		static Uint32 timer_proc(Uint32,void*);
 	protected:
@@ -295,528 +401,6 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		list<sdl_board*> _board_list;
 }*sdl_board_ptr;
 //sdl_board** sdl_board::_hit_board_ptr=NULL;
-//-------------------------------------
-//
-//
-//            定义事件句柄类型 
-//
-//
-//-------------------------------------
-/*
-		定义事件句柄类型 
-		要求所有事件函数返回整型值，
-		调用对象与参数为事件参数
-		结构中有两个数据
-		sdl_board* object 用于保存对象地址
-		int handle 用于保存每个对象指定事件在handle函数中的处理ID
- */
-struct sdl_event_handle
-{
-	sdl_board* object;
-	int handle;
-};
-//-------------------------------------
-//
-//
-//            对象事件委托结构体 
-//
-//
-//-------------------------------------
-/* 
-	对象事件委托结构体 
-	结构中有两个数据
-	map<string,sdl_event_handle> _event;
-	用于存储对象被委托的事件,string为引索关键词格式为"对象地址_事件处理ID"
-	queue<SDL_Event*> _event_queue;
-	用于存储被委托对象所产生的事件
- */
-class sdl_event_struct
-{
-	friend class sdl_event_object;
-	friend class sdl_event_manager;
-	public:
-		def_dll sdl_event_struct()
-		{
-			_event.clear();
-		}
-		/* 对象事件析构函数 */
-		def_dll virtual ~sdl_event_struct();
-		/* 
-			对象事件注册功能，
-			注册时要一个事件函数名的字串与函数名入口地址
-		 */
-		def_dll int event_register(string,sdl_event_handle);
-		/*
-			 对象事件注消功能
-			 注消时要用到事件函数名的字串
-		*/
-		def_dll int event_unregister(string);
-		/* 
-				事件调用累计增量 
-		 */
-		def_dll int push(SDL_Event*);
-		/* 
-				事件调用后减量 
-		 */
-		def_dll int pull();
-		/* 
-				事件调用计数 
-		 */
-		def_dll int count();
-	protected:
-		//事件函数入口列表
-		def_dll	map<string,sdl_event_handle> _event;
-		//事件参数列表
-		def_dll queue<SDL_Event*> _event_queue;
-};
-def_dll sdl_event_struct::~sdl_event_struct()
-{
-	map<string,sdl_event_handle>::iterator node;
-	for(node = _event.begin();node!=_event.end();node++)
-	{
-		//delete 
-			//(sdl_event_handle)node->first;
-	}
-	_event.clear();
-	while(pull());
-}
-def_dll int sdl_event_struct::event_register(string event_string,sdl_event_handle event_function)
-{
-	_event.insert(pair<string,sdl_event_handle>(event_string,event_function));
-	return 0;
-}
-def_dll int sdl_event_struct::event_unregister(string event_string)
-{
-	_event.erase(event_string);
-	return 0;
-}
-def_dll int sdl_event_struct::push(SDL_Event *e)
-{
-	SDL_Event* te = new SDL_Event;	
-	memcpy((char*)te,(char*)e,sizeof(SDL_Event));
-	_event_queue.push(te);
-	return _event_queue.size();
-}
-def_dll int sdl_event_struct::pull()
-{
-	SDL_Event* t;
-	if(_event_queue.size())
-	{
-		t = _event_queue.front();
-		_event_queue.pop();
-		delete t;
-	}
-	return _event_queue.size();
-}
-def_dll int sdl_event_struct::count()
-{
-	return _event_queue.size();
-}
-
-
-
-
-//-------------------------------------
-//
-//
-//            对象事件项目列表 
-//
-//
-//-------------------------------------
-/* 
-		对象事件项目列表 
-		用于管理每个对象其中一个事件的委托入口调用
-		一个参数
-		map<string,sdl_event_struct*> _object_event_list;
-		用于存储给对象注册进来的的委托事件,string为引索关键词,格式为"对象地址_委托事件字串"
- */
-class sdl_event_object
-{
-	friend class sdl_event_manager;
-	public:
-		def_dll sdl_event_object();
-		/*
-			 析构函数
-			 删除时清理对象所存储的所有事件 
-		 */
-		def_dll ~sdl_event_object();
-		/* 
-			注册一个事件
-			参数为事件字串
-		 */
-		def_dll int event_register(string);
-		/* 
-			注消一个事件
-			参数为事件字串
-		 */
-		def_dll int event_unregister(string);
-		/* 
-			事件调用累计一次 
-		 */
-		def_dll int push();
-		/* 
-			事件调用一次 
-		 */
-		def_dll int pull();
-		/* 
-			事件累计次数 
-		 */
-		def_dll int count();
-	protected:
-		def_dll int _event_count;
-		def_dll map<string,sdl_event_struct*> _object_event_list;
-};
-def_dll sdl_event_object::sdl_event_object()
-{
-	_event_count = 0;
-	_object_event_list.clear();
-}
-def_dll sdl_event_object::~sdl_event_object()
-{
-	map<string,sdl_event_struct*>::iterator node;
-	for(node = _object_event_list.begin();node!=_object_event_list.end();node++)
-	{
-		delete (sdl_event_struct*)(node->second);
-	}
-	_object_event_list.clear();
-}
-def_dll int sdl_event_object::event_register(string event_string)
-{
-	sdl_event_struct* _event_ingress = new sdl_event_struct;
-	_object_event_list.insert(pair<string,sdl_event_struct*>(event_string,_event_ingress));	
-	return 0;
-}
-def_dll int sdl_event_object::event_unregister(string event_string)
-{
-	map<string,sdl_event_struct*>::iterator node;
-	node = _object_event_list.find(event_string);
-	delete (sdl_event_struct*)node->second;
-	_object_event_list.erase(event_string);	
-	return 0;
-}
-def_dll int sdl_event_object::push()
-{
-	_event_count++;
-	return _event_count;
-}
-def_dll int sdl_event_object::pull()
-{
-	_event_count--;
-	return _event_count;
-}
-def_dll int sdl_event_object::count()
-{
-	return _event_count;
-}
-
-
-
-
-
-//-------------------------------------
-//
-//
-//           事件管理器 
-//
-//
-//-------------------------------------
-/* 
-			事件管理器(静态类)
-
-			用于调用对象事件
-			实现委托功能与事件多线程化
-
-			功能
-			1.加入/移除对象
-			2、给对象注册/注销事件
-			3、给对象事件加入/删除事件委托函数
-			4、自行处理对象事件
-
-
-			一个全局静态操作参数
-			map<sdl_board*,sdl_event_object*> _event_list;
-			用于存储所有对象的事件结构,sdl_board*为关键词引索，使用的是对象的地址
- */
-class sdl_event_manager
-{
-	friend class sdl_frame;
-	public:
-		/* 
-			加入事件对象 参数为对象地址
-		 */
-		def_dll static int push(sdl_board*);
-		/* 
-			移除事件对象 参数为对象地址
-		 */
-		def_dll static int pull(sdl_board*);
-		/* 
-		 加入对象事件，参数为对象地址，事件字串 
-		 */
-		def_dll static int push(sdl_board*,string);
-		/* 
-			移除对象事件，参数为对象地址，事件字串 
-		 */
-		def_dll static int pull(sdl_board*,string);
-		/* 
-			加入对象事件委托入口函数
-			参数为对象地址，事件字串，委托对象，委托入口函数处理ID
-		 */
-		def_dll static int push(sdl_board*,string,sdl_board*,int);
-		/* 
-			移除对象事件委托入口函数
-			参数为对象地址，事件字串，委托入口函数地址
-		 */
-		def_dll static int pull(sdl_board*,string,sdl_board*,int);
-		/* 
-			对象事件调用 
-		 */
-		def_dll static int call_event(sdl_board*,string,SDL_Event*);
-		/* 
-			多线程管理事件列表 
-		 */
-		def_dll static int start();
-		/* 
-			退出时的销毁函数 
-		 */
-		def_dll static int destroy();
-	protected:
-		def_dll static int run(void*);
-	protected:
-		def_dll static map<sdl_board*,sdl_event_object*> _event_list;		
-		def_dll static SDL_Thread* _event_process_thread;
-		def_dll static sdl_condition _event_process_thread_cond;
-		def_dll static sdl_condition _event_created_thread_cond;
-		def_dll static sdl_mutex _event_thread_lock;
-		def_dll static int _event_thread_is_lock;
-		def_dll static int _event_thread_is_run;
-};
-def_dll map<sdl_board*,sdl_event_object*> sdl_event_manager::_event_list;
-def_dll SDL_Thread* sdl_event_manager::_event_process_thread = NULL;
-def_dll sdl_condition sdl_event_manager::_event_process_thread_cond;
-def_dll sdl_condition sdl_event_manager::_event_created_thread_cond;
-def_dll sdl_mutex sdl_event_manager::_event_thread_lock;
-def_dll int sdl_event_manager::_event_thread_is_lock=0;
-def_dll int sdl_event_manager::_event_thread_is_run = 1;
-////////////////////////////////////////////////////
-//
-//
-//
-//
-//
-////////////////////////////////////////////////////
-def_dll int sdl_event_manager::push(sdl_board* obj)
-{
-	sdl_event_object *obj_event_list = new sdl_event_object;
-	sdl_event_manager::_event_list.insert(pair<sdl_board*,sdl_event_object*>(obj,obj_event_list));
-	return 0;
-}
-def_dll int sdl_event_manager::pull(sdl_board* obj)
-{
-	sdl_event_manager::_event_list.erase(obj);
-	return 0;
-}
-def_dll int sdl_event_manager::push(sdl_board* obj,string event_string)
-{
-	map<sdl_board*,sdl_event_object*>::iterator event_iter;
-	sdl_event_object* event; 
-	/* 先找到对象列表中的对象事件列表的引索 */
-	event_iter = sdl_event_manager::_event_list.find(obj);
-	if(event_iter == sdl_event_manager::_event_list.end())
-	{
-		return -1;
-	}
-	/* 再注册事件到对象事件列表 */
-	event = (sdl_event_object*)(event_iter->second);
-	/* 使用对象事件列表自身注册功能 */
-	return event->event_register(event_string);
-}
-def_dll int sdl_event_manager::pull(sdl_board* obj,string event_string)
-{
-	map<sdl_board*,sdl_event_object*>::iterator event_iter;
-	sdl_event_object* event; 
-	/* 先找到对象列表中的对象事件列表的引索 */
-	event_iter = sdl_event_manager::_event_list.find(obj);
-	if(event_iter == sdl_event_manager::_event_list.end())
-	{
-		return -1;
-	}
-	/* 再注册事件到对象事件列表 */
-	event = (sdl_event_object*)event_iter->second;
-	/* 使用对象事件列表自身注册功能 */
-	return event->event_unregister(event_string);
-}
-def_dll int sdl_event_manager::push(sdl_board* connect_object,string event_string,sdl_board* event_object,int event_handle)
-{
-	stringstream event_object_string;
-	map<sdl_board*,sdl_event_object*>::iterator event_iter;
-	map<string,sdl_event_struct*>::iterator event_struct_iter;
-	sdl_event_object* event; 
-	sdl_event_struct* event_struct; 
-	sdl_event_handle _handle;
-	_handle.object = event_object;
-	_handle.handle = event_handle;
-	/* 先找到对象列表中的对象事件列表的引索 */
-	event_iter = sdl_event_manager::_event_list.find(connect_object);
-	/* 如果对象列表没有找到返回-1 */
-	if(event_iter == sdl_event_manager::_event_list.end())
-	{
-		return -1;
-	}
-	/* 再读取注册事件对象的事件列表 */
-	event = (sdl_event_object*)event_iter->second;
-	/* 
-		 然后找到对象事件列表中的事件(委托)结构
-			没有找到返回-1 
-	 */
-	event_struct_iter = event->_object_event_list.find(event_string);
-	if(event_struct_iter == event->_object_event_list.end())
-	{
-		return -1;
-	}
-	/* 使用对象事件列表自身注册功能 */
-	event_object_string.clear();
-	event_object_string<<event_object<<"_"<<_handle.handle;
-	event_struct = (sdl_event_struct*)event_struct_iter->second;
-
-	return event_struct->event_register(event_object_string.str(),_handle);
-}
-def_dll int sdl_event_manager::pull(sdl_board* connect_object,string event_string,sdl_board* event_object,int event_hendle)
-{
-	stringstream event_object_string;
-	map<sdl_board*,sdl_event_object*>::iterator event_iter;
-	map<string,sdl_event_struct*>::iterator event_struct_iter;
-	sdl_event_object* event; 
-	sdl_event_struct* event_struct; 
-	/* 先找到对象列表中的对象事件列表的引索 */
-	event_iter = sdl_event_manager::_event_list.find(connect_object);
-	if(event_iter == sdl_event_manager::_event_list.end())
-	{
-		return -1;
-	}
-	/* 再读取注册事件对象的事件列表 */
-	event = (sdl_event_object*)event_iter->second;
-	/* 
-		 然后找到对象事件列表中的事件(委托)结构
-			没有找到返回-1 
-	 */
-	event_struct_iter = event->_object_event_list.find(event_string);
-	if(event_struct_iter == event->_object_event_list.end())
-	{
-		return -1;
-	}
-	/* 使用对象事件列表自身注册功能 */
-	event_object_string<<event_object<<"_"<<event_hendle;
-	event_struct = (sdl_event_struct*)event_struct_iter->second;
-
-	return event_struct->event_unregister(event_object_string.str());
-}
-def_dll int sdl_event_manager::call_event(sdl_board* event_object,string event_string,SDL_Event* e)
-{
-	stringstream event_object_string;
-	map<sdl_board*,sdl_event_object*>::iterator event_iter;
-	map<string,sdl_event_struct*>::iterator event_struct_iter;
-	sdl_event_object* event; 
-	sdl_event_struct* event_struct; 
-	/* 先找到对象列表中的对象事件列表的引索 */
-	event_iter = sdl_event_manager::_event_list.find(event_object);
-	if(event_iter == sdl_event_manager::_event_list.end())
-	{
-		return -1;
-	}
-	/* 再读取注册事件对象的事件列表 */
-	event = (sdl_event_object*)event_iter->second;
-	/* 
-		 然后找到对象事件列表中的事件(委托)结构
-			没有找到返回-1 
-	 */
-	event_struct_iter = event->_object_event_list.find(event_string);
-	if(event_struct_iter == event->_object_event_list.end())
-	{
-		return -1;
-	}
-	/* 使用对象事件列表累计 */
-	event_struct = (sdl_event_struct*)event_struct_iter->second;
-	return event_struct->push(e);
-}
-def_dll int sdl_event_manager::start()
-{
-	sdl_event_manager::_event_process_thread = SDL_CreateThread(sdl_event_manager::run,"sdl_event_manager::run",NULL);
-	return 0;
-}
-def_dll int sdl_event_manager::run(void* p)
-{
-	stringstream event_object_string;
-	map<sdl_board*,sdl_event_object*>::iterator event_iter;
-	map<string,sdl_event_struct*>::iterator event_struct_iter;
-	map<string,sdl_event_handle>::iterator event_struct_handle_iter;
-	sdl_event_object* event; 
-	sdl_event_struct* event_struct; 
-	sdl_event_handle event_struct_handle;
-	sdl_board* event_object;
-	while(sdl_event_manager::_event_thread_is_run)
-	{
-		/* 引索所有的托管函数地址 */
-		/* 先找到对象列表中的对象事件列表的引索 */
-		//event_iter = sdl_event_manager::_event_list.begin();
-		for(event_iter = sdl_event_manager::_event_list.begin();event_iter!=sdl_event_manager::_event_list.end();event_iter++)
-		{
-			event_object = (sdl_board*)(event_iter->first);
-			/* 
-				 如果当前对象要销毁则锁定事件处理线程 
-				 然后删除当前窗口节点 
-			 */
-			if(event_object->_is_destroy)
-			{
-				/* 删除对象节点时是否要删除事件列表中所有调用该对象的委托事件 */
-				sdl_event_manager::_event_list.erase(event_object);				
-				//delete event_object;
-			}
-			else
-			{
-				/* 否则再读取注册事件对象的事件列表 */
-				event = (sdl_event_object*)event_iter->second;
-				/* 
-					然后找到对象事件列表中的事件(委托)结构
-				*/
-				for(event_struct_iter = event->_object_event_list.begin();event_struct_iter!=event->_object_event_list.end();event_struct_iter++)
-				{
-					/* 使用对象事件列表累计 */
-					event_struct = (sdl_event_struct*)event_struct_iter->second;
-					if(event_struct->count())
-					{
-						for(event_struct_handle_iter = event_struct->_event.begin();event_struct_handle_iter!=event_struct->_event.end();event_struct_handle_iter++)
-						{
-							/* 调用托管的事件函数 */
-							event_struct_handle = (sdl_event_handle)event_struct_handle_iter->second;
-							if(event_struct_handle.object)
-							{
-								//event_struct_handle.object;
-								if(sdl_event_manager::_event_list.find(event_struct_handle.object)!=sdl_event_manager::_event_list.end())
-								event_struct_handle.object->handle(event_struct_handle.handle,(SDL_Event*)(event_struct->_event_queue.front()));
-							}
-						}
-						event_struct->pull();
-					}
-				}
-			}
-		}
-		SDL_Delay(1);
-	}
-	return 0;
-}
-def_dll int sdl_event_manager::destroy()
-{
-	int _thread_state;
-	map<sdl_board*,sdl_event_object*>::iterator node;
-	sdl_event_manager::_event_thread_is_run = 0;
-	SDL_WaitThread(sdl_event_manager::_event_process_thread,&_thread_state);
-	for(node = sdl_event_manager::_event_list.begin();node!=sdl_event_manager::_event_list.end();node++)
-	{
-		delete (sdl_event_object*)node->second;
-	}
-	sdl_event_manager::_event_list.clear();
-	return 0;
-}
 //------------------------------------------
 //
 //
@@ -1078,28 +662,9 @@ int sdl_board::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflags
 		_text_rect.x = (pw-_text_board->clip_rect()->w)/2,_text_rect.y = (ph-_text_board->clip_rect()->h)/2,_text_rect.w = pw,_text_rect.h = ph;
 	}
 	//
-	/* 注册委托函数 */
-	sdl_event_manager::push(this);
-	register_event("on_timer");
-	connect_event("on_timer",this,sdlgui_event_timer);
-	register_event("on_click");
-	connect_event("on_click",this,sdlgui_mouse_click);
-	register_event("on_db_click");
-	connect_event("on_db_click",this,sdlgui_mouse_db_click);
-	register_event("on_release");
-	connect_event("on_release",this,sdlgui_mouse_release);
-	register_event("on_motion");
-	connect_event("on_motion",this,sdlgui_mouse_motion);
-	register_event("on_wheel");
-	connect_event("on_wheel",this,sdlgui_mouse_wheel);
-	register_event("on_key_down");
-	connect_event("on_key_down",this,sdlgui_key_down);
-	register_event("on_key_up");
-	connect_event("on_key_up",this,sdlgui_key_up);
-	register_event("on_get_focus");
-	connect_event("on_get_focus",this,sdlgui_window_get_focus);
-	register_event("on_kill_focus");
-	connect_event("on_kill_focus",this,sdlgui_window_kill_focus);
+	/* 发送初始化事件 */
+	SDL_Event e;
+	on_created(*this,e);
 	return 0;
 }
 //------------------------------------------
@@ -1550,7 +1115,7 @@ Uint32 sdl_board::timer_proc(Uint32 interval,void* p)
 		ue.code = interval;
 		e.type = SDL_USEREVENT;
 		e.user = ue;
-		((sdl_board*)p)->event_signal("on_timer",(SDL_Event*)&interval);
+		//((sdl_board*)p)->event_signal("on_timer",(SDL_Event*)&interval);
 		//((sdl_board*)p)->event_signal("on_timer",&e);
 		//((sdl_board*)p)->event_signal("on_click",&e);
 	}
@@ -1604,9 +1169,9 @@ int sdl_board::active()
 	}
 	if(sdl_frame::_active_win)
 	{
-		sdl_frame::_active_win->event_signal("on_kill_focus",(SDL_Event*)this);
+		//sdl_frame::_active_win->event_signal("on_kill_focus",(SDL_Event*)this);
 	}
-	event_signal("on_get_focus",(SDL_Event*)sdl_frame::_active_win);
+	//event_signal("on_get_focus",(SDL_Event*)sdl_frame::_active_win);
 	sdl_frame::_active_win = this;
 	return 0;
 }
@@ -1634,135 +1199,6 @@ int sdl_board::capture(int p=1)
 	return 0;
 }
 //---------------------------------------------
-//底板窗口委托事件处理
-int sdl_board::handle(int id,SDL_Event* e)
-{
-	switch(id)
-	{
-		case sdlgui_mouse_click:
-			on_click(This,(void*)e);
-		break;
-		case sdlgui_mouse_motion:
-			on_motion(This,(void*)e);
-		break;
-		case sdlgui_mouse_wheel:
-			on_wheel(This,(void*)e);
-		break;
-		case sdlgui_mouse_db_click:
-			on_db_click(This,(void*)e);
-		break;
-		case sdlgui_mouse_release:
-			on_release(This,(void*)e);
-		break;
-		case sdlgui_event_timer:
-			on_timer(This,(void*)e);
-		break;
-		case sdlgui_key_down:
-			on_keydown(This,(void*)e);
-		break;
-		case sdlgui_key_up:
-			on_keyup(This,(void*)e);
-		break;
-		case sdlgui_window_get_focus:
-			on_get_focus(This,(void*)e);
-		break;
-		case sdlgui_window_kill_focus:
-			on_kill_focus(This,(void*)e);
-		break;
-		default:
-			cout<<"other events"<<endl;
-		break;
-	}
-	return 0;
-}
-//----------------------------------------------
-//底板窗口注册事件函数
-int sdl_board::register_event(string event_string)
-{
-	return sdl_event_manager::push(this,event_string);
-}
-//----------------------------------------------
-//底板窗口连接委托事件函数
-int sdl_board::connect_event(string event_string,sdl_board* event_object,int event_handle)
-{
-	return sdl_event_manager::push(This,event_string,event_object,event_handle);
-}
-//----------------------------------------------
-//给底板窗口发送信号
-int sdl_board::event_signal(string event_string,SDL_Event*e)
-{
-	return sdl_event_manager::call_event(This,event_string,e);
-}
-//---------------------------------------------
-//底板窗口鼠标点击事件委托函数
-int sdl_board::on_click(sdl_board* obj,void* data)
-{
-	//cout<<"click mouse on board is:"<<this<<endl;
-	return 0;
-}
-//---------------------------------------------
-//底板窗口鼠标释放事件委托函数
-int sdl_board::on_release(sdl_board* obj,void* data)
-{
-	//cout<<"release mouse on board is:"<<this<<endl;
-	return 0;
-}
-//---------------------------------------------
-//底板窗口鼠标双击事件委托函数
-int sdl_board::on_db_click(sdl_board* obj,void* data)
-{
-	//cout<<"db_click mouse on board is:"<<this<<endl;
-	return 0;
-}
-//---------------------------------------------
-//底板窗口鼠标移动事件委托函数
-int sdl_board::on_motion(sdl_board* obj,void* data)
-{
-	//cout<<"motion board is:"<<this<<endl;
-	return 0;
-}
-//-------------------------------------------------
-// 鼠标中键滚动事件 
-int sdl_board::on_wheel(sdl_board* obj,void* data)
-{
-	//cout<<"mouse wheel is"<<this<<endl;
-	return 0;
-}
-//---------------------------------------------
-//底板窗口键盘按下事件委托函数
-int sdl_board::on_keydown(sdl_board* obj,void* data)
-{
-	//cout<<"key down is:"<<this<<endl;
-	return 0;
-}
-//---------------------------------------------
-//底板窗口键盘释放事件委托函数
-int sdl_board::on_keyup(sdl_board* obj,void* data)
-{
-	//cout<<"key up is:"<<this<<endl;
-	return 0;
-}
-//------------------------------------------------
-//窗口计时事件
-int sdl_board::on_timer(sdl_board* obj,void* data)
-{
-	//cout<<"timer is"<<clock()<<endl;
-	return 0;
-}
-//------------------------------------------------
-//底板得到焦点事件
-int sdl_board::on_get_focus(sdl_board* obj,void* data)
-{
-	cout<<"board get focus"<<endl;
-	return 0;
-}
-//------------------------------------------------
-//底板失去焦点事件
-int sdl_board::on_kill_focus(sdl_board* obj,void* data)
-{
-	cout<<"board kill focus"<<endl;
-	return 0;
-}
 //------------------------------------------------
 //
 //
@@ -2027,7 +1463,8 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_FINGERDOWN:
 			bug<<"test"<<"..."<<1;
 			bug.out_file("test.txt");
-			if(t != this)
+			//t->on_click(*this,*e);
+			//if(t != this)
 			{
 				//t->event(e);
 				//if(e->button.clicks==2)
@@ -2036,31 +1473,34 @@ int sdl_frame::event_shunt(SDL_Event* e)
 				}
 				//else
 				{
-					t->event_signal("on_click",e);
+					//t->event_signal("on_click",e);
+					t->on_click(*t,*e);
 				}
 			}
 		break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_FINGERUP:
-			if(t != this)
+			//if(t != this)
 			{
 				//t->event(e);
-				t->event_signal("on_release",e);
+				//t->event_signal("on_release",e);
+				t->on_release(*t,*e);
 			}
 		break;
 		case SDL_FINGERMOTION:
 		case SDL_MOUSEMOTION:
-			if(t != this)
+			//if(t != this)
 			{
 				//t->event(e);
-				t->event_signal("on_motion",e);
+				t->on_motion(*t,*e);
 			}
 		break;
 		case SDL_MOUSEWHEEL:
-			if(t != this)
+			//if(t != this)
 			{
 				//t->event(e);
-				t->event_signal("on_wheel",e);
+				//t->event_signal("on_wheel",e);
+				t->on_wheel(*t,*e);
 			}
 		break;
 		case SDL_KEYUP:
@@ -2069,7 +1509,8 @@ int sdl_frame::event_shunt(SDL_Event* e)
 				t = sdl_frame::_active_win;
 			}
 			//t->event(e);
-			t->event_signal("on_key_up",e);
+			//t->event_signal("on_key_up",e);
+			t->on_keyup(*t,*e);
 		break;
 		case SDL_TEXTINPUT:
 			//ime.input(*e->text.text);
@@ -2079,7 +1520,8 @@ int sdl_frame::event_shunt(SDL_Event* e)
 				t = sdl_frame::_active_win;
 			}
 			//t->event(e);
-			t->event_signal("on_key_down",e);
+			//t->event_signal("on_key_down",e);
+			t->on_keydown(*t,*e);
 		break;
 	}
 	return 0;
@@ -2088,7 +1530,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 //重载窗口委托入口函数
 int sdl_frame::handle(int id,SDL_Event*e)
 {
-	return sdl_board::handle(id,e);
+	return 0;
 }
 //--------------------------------------------
 //重载窗口的系统事件处理函数。
@@ -2125,6 +1567,9 @@ int sdl_frame::run()
 {
 	map<Uint32,sdl_frame*>::iterator _node;
 	sdl_frame* _node_window;
+	/* 启动事件序列管理 */
+	event_signal::start();
+	/* 接收事件 */
 	while(!sdl_frame::_is_exit)
 	{
 		if(sdl_frame::_window_list.empty())
@@ -2135,13 +1580,6 @@ int sdl_frame::run()
 		{
 			while(SDL_PollEvent(&sdl_frame::_main_event))
 			{
-				/* 如果事件处理线程没有锁定则锁定后创建事件 */
-				sdl_event_manager::_event_thread_lock.lock();
-				if(!sdl_event_manager::_event_thread_is_lock)
-				{
-					//sdl_event_manager::_event_process_thread_cond.wait(sdl_event_manager::_event_thread_lock);
-					sdl_event_manager::_event_thread_is_lock = 1;
-				}
 				/* 确定事件窗口 */
 				_node = _window_list.find(sdl_frame::_main_event.window.windowID);
 				if(_node==_window_list.end())
@@ -2175,7 +1613,7 @@ int sdl_frame::run()
 					break;
 				}
 				/* 事件线程解锁 */
-				sdl_event_manager::_event_thread_lock.unlock();
+				//sdl_event_manager::_event_thread_lock.unlock();
 			}
 			for(_node = _window_list.begin();_node!=_window_list.end();_node++)
 			{
@@ -2185,7 +1623,7 @@ int sdl_frame::run()
 		}
 		SDL_Delay(1);
 	}
-	sdl_event_manager::destroy();
+	//sdl_event_manager::destroy();
 	return 0;
 }
 //------------------------------------------------
