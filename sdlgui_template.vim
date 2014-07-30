@@ -26,9 +26,12 @@ abbr sdl_class{...}
   :
   GUI<$1,$2>()
   {
-    if(init(ptitle,px,py,pw,ph,pflags))return -1;
-    return 0;
+    init(ptitle,px,py,pw,ph,pflags);
   }
+	$1::~$1()
+	{
+
+	}
   int $1::init()
   {
     if($2::init())return -1;
