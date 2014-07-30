@@ -20,9 +20,6 @@ typedef class sdl_button : public GUI<sdl_button,sdl_widget>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
-		int handle(int,SDL_Event*);
-		int on_click(sdl_board*,void*);
-		int on_release(sdl_board*,void*);
 	protected:
 		sdl_clip _page;		
 }*sdl_button_ptr;
@@ -60,6 +57,20 @@ int sdl_button::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	_page.fill_rect(&rt,0xff0000);
 	//
 	_page.clip(1,1,this,NULL);
+	/* 预定义事件 */
+	on_click()=[this](sdl_board&obj,SDL_Event& e)
+	{
+		capture(1);
+		_page.clip(0,0,this,NULL);
+		active();
+		return 0;
+	};
+	on_release()=[this](sdl_board&obj,SDL_Event& e)
+	{
+		_page.clip(1,1,this,NULL);
+		capture(0);
+		return 0;
+	};
 	return 0;
 }
 int sdl_button::sysevent(SDL_Event*e)
@@ -70,36 +81,6 @@ int sdl_button::sysevent(SDL_Event*e)
 			break;
 	}
 	return sdl_widget::sysevent(e);
-}
-int sdl_button::handle(int id,SDL_Event* e)
-{
-	switch(id)
-	{
-		case sdlgui_mouse_click:
-			on_click(this,(void*)e);
-		break;
-		case sdlgui_mouse_release:
-			on_release(this,(void*)e);
-		break;
-		default:
-			return sdl_board::handle(id,e);
-		break;
-	}
-	return 0;
-}
-int sdl_button::on_click(sdl_board* obj,void* data)
-{
-	_page.clip(0,0,this,NULL);
-	capture(1);
-	active();
-	return sdl_board::on_click(obj,data);
-}
-int sdl_button::on_release(sdl_board* obj,void* data)
-{
-	_page.clip(1,1,this,NULL);
-	capture(0);
-	return 0;
-	//return sdl_widget::on_release(obj,data);
 }
 //----------------------------------------------------------------
 //
@@ -119,11 +100,6 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		int init(const char*,int,int,int,int,Uint32);
 		int redraw();
 		int sysevent(SDL_Event*);
-		int handle(int,SDL_Event*);
-		int on_timer(sdl_board*,void*);
-		int on_motion(sdl_board*,void*);
-		int on_release(sdl_board*,void*);
-		virtual int on_scroll(sdl_board*,void*);
 		float point();
 		float point(float,int);
 		int scroll(sdl_board*,float,float);
@@ -146,6 +122,8 @@ typedef class sdl_scroll : public GUI<sdl_scroll,sdl_widget>
 		sdl_board* _scroll_object;
 		/* 滚动条计时器 */
 		SDL_TimerID _scroll_timer;
+	public:
+		event_signal on_scroll;
 }*sdl_scroll_ptr;
 sdl_scroll::sdl_scroll()
 	:
@@ -175,8 +153,39 @@ int sdl_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pflag
 	_scroll_timer = 0;
 	_scroll_object = NULL;
 	fill_rect(NULL,0x00ff00);
-	register_event("on_scroll");
-	connect_event("on_scroll",this,sdlgui_scroll_scroll);
+	/* 预定义事件 */
+	on_timer()=[this](sdl_board& obj,SDL_Event &e)
+	{
+		if(_step<=0)
+		{
+			SDL_RemoveTimer(_scroll_timer);
+			_scroll_timer = 0;
+		}
+		else
+		{
+			_step-=0.05;
+			_speed -= _step*(_speed*0.05);
+		}
+		on_scroll(*this,e);
+		return 0;
+	};
+	on_motion()=[this](sdl_board& obj,SDL_Event &e)
+	{
+		if(e.motion.state == SDL_BUTTON_LMASK)
+		{
+			_step = 1;
+			if(!_scroll_timer)
+			{
+				_scroll_timer = add_timer(100);
+			}
+		}
+		return 0;
+	};
+	on_release()=[this](sdl_board& obj,SDL_Event &e)
+	{
+		_step = 1;
+		return 0;
+	};
 	return 0;
 }
 float sdl_scroll::point()
@@ -211,53 +220,6 @@ int sdl_scroll::sysevent(SDL_Event*e)
 	}
 	return sdl_widget::sysevent(e);
 }
-int sdl_scroll::handle(int id,SDL_Event* e)
-{
-	switch(id)
-	{
-		case sdlgui_scroll_scroll:
-			on_scroll(this,(void*)e);
-		break;
-	}
-	return sdl_board::handle(id,e);
-}
-int sdl_scroll::on_timer(sdl_board* obj,void* e)
-{
-	if((_step<=0))
-	{
-		SDL_RemoveTimer(_scroll_timer);
-		_scroll_timer = 0;
-	}
-	else
-	{
-		_step-=0.05;
-		_speed-=_step*(_speed*0.05);
-	}
-	event_signal("on_scroll",(SDL_Event*)e);
-	return 0;
-}
-int sdl_scroll::on_motion(sdl_board* obj,void* e)
-{
-	if(((SDL_Event*)e)->motion.state==SDL_BUTTON_LMASK)
-	{
-		_step = 1;
-		if(!_scroll_timer)
-		{
-			_scroll_timer = add_timer(100);
-		}
-	}
-	return 0;
-}
-int sdl_scroll::on_release(sdl_board* obj,void* e)
-{
-	_step = 1;
-	return 0;
-}
-int sdl_scroll::on_scroll(sdl_board* obj,void* e)
-{
-	//cout<<"scroll is:"<<this<<endl;
-	return 0;
-}
 //----------------------------------------------
 //
 //
@@ -273,11 +235,8 @@ typedef class sdl_v_scroll : public GUI<sdl_v_scroll,sdl_scroll>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
-		int handle(int,SDL_Event*);
-		//int on_release(sdl_board*,void*);
-		int on_motion(sdl_board*,void*);
-		int on_timer(sdl_board*,void*);
 		float point(float,int);
+		float point();
 	protected:
 		
 }*sdl_v_scroll_ptr;
@@ -306,6 +265,31 @@ int sdl_v_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pfl
 	_bar_rect.w = pw;
 	_bar_rect.h = ph*0.3;
 	bar.init(0,_bar_rect.w,_bar_rect.h,32,0,0,0,0);
+	/* 预定义事件 */
+	on_motion()=[this](sdl_board& obj,SDL_Event& e)
+	{
+		int s;
+		float p;
+		if(e.motion.state == SDL_BUTTON_LMASK)
+		{
+			s = e.motion.yrel;
+			_speed = s;
+			p = to_local_pos_y((float)e.motion.y)/(float)_rect.h;
+			point(p,0);
+		}
+		return 0;
+	};
+	on_timer()=[this](sdl_board& obj,SDL_Event& e)
+	{
+		float s = _speed / (_rect.h - _bar_rect.h);
+		_point += s;
+		point(_point,1);
+		if(_scroll_object)
+		{
+			_scroll_object->pos_y(_scroll_rect.y+(_scroll_rect.y-_scroll_rect.x)*_point);
+		}
+		return 0;
+	};
 	return 0;
 }
 float sdl_v_scroll::point(float p,int m=0)
@@ -330,6 +314,10 @@ float sdl_v_scroll::point(float p,int m=0)
 	}
 	return _point;
 }
+float sdl_v_scroll::point()
+{
+	return sdl_scroll::point();
+}
 int sdl_v_scroll::sysevent(SDL_Event*e)
 {
 	switch(e->type)
@@ -338,39 +326,6 @@ int sdl_v_scroll::sysevent(SDL_Event*e)
 		break;
 	}
 	return sdl_scroll::sysevent(e);
-}
-int sdl_v_scroll::handle(int id,SDL_Event* e)
-{
-	return sdl_scroll::handle(id,e);
-}
-/* 
-		鼠标移动时计算垂直运动速度 
- */
-int sdl_v_scroll::on_motion(sdl_board* obj,void* data)
-{
-	int s;
-	float p;
-	if((((SDL_Event*)data)->motion.state==SDL_BUTTON_LMASK))
-	{
-		s = ((SDL_Event*)data)->motion.yrel;
-		_speed = s;
-		p = to_local_pos_y((float)((SDL_Event*)data)->motion.y)/(float)_rect.h;
-		point(p,0);
-	}
-	return sdl_scroll::on_motion(obj,data);
-}
-int sdl_v_scroll::on_timer(sdl_board* obj,void* data)
-{
-	if(sdl_scroll::on_timer(obj,data))return -1;
-	float s = _speed/(_rect.h-_bar_rect.h);
-	_point+=s;
-	point(_point,1);
-	/* 如果指定了滚动对象，则调整对象位置 */
-	if(_scroll_object)	
-	{
-		_scroll_object->pos_y(_scroll_rect.y+(_scroll_rect.y-_scroll_rect.x)*_point);
-	}
-	return 0;
 }
 //-------------------------------------------------
 //
@@ -387,10 +342,8 @@ typedef class sdl_h_scroll : public GUI<sdl_h_scroll,sdl_scroll>
 		int init();
 		int init(const char*,int,int,int,int,Uint32);
 		int sysevent(SDL_Event*);
-		int handle(int,SDL_Event*);
-		int on_motion(sdl_board*,void*);
-		int on_timer(sdl_board*,void*);
 		float point(float,int);
+		float point();
 	protected:
 		
 }*sdl_h_scroll_ptr;
@@ -420,6 +373,31 @@ int sdl_h_scroll::init(const char* ptitle,int px,int py,int pw,int ph,Uint32 pfl
 	_bar_rect.h = ph;
 	bar.init(0,_bar_rect.w,_bar_rect.h,32,0,0,0,0);
 	bar.fill_rect(NULL,0xff0000);
+	/* 预定义事件 */
+	on_motion()=[this](sdl_board& obj,SDL_Event& e)
+	{
+		int s;
+		float p;
+		if(e.motion.state == SDL_BUTTON_LMASK)
+		{
+			s = e.motion.xrel;
+			_speed = s;
+			p = to_local_pos_x((float)e.motion.x)/(float)_rect.w;
+			point(p,0);
+		}
+		return 0;
+	};
+	on_timer()=[this](sdl_board& obj,SDL_Event& e)
+	{
+		float s = _speed / (_rect.w - _bar_rect.w);
+		_point += s;
+		point(_point,1);
+		if(_scroll_object)
+		{
+			_scroll_object->pos_x(_scroll_rect.y+(_scroll_rect.y-_scroll_rect.x)*_point);
+		}
+		return 0;
+	};
 	return 0;
 }
 int sdl_h_scroll::sysevent(SDL_Event*e)
@@ -430,36 +408,6 @@ int sdl_h_scroll::sysevent(SDL_Event*e)
 		break;
 	}
 	return sdl_scroll::sysevent(e);
-}
-int sdl_h_scroll::handle(int id,SDL_Event* e)
-{
-	return sdl_scroll::handle(id,e);
-}
-int sdl_h_scroll::on_motion(sdl_board* obj,void* data)
-{
-	int s;
-	float p;
-	if((((SDL_Event*)data)->motion.state==SDL_BUTTON_LMASK))
-	{
-		s = ((SDL_Event*)data)->motion.xrel;
-		_speed = s;
-		p = to_local_pos_x((float)((SDL_Event*)data)->motion.x)/(float)_rect.w;
-		point(p,0);
-	}
-	return sdl_scroll::on_motion(obj,data);
-}
-int sdl_h_scroll::on_timer(sdl_board* obj,void* data)
-{
-	if(sdl_scroll::on_timer(obj,data))return -1;
-	float s = _speed/(_rect.w-_bar_rect.w);
-	_point+=s;
-	point(_point,1);
-	/* 如果指定了滚动对象，则调整对象位置 */
-	if(_scroll_object)	
-	{
-		_scroll_object->pos_y(_scroll_rect.y+(_scroll_rect.y-_scroll_rect.x)*_point);
-	}
-	return 0;
 }
 float sdl_h_scroll::point(float p,int m=0)
 {
@@ -480,5 +428,9 @@ float sdl_h_scroll::point(float p,int m=0)
 		_bar_rect.x = _rect.w-_bar_rect.w;
 	}
 	return _point;
+}
+float sdl_h_scroll::point()
+{
+	return sdl_scroll::point();
 }
 #endif// __SDLGUI_TOOLS_HEAD__
