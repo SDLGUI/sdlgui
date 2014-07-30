@@ -57,7 +57,7 @@
 //-----------------------------------------------
 using namespace std;
 //--------------------------------------------------
-class event_struct;
+class event_signal;
 class sdl_board;
 template<class T,class B> class GUI;
 class sdl_ime;
@@ -205,11 +205,11 @@ class event_signal
 				for(auto p :_event_list)
 				{
 					(*p)(*(_event_called_board.front()),*(_event_called_arg.front()));	
-					//* 消除已经调用过的参数 */
-					_event_called_board.pop();
-					delete _event_called_arg.front();
-					_event_called_arg.pop();
 				}
+				//* 消除已经调用过的参数 */
+				_event_called_board.pop();
+				delete _event_called_arg.front();
+				_event_called_arg.pop();
 			}
 			return 0;
 		}
@@ -382,6 +382,7 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		event_signal on_created;
 		event_signal on_destroy;
 		event_signal on_sizeed;
+		event_signal on_timer;
 	protected:
 		static Uint32 timer_proc(Uint32,void*);
 	protected:
@@ -1115,9 +1116,7 @@ Uint32 sdl_board::timer_proc(Uint32 interval,void* p)
 		ue.code = interval;
 		e.type = SDL_USEREVENT;
 		e.user = ue;
-		//((sdl_board*)p)->event_signal("on_timer",(SDL_Event*)&interval);
-		//((sdl_board*)p)->event_signal("on_timer",&e);
-		//((sdl_board*)p)->event_signal("on_click",&e);
+		((sdl_board*)p)->on_timer(*((sdl_board*)p),e);
 	}
 	return interval;
 }
@@ -1438,8 +1437,6 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
 			SDL_GetMouseState(&x,&y);
-			bug<<x;
-			bug.out_file("test.txt");
 		break;
 		case SDL_FINGERUP:
 		case SDL_FINGERDOWN:
@@ -1461,8 +1458,8 @@ int sdl_frame::event_shunt(SDL_Event* e)
 	{
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_FINGERDOWN:
-			bug<<"test"<<"..."<<1;
-			bug.out_file("test.txt");
+			//bug<<"test"<<"..."<<1;
+			//bug.out_file("test.txt");
 			//t->on_click(*this,*e);
 			//if(t != this)
 			{
