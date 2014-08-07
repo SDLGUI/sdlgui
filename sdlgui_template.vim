@@ -7,10 +7,9 @@ abbr sdl_class{...}
     public:
       $1(); 
       $1(const char*,int,int,int,int,Uint32); 
-      ~$1();
+      virtual ~$1();
       int init();
       int init(const char*,int,int,int,int,Uint32); 
-      int sysevent(SDL_Event*);
       int draw();
     public:
       ${0}
@@ -42,11 +41,20 @@ abbr sdl_class{...}
     if($2::init(ptitle,px,py,pw,ph,pflags))return -1;
     return 0;
   }
-  int $1::sysevent(SDL_Event* e)
-  {
-    return $2::sysevent(e);
-  }
   int $1::draw()
   {
     return $2::draw();
   }
+
+#sdl_add_widget
+snippet sdl_add_widget
+abbr obj.add<sdl_widget>(...)
+	${1:#:object} add<${2:sdl_widget}>("${3:#:title}",${4:#:rect},${5:1});
+
+#sdl_event
+snippet sdl_event
+abbr obj.on_event()=...
+${1}${2:.}${3:on_click()}=[${4:&}](sdl_board& obj,SDL_Event& e)
+{
+	return 0;
+};
