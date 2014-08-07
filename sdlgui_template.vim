@@ -49,12 +49,13 @@ abbr sdl_class{...}
 #sdl_add_widget
 snippet sdl_add_widget
 abbr obj.add<sdl_widget>(...)
-	${1:#:object} add<${2:sdl_widget}>("${3:#:title}",${4:#:rect},${5:1});
+	${1:#:object} add<${2:sdl_widget}>("${3:#:title}",${4:#:rect},${5:1});${6}
 
 #sdl_event
 snippet sdl_event
 abbr obj.on_event()=...
-${1}${2:.}${3:on_click()}=[${4:&}](sdl_board& obj,SDL_Event& e)
-{
-	return 0;
-};
+	${1:#Event Object}${2:->}${3:on_click()}=[${4:&}](sdl_board& obj,SDL_Event& e)
+	{
+		${5}
+		return 0;
+	};
