@@ -1434,6 +1434,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 	switch(e->type)
 	{
 		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEMOTION:
 		case SDL_MOUSEWHEEL:
 			SDL_GetMouseState(&x,&y);
@@ -1462,6 +1463,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 			//bug.out_file("test.txt");
 			//t->on_click(*this,*e);
 			//if(t != this)
+			//cout<<"down:"<<t<<endl;
 			{
 				//t->event(e);
 				//if(e->button.clicks==2)
@@ -1477,6 +1479,7 @@ int sdl_frame::event_shunt(SDL_Event* e)
 		break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_FINGERUP:
+			//cout<<"up:"<<t<<endl;
 			//if(t != this)
 			{
 				//t->event(e);
