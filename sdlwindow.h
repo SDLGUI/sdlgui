@@ -418,6 +418,7 @@ typedef class sdl_clip : public sdlsurface
 		int init(int,int,string);
 		int clip(int,int);
 		int clip(int,int,sdlsurface*,SDL_Rect*);
+		int clip(int,int,int,sdlsurface*,SDL_Rect*);
 		int clip_width();
 		int clip_height();
 		//int blit_surface(int,int,sdlsurface*,SDL_Rect*);
@@ -1259,6 +1260,14 @@ int sdl_clip::clip(int ps,int pe,sdlsurface* dst,SDL_Rect *rt = NULL)
 		return blit_surface(&srt,dst,NULL);
 	}
 	return -1;
+}
+int sdl_clip::clip(int key_color,int ps,int pe,sdlsurface* dst,SDL_Rect *rt = NULL)
+{
+	if(key_color>=0)
+	{
+		color_key(1,key_color);
+	}
+	return clip(ps,pe,dst,rt);
 }
 int sdl_clip::clip_width()
 {
