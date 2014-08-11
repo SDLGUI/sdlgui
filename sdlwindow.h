@@ -57,6 +57,8 @@
 //-----------------------------------------------
 using namespace std;
 //--------------------------------------------------
+class sdl_timer_node;
+class sdl_timer;
 class event_signal;
 class sdl_board;
 template<class T,class B> class GUI;
@@ -237,12 +239,13 @@ class event_signal
 			event_signal* p=NULL;
 			while(1)
 			{
-				//std::cout<<p<<std::endl;
+				//std::cout<<event_signal::_event_queue.size()<<std::endl;
 				if(!event_signal::_event_queue.empty())
 				{
 					event_signal::_event_queue.front()->call_event();
 					event_signal::_event_queue.pop();
 				}
+				SDL_Delay(1);
 			}
 			return 0;
 		}
@@ -358,6 +361,8 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		int text(const char*);
 		/* 给底板加入计时器*/
 		SDL_TimerID add_timer(Uint32);
+		//Uint32 add_sdl_timer(Uint32);
+		sdl_timer_node& add_sdl_timer(Uint32);
 		/* 设置底板透明度 */
 		int alpha(Uint8);
 		/* 设置底板混合模式 */
@@ -401,7 +406,98 @@ typedef class sdl_board : public GUI<sdl_board,sdlsurface>
 		//map<sdl_board*,int> _board_list;
 		list<sdl_board*> _board_list;
 }*sdl_board_ptr;
-//sdl_board** sdl_board::_hit_board_ptr=NULL;
+
+//------------------------------------------
+//
+//
+//
+//						自定义定时器
+//
+//
+//
+//------------------------------------------
+class sdl_timer_node 
+{
+	friend class sdl_timer;
+	Uint32 time;	
+	clock_t next_time;
+	sdl_board* obj;
+	public:
+	sdl_timer_node()
+	{
+		next_time = 0;
+		obj = NULL;
+	}
+};
+class sdl_timer
+{
+	public:
+	public:
+		static int start();
+		static sdl_timer_node& push(Uint32,sdl_board*);
+	protected:
+		static int timer_process(void* data);
+	protected:
+		static SDL_Thread* _timer_thread;
+		static std::vector<sdl_timer_node*> _node_list;
+
+};
+SDL_Thread* sdl_timer::_timer_thread = NULL;
+std::vector<sdl_timer_node*> sdl_timer::_node_list;
+
+int sdl_timer::start()
+{
+	if(!_timer_thread)
+	{
+		_timer_thread = SDL_CreateThread(sdl_timer::timer_process,"sdl_timer::timer_process",NULL);
+	}
+	return 0;
+}
+sdl_timer_node& sdl_timer::push(Uint32 i,sdl_board* obj)
+{
+	sdl_timer_node* t = new sdl_timer_node;
+	t->time = i;
+	t->obj = obj;
+	sdl_timer::_node_list.push_back(t);
+	return *t;
+}
+int sdl_timer::timer_process(void* data)
+{
+	SDL_Event e;
+	SDL_UserEvent ue;
+	vector<sdl_timer_node*>::iterator iter;
+	sdl_timer_node* i;
+	while(1)
+	{
+		if(!sdl_timer::_node_list.empty())
+		{
+			for(iter = sdl_timer::_node_list.begin();iter!=_node_list.end();iter++)
+			{
+				i = *iter;
+				if(i->next_time<clock())
+				{
+					ue.type = SDL_USEREVENT;
+					ue.code = i->time;
+					e.type = SDL_USEREVENT;
+					e.user = ue;
+					i->obj->on_timer(*(i->obj),e);
+					if(i->time)
+					{
+						i->next_time = clock()+i->time;
+					}
+					else
+					{
+						delete i;
+						sdl_timer::_node_list.erase(iter);					
+					}
+				}
+			}
+		}
+		SDL_Delay(1);
+	}
+	return 0;
+}
+
 //------------------------------------------
 //
 //
@@ -1105,6 +1201,10 @@ SDL_TimerID sdl_board::add_timer(Uint32 timer)
 {
 	return SDL_AddTimer(timer,sdl_board::timer_proc,(void*)this);
 }
+sdl_timer_node& sdl_board::add_sdl_timer(Uint32 timer)
+{
+	return sdl_timer::push(timer,this);
+}
 //-------------------------------------------------
 //窗口计时器公共函数
 Uint32 sdl_board::timer_proc(Uint32 interval,void* p)
@@ -1578,6 +1678,8 @@ int sdl_frame::run()
 	sdl_frame* _node_window;
 	/* 启动事件序列管理 */
 	event_signal::start();
+	/* 启动计时器管理 */
+	sdl_timer::start();
 	/* 接收事件 */
 	while(!sdl_frame::_is_exit)
 	{
