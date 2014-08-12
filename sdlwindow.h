@@ -1215,9 +1215,11 @@ Uint32 sdl_board::timer_proc(Uint32 interval,void* p)
 	{
 		ue.type = SDL_USEREVENT;
 		ue.code = interval;
+		ue.data1 = p;
 		e.type = SDL_USEREVENT;
 		e.user = ue;
-		((sdl_board*)p)->on_timer(*((sdl_board*)p),e);
+		SDL_PushEvent(&e);
+		//((sdl_board*)p)->on_timer(*((sdl_board*)p),e);
 	}
 	return interval;
 }
@@ -1709,13 +1711,14 @@ int sdl_frame::run()
 					break;
 					case SDL_USEREVENT:
 						/* 计时器消息分流 */
-						if(sdl_frame::_main_event.user.code == sdlgui_event_timer)
+						//if(sdl_frame::_main_event.user.code == sdlgui_event_timer)
 						{
-							((sdl_board*)sdl_frame::_main_event.user.data1)->event(&_main_event);
+							//((sdl_board*)sdl_frame::_main_event.user.data1)->event(&_main_event);
 						}
-						else
+						//else
 						{
-							_node_window->event(&sdl_frame::_main_event);
+							((sdl_board*)sdl_frame::_main_event.user.data1)->on_timer(*(sdl_board*)(sdl_frame::_main_event.user.data1),sdl_frame::_main_event);
+							//_node_window->event(&sdl_frame::_main_event);
 						}
 					break;
 					default:
