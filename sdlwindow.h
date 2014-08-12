@@ -1681,7 +1681,7 @@ int sdl_frame::run()
 	/* 启动事件序列管理 */
 	event_signal::start();
 	/* 启动计时器管理 */
-	sdl_timer::start();
+	//sdl_timer::start();
 	/* 接收事件 */
 	while(!sdl_frame::_is_exit)
 	{
