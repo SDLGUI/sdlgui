@@ -2,7 +2,7 @@ CFLAG = -I/usr/local/include
 name=test.cpp
 bin=.
 SDLGUI_DIR=./sdlgui
-LIBS =  -L/usr/local/lib -lSDL2_image -lSDL2_gfx -lSDL2_ttf -lSDL2main -lSDL2
+LIBS =  -L/usr/local/lib -lSDL2 -lSDL2_image -lSDL2_gfx -lSDL2_ttf -lSDL2main -lSDL2
 WINLIBS = -L/usr/local/lib -lSDL2_image -lSDL2_image.dll -lSDL2_gfx -lSDL2_draw -lmingw32 -lSDL2_ttf -lSDL2_ttf.dll -lSDL2_mixer -lSDL2_mixer.dll -lSDL2main -lSDL2 -lSDL2.dll 
 ALL:
 	rm -f $(bin)/$(name).exe 
