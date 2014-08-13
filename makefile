@@ -11,7 +11,7 @@ windows : $(name) $(SDLGUI_DIR)/sdlbase.h $(SDLGUI_DIR)/sdlwindow.h $(SDLGUI_DIR
 	mkdir -p $(bin)
 	g++ -std=c++11 -Wall -g $(name) -o $(bin)/$(name).exe $(CFLAG) $(WINLIBS)
 	$(bin)/$(name).exe
-ubuntu: $(SDLGUI_DIR)/test.cpp $(SDLGUI_DIR)/sdlgui.h $(SDLGUI_DIR)/sdlbase.h $(SDLGUI_DIR)/sdlwindow.h $(SDLGUI_DIR)/sdltools.h
+ubuntu: $(name) $(SDLGUI_DIR)/sdlgui.h $(SDLGUI_DIR)/sdlbase.h $(SDLGUI_DIR)/sdlwindow.h $(SDLGUI_DIR)/sdltools.h
 	mkdir -p $(bin)
 	g++ -std=c++11 -Wall -g $(name) -o $(bin)/$(name).exe $(CFLAG) $(LIBS)
 	$(bin)/$(name).exe
