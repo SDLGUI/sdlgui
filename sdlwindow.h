@@ -1726,6 +1726,7 @@ int sdl_frame::run()
 						_node_window->event_shunt(&sdl_frame::_main_event);
 					break;
 				}
+				memset((char*)&sdl_frame::_main_event,0x00,sizeof(sdl_frame::_main_event));
 				/* 事件线程解锁 */
 				//sdl_event_manager::_event_thread_lock.unlock();
 			}
