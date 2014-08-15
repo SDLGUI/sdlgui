@@ -189,6 +189,15 @@ class event_signal
 		/* 用于调用事件接口 */
 		int operator()(sdl_board& obj,SDL_Event& e)
 		{
+			/* 临时调整测试 */
+			if(!_event_list.empty())
+			{
+				for(auto p :_event_list)
+				{
+					(*p)(obj,e);	
+				}
+			}
+			return 0;
 			/* 向事件参数尾追加一个对象 */
 			_event_called_board.push(&obj);
 			/* 向事件参数尾追加一个事件参数 */
