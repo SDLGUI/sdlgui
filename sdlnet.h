@@ -121,7 +121,7 @@ class sdlnet
 			num_ip = _localhost_ip.host;
 			return number_to_address(_localhost_ip.host);
 		}
-	protected:
+	//protected:
 		static int to_dec(char n)
 		{
 			if(n>='0'&&n<='9')
@@ -181,7 +181,11 @@ class sdlnet
 				index++;
 				n/=16;
 			}
-			hex[index]=0x00;
+			if(index%8)
+			{
+				hex[index++]='0';
+				hex[index]=0x00;
+			}
 			for(n=0;n<index/2;n++)
 			{
 				c = hex[n];
