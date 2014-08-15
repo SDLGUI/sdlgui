@@ -81,6 +81,7 @@ class sdlnet
 		}
 		static const char* number_to_address(Uint32 n)
 		{
+			if(!n)return NULL;
 			string ip_str;
 			string num = sdlnet::number_to_hex(n);
 			stringstream ss;
@@ -111,6 +112,14 @@ class sdlnet
 		static const char* resolve_ip(IPaddress* address)
 		{
 			return SDLNet_ResolveIP(address);
+		}
+		static const char* localhost_ip(Uint32& num_ip)
+		{
+			IPaddress _localhost_ip;
+			SDLNet_ResolveHost(&_localhost_ip,NULL,0);
+			SDLNet_ResolveHost(&_localhost_ip,SDLNet_ResolveIP(&_localhost_ip),0);
+			num_ip = _localhost_ip.host;
+			return number_to_address(_localhost_ip.host);
 		}
 	protected:
 		static int to_dec(char n)
@@ -158,6 +167,12 @@ class sdlnet
 		static char* number_to_hex(Uint32 n)
 		{
 			char *hex = new char[100];
+			if(!n)
+			{
+				hex[0]='0';
+				hex[1]=0;
+				return hex;
+			}
 			int index=0;
 			int c;
 			while(n)
