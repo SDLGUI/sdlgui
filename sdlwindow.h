@@ -1678,6 +1678,7 @@ int sdl_frame::run()
 {
 	map<Uint32,sdl_frame*>::iterator _node;
 	sdl_frame* _node_window;
+	SDL_Event e;
 	/* 启动事件序列管理 */
 	event_signal::start();
 	/* 启动计时器管理 */
@@ -1691,6 +1692,8 @@ int sdl_frame::run()
 		}
 		else
 		{
+			memset((char*)&e,0x00,sizeof(e));
+			memset((char*)&sdl_frame::_main_event,0x00,sizeof(sdl_frame::_main_event));
 			while(SDL_PollEvent(&sdl_frame::_main_event))
 			{
 				/* 确定事件窗口 */
@@ -1726,7 +1729,7 @@ int sdl_frame::run()
 						_node_window->event_shunt(&sdl_frame::_main_event);
 					break;
 				}
-				memset((char*)&sdl_frame::_main_event,0x00,sizeof(sdl_frame::_main_event));
+				//memset((char*)&sdl_frame::_main_event,0x00,sizeof(sdl_frame::_main_event));
 				/* 事件线程解锁 */
 				//sdl_event_manager::_event_thread_lock.unlock();
 			}
