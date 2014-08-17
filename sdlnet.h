@@ -3,6 +3,13 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include <sstream>
+#ifdef WIN32
+#else
+	#include <sys/socket.h>
+	#include <sys/ioctl.h>
+	#include <net/if.h>
+	#include <arpa/inet.h>
+#endif
 class sdlnet_udp_socket
 {
 	public:
@@ -113,13 +120,41 @@ class sdlnet
 		{
 			return SDLNet_ResolveIP(address);
 		}
-		static const char* localhost_ip(Uint32& num_ip)
+		static const string localhost_ip(Uint32& num_ip)
 		{
-			IPaddress _localhost_ip;
-			SDLNet_ResolveHost(&_localhost_ip,NULL,0);
-			SDLNet_ResolveHost(&_localhost_ip,SDLNet_ResolveIP(&_localhost_ip),0);
-			num_ip = _localhost_ip.host;
-			return number_to_address(_localhost_ip.host);
+			string ip;
+			#ifdef WIN32
+				IPaddress _localhost_ip;
+				SDLNet_ResolveHost(&_localhost_ip,NULL,0);
+				SDLNet_ResolveHost(&_localhost_ip,SDLNet_ResolveIP(&_localhost_ip),0);
+				num_ip = _localhost_ip.host;
+				ip = number_to_address(_localhost_ip.host);
+				return ip;
+			#else
+				int socket_fd = socket(PF_INET,SOCK_DGRAM,0);
+				struct sockaddr_in *sin;
+				ifconf conf;
+				struct ifreq* ifr;
+				char buf[128];
+				int i,n;
+				conf.ifc_len = 128;
+				conf.ifc_buf = buf;
+				ioctl(socket_fd,SIOCGIFCONF,&conf);
+				ifr = conf.ifc_req;
+				n = conf.ifc_len/sizeof(struct ifreq);
+				for(i=0;i<n;i++)
+				{
+					sin = (struct sockaddr_in*)(&ifr->ifr_addr);
+					ip = inet_ntoa(sin->sin_addr);
+					if(ip.compare("127.0.0.1"))
+					{
+						return ip;
+					}
+					ifr++;
+				}
+				ip = "127.0.0.1";
+				return ip;
+			#endif
 		}
 	//protected:
 		static int to_dec(char n)
